@@ -4,20 +4,86 @@ import Hero from './components/Hero';
 import Features from './components/Features';
 import Practice from './components/Practice';
 import Progress from './components/Progress';
-import Chatbot from './components/Chatbot';
 import Footer from './components/Footer';
-import AuthPage from './pages/AuthPage';
+import Chatbot from './components/Chatbot';
+import Login from './components/Login';
+import Register from './components/Register';
+import AdminRegister from './components/admin/AdminRegister';
+import AdminDashboard from './components/admin/AdminDashboard';
+import PlacementTest from './components/assessment/PlacementTest';
+import ProgressDashboard from './components/dashboard/ProgressDashboard';
+import { useAuthStore } from './stores/authStore';
 
 function App() {
-  const [showAuth, setShowAuth] = useState(false);
+  const [currentPage, setCurrentPage] = useState<'home' | 'login' | 'register' | 'admin-register' | 'placement-test' | 'dashboard'>('home');
+  const { user, isAuthenticated } = useAuthStore();
 
-  if (showAuth) {
-    return <AuthPage onClose={() => setShowAuth(false)} />;
+  const handleAuthClick = () => {
+    setCurrentPage('login');
+  };
+
+  const handleAuthSuccess = () => {
+    setCurrentPage('home');
+  };
+
+  const handleAdminLogout = () => {
+    setCurrentPage('home');
+  };
+
+  // If user is admin and authenticated, show admin dashboard
+  if (isAuthenticated && user?.role === 'admin') {
+    return <AdminDashboard onLogout={handleAdminLogout} />;
+  }
+
+  // If user is authenticated (regular user), show user dashboard
+  if (isAuthenticated && user?.role === 'user') {
+    if (currentPage === 'placement-test') {
+      return <PlacementTest />;
+    }
+    if (currentPage === 'dashboard') {
+      return <ProgressDashboard />;
+    }
+  }
+
+  if (currentPage === 'login') {
+    return (
+      <Login
+        onLoginSuccess={handleAuthSuccess}
+        onSwitchToRegister={() => setCurrentPage('register')}
+        onSwitchToAdminRegister={() => setCurrentPage('admin-register')}
+      />
+    );
+  }
+
+  if (currentPage === 'register') {
+    return (
+      <Register
+        onRegisterSuccess={handleAuthSuccess}
+        onSwitchToLogin={() => setCurrentPage('login')}
+      />
+    );
+  }
+
+  if (currentPage === 'admin-register') {
+    return (
+      <AdminRegister
+        onLoginSuccess={handleAuthSuccess}
+        onSwitchToLogin={() => setCurrentPage('login')}
+      />
+    );
+  }
+
+  if (currentPage === 'placement-test') {
+    return <PlacementTest />;
+  }
+
+  if (currentPage === 'dashboard') {
+    return <ProgressDashboard />;
   }
 
   return (
     <div className="min-h-screen bg-white">
-      <Header onAuthClick={() => setShowAuth(true)} />
+      <Header onAuthClick={handleAuthClick} />
       <Hero />
       <Features />
       <Practice />

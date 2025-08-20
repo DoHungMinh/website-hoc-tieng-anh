@@ -8,6 +8,7 @@ export interface IUser extends Document {
   fullName: string;
   phone?: string;
   avatar?: string;
+  role: 'user' | 'admin';
   level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
   isEmailVerified: boolean;
   learningGoals: string[];
@@ -51,6 +52,11 @@ const userSchema = new Schema<IUser>({
   avatar: {
     type: String,
     default: null
+  },
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
   },
   level: {
     type: String,

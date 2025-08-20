@@ -5,6 +5,7 @@ export interface User {
   lastName: string;
   fullName: string;
   avatar?: string;
+  role: 'user' | 'admin';
   level: LearningLevel;
   isEmailVerified: boolean;
   learningGoals: string[];

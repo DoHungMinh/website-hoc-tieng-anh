@@ -64,7 +64,8 @@ router.post('/register', async (req: Request, res: Response) => {
         id: user._id,
         fullName: user.fullName,
         email: user.email,
-        phone: user.phone
+        phone: user.phone,
+        role: user.role
       },
       token
     });
@@ -123,7 +124,8 @@ router.post('/login', async (req: Request, res: Response) => {
         fullName: user.fullName,
         email: user.email,
         phone: user.phone,
-        level: user.level
+        level: user.level,
+        role: user.role
       },
       token
     });
@@ -133,6 +135,83 @@ router.post('/login', async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi đăng nhập'
+    });
+  }
+});
+
+// Admin Register
+router.post('/admin/register', async (req: Request, res: Response) => {
+  try {
+    const { fullName, email, phone, password, adminCode } = req.body;
+
+    // Check admin code (simple security measure)
+    if (adminCode !== process.env.ADMIN_REGISTER_CODE) {
+      res.status(403).json({
+        success: false,
+        message: 'Mã đăng ký admin không hợp lệ'
+      });
+      return;
+    }
+
+    // Validation
+    if (!fullName || !email || !password) {
+      res.status(400).json({
+        success: false,
+        message: 'Vui lòng điền đầy đủ thông tin bắt buộc'
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      res.status(400).json({
+        success: false,
+        message: 'Mật khẩu phải có ít nhất 6 ký tự'
+      });
+      return;
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      res.status(400).json({
+        success: false,
+        message: 'Email này đã được sử dụng'
+      });
+      return;
+    }
+
+    // Create new admin user
+    const user = new User({
+      fullName,
+      email,
+      phone,
+      password,
+      role: 'admin'
+    });
+
+    await user.save();
+
+    // Generate token
+    const token = generateToken(user._id);
+
+    res.status(201).json({
+      success: true,
+      message: 'Đăng ký admin thành công',
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        phone: user.phone,
+        role: user.role
+      },
+      token
+    });
+
+  } catch (error) {
+    console.error('Admin register error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi đăng ký admin'
     });
   }
 });
