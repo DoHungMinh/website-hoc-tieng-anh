@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { BookOpen, Menu, X, User, Bell } from 'lucide-react';
 
-const Header = () => {
+interface HeaderProps {
+  onAuthClick?: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ onAuthClick }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -38,9 +42,12 @@ const Header = () => {
             <button className="text-white hover:text-lime-200 transition-colors duration-200">
               <Bell className="h-6 w-6" />
             </button>
-            <button className="bg-lime-500 hover:bg-lime-400 text-green-900 px-4 py-2 rounded-lg font-medium transition-colors duration-200">
+            <button 
+              onClick={onAuthClick}
+              className="bg-lime-500 hover:bg-lime-400 text-green-900 px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+            >
               <User className="h-5 w-5 inline mr-2" />
-              Tài khoản
+              Đăng nhập
             </button>
           </div>
 
@@ -72,8 +79,11 @@ const Header = () => {
               <a href="#progress" className="text-white hover:text-lime-200 transition-colors duration-200 py-2 font-medium">
                 Tiến độ
               </a>
-              <button className="bg-lime-500 hover:bg-lime-400 text-green-900 px-4 py-2 rounded-lg font-medium transition-colors duration-200 mt-4">
-                Tài khoản
+              <button 
+                onClick={onAuthClick}
+                className="bg-lime-500 hover:bg-lime-400 text-green-900 px-4 py-2 rounded-lg font-medium transition-colors duration-200 mt-4"
+              >
+                Đăng nhập
               </button>
             </div>
           </div>

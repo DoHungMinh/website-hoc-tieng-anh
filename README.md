@@ -2,10 +2,18 @@
 
 Một nền tảng học tiếng Anh trực tuyến hoàn chỉnh với AI Chatbot thông minh, hệ thống đánh giá trình độ và bài học thích ứng.
 
+## ✅ Trạng thái dự án
+
+- **Frontend**: ✅ Hoàn thành - React + TypeScript + Vite + Tailwind CSS
+- **Backend Structure**: ✅ Hoàn thành - Node.js + Express + MongoDB (MVC)
+- **Components**: ✅ Hoàn thành - UI/UX components và features
+- **Development Environment**: ✅ Sẵn sàng - Dev server chạy tại http://localhost:5173
+- **Package Management**: ✅ Hoàn thành - NPM workspaces cho monorepo
+
 ## 🏗️ Kiến trúc dự án
 
 ```
-english-learning-platform/
+website-hoc-tieng-anh/
 ├── frontend/                     # React + Vite + Tailwind CSS
 │   ├── src/
 │   │   ├── components/

@@ -8,6 +8,9 @@ import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
+// Import database connection
+const connectDB = require('../config/database');
+
 // Import routes
 import authRoutes from './routes/auth';
 import assessmentRoutes from './routes/assessment';

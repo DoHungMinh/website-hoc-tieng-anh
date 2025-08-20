@@ -1,11 +1,12 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 export interface IUser extends Document {
   _id: string;
   email: string;
   password: string;
-  firstName: string;
-  lastName: string;
+  fullName: string;
+  phone?: string;
   avatar?: string;
   level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
   isEmailVerified: boolean;
@@ -22,6 +23,7 @@ export interface IUser extends Document {
   totalStudyHours: number;
   createdAt: Date;
   updatedAt: Date;
+  comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
 const userSchema = new Schema<IUser>({
@@ -37,14 +39,13 @@ const userSchema = new Schema<IUser>({
     required: true,
     minlength: 6
   },
-  firstName: {
+  fullName: {
     type: String,
     required: true,
     trim: true
   },
-  lastName: {
+  phone: {
     type: String,
-    required: true,
     trim: true
   },
   avatar: {
@@ -95,14 +96,31 @@ const userSchema = new Schema<IUser>({
   timestamps: true
 });
 
-// Virtual for full name
-userSchema.virtual('fullName').get(function() {
-  return `${this.firstName} ${this.lastName}`;
+// Hash password before saving
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+  
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error as Error);
+  }
 });
+
+// Compare password method
+userSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
+  return bcrypt.compare(candidatePassword, this.password);
+};
 
 // Ensure virtual fields are serialized
 userSchema.set('toJSON', {
-  virtuals: true
+  virtuals: true,
+  transform: function(doc, ret) {
+    delete (ret as any).password;
+    return ret;
+  }
 });
 
 export const User = mongoose.model<IUser>('User', userSchema);
