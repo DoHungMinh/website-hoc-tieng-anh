@@ -8,14 +8,13 @@ import Footer from './components/Footer';
 import Chatbot from './components/Chatbot';
 import Login from './components/Login';
 import Register from './components/Register';
-import AdminRegister from './components/admin/AdminRegister';
 import AdminDashboard from './components/admin/AdminDashboard';
 import PlacementTest from './components/assessment/PlacementTest';
 import ProgressDashboard from './components/dashboard/ProgressDashboard';
 import { useAuthStore } from './stores/authStore';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'login' | 'register' | 'admin-register' | 'placement-test' | 'dashboard'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'login' | 'register' | 'placement-test' | 'dashboard'>('home');
   const { user, isAuthenticated } = useAuthStore();
 
   const handleAuthClick = () => {
@@ -50,7 +49,6 @@ function App() {
       <Login
         onLoginSuccess={handleAuthSuccess}
         onSwitchToRegister={() => setCurrentPage('register')}
-        onSwitchToAdminRegister={() => setCurrentPage('admin-register')}
       />
     );
   }
@@ -59,15 +57,6 @@ function App() {
     return (
       <Register
         onRegisterSuccess={handleAuthSuccess}
-        onSwitchToLogin={() => setCurrentPage('login')}
-      />
-    );
-  }
-
-  if (currentPage === 'admin-register') {
-    return (
-      <AdminRegister
-        onLoginSuccess={handleAuthSuccess}
         onSwitchToLogin={() => setCurrentPage('login')}
       />
     );

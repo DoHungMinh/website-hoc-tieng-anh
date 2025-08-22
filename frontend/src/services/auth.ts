@@ -13,14 +13,6 @@ export interface RegisterData {
   password: string;
 }
 
-export interface AdminRegisterData {
-  fullName: string;
-  email: string;
-  phone?: string;
-  password: string;
-  adminCode: string;
-}
-
 export interface AuthResponse {
   success: boolean;
   user?: {
@@ -62,31 +54,6 @@ export const authAPI = {
   register: async (data: RegisterData): Promise<AuthResponse> => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.message || `HTTP error! status: ${response.status}`);
-      }
-      
-      return result;
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('Lỗi kết nối không xác định');
-    }
-  },
-
-  adminRegister: async (data: AdminRegisterData): Promise<AuthResponse> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/admin/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

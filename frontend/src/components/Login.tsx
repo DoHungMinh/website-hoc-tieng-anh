@@ -5,11 +5,10 @@ import { useAuthStore } from '../stores/authStore';
 
 interface LoginProps {
   onSwitchToRegister: () => void;
-  onSwitchToAdminRegister?: () => void;
   onLoginSuccess?: () => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onSwitchToAdminRegister, onLoginSuccess }) => {
+const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -219,18 +218,6 @@ const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onSwitchToAdminRegist
                 Hãy đăng ký
               </button>
             </p>
-            
-            {/* Admin Register Link */}
-            {onSwitchToAdminRegister && (
-              <p className="text-green-100 mt-2">
-                <button
-                  onClick={onSwitchToAdminRegister}
-                  className="text-purple-300 hover:text-purple-200 font-semibold transition-colors duration-200 underline decoration-2 underline-offset-2"
-                >
-                  Đăng ký tài khoản Admin
-                </button>
-              </p>
-            )}
           </div>
 
           {/* Social Login */}
