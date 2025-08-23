@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Edit, Trash2, BookOpen, FileText, Volume2, Clock, Users } from 'lucide-react';
 import CreateIELTSExam from './CreateIELTSExam';
 
 interface Exam {
-  id: string;
+  _id: string;
   title: string;
   type: 'reading' | 'listening';
   difficulty: string;
@@ -19,54 +19,161 @@ const ExamManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterLevel, setFilterLevel] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    total: 0,
+    reading: 0,
+    listening: 0,
+    published: 0
+  });
   
-  // Mock data - replace with real API call
-  const [exams, setExams] = useState<Exam[]>([
-    {
-      id: '1',
-      title: 'IELTS Academic Reading Test 1',
-      type: 'reading',
-      difficulty: 'Band 6.0-7.0',
-      duration: 60,
-      totalQuestions: 40,
-      status: 'published',
-      createdAt: '2024-01-15',
-      updatedAt: '2024-01-20'
-    },
-    {
-      id: '2',
-      title: 'IELTS Listening Test 1',
-      type: 'listening',
-      difficulty: 'Band 5.0-6.0',
-      duration: 40,
-      totalQuestions: 40,
-      status: 'draft',
-      createdAt: '2024-01-16',
-      updatedAt: '2024-01-18'
-    }
-  ]);
+  // Replace mock data with API calls
+  const [exams, setExams] = useState<Exam[]>([]);
 
-  const handleCreateExam = (examData: {
-    title: string;
-    type: 'reading' | 'listening';
-    difficulty: string;
-    duration: number;
-    totalQuestions: number;
-  }) => {
-    const newExam: Exam = {
-      id: Date.now().toString(),
-      title: examData.title,
-      type: examData.type,
-      difficulty: examData.difficulty,
-      duration: examData.duration,
-      totalQuestions: examData.totalQuestions,
-      status: 'draft',
-      createdAt: new Date().toISOString().split('T')[0],
-      updatedAt: new Date().toISOString().split('T')[0]
-    };
-    
-    setExams(prev => [newExam, ...prev]);
+  // Fetch exams from API
+  const fetchExams = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        console.error('No token found');
+        alert('Vui lòng đăng nhập lại');
+        return;
+      }
+      
+      const response = await fetch('/api/ielts?status=all', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.status === 403) {
+        alert('Bạn không có quyền truy cập. Vui lòng đăng nhập lại');
+        localStorage.removeItem('token');
+        return;
+      }
+      
+      if (response.ok) {
+        const data = await response.json();
+        setExams(data.data);
+      } else {
+        console.error('Failed to fetch exams:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching exams:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch exam statistics
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        console.error('No token found for stats');
+        return;
+      }
+      
+      const response = await fetch('/api/ielts/admin/stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.status === 403) {
+        console.error('Forbidden access to stats');
+        return;
+      }
+      
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data.data);
+      } else {
+        console.error('Failed to fetch stats:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchExams();
+    fetchStats();
+  }, []);
+
+  const handleCreateExam = async () => {
+    // Exam is already created in CreateIELTSExam component
+    // Just refresh the list and go back
+    await fetchExams();
+    await fetchStats();
     setShowCreateForm(false);
+  };
+
+  const handleDeleteExam = async (examId: string) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa đề thi này không?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/ielts/${examId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        await fetchExams();
+        await fetchStats();
+        alert('Xóa đề thi thành công!');
+      } else {
+        throw new Error('Failed to delete exam');
+      }
+    } catch (error) {
+      console.error('Error deleting exam:', error);
+      alert('Lỗi khi xóa đề thi');
+    }
+  };
+
+  const handleToggleStatus = async (examId: string, currentStatus: string) => {
+    if (!examId) {
+      console.error('ExamId is undefined');
+      return;
+    }
+    
+    const newStatus = currentStatus === 'published' ? 'draft' : 'published';
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Vui lòng đăng nhập lại');
+        return;
+      }
+      
+      const response = await fetch(`/api/ielts/${examId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (response.ok) {
+        await fetchExams();
+        await fetchStats();
+      } else {
+        throw new Error('Failed to update status');
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Lỗi khi cập nhật trạng thái');
+    }
   };
 
   const filteredExams = exams.filter(exam => {
@@ -110,7 +217,7 @@ const ExamManagement = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Tổng đề thi</p>
-              <p className="text-2xl font-bold text-gray-900">{exams.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
             </div>
             <div className="p-3 bg-green-100 rounded-lg">
               <FileText className="h-6 w-6 text-green-600" />
@@ -122,9 +229,7 @@ const ExamManagement = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Reading Tests</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {exams.filter(e => e.type === 'reading').length}
-              </p>
+              <p className="text-2xl font-bold text-gray-900">{stats.reading}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-lg">
               <BookOpen className="h-6 w-6 text-blue-600" />
@@ -136,9 +241,7 @@ const ExamManagement = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Listening Tests</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {exams.filter(e => e.type === 'listening').length}
-              </p>
+              <p className="text-2xl font-bold text-gray-900">{stats.listening}</p>
             </div>
             <div className="p-3 bg-purple-100 rounded-lg">
               <Volume2 className="h-6 w-6 text-purple-600" />
@@ -150,9 +253,7 @@ const ExamManagement = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Đã xuất bản</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {exams.filter(e => e.status === 'published').length}
-              </p>
+              <p className="text-2xl font-bold text-gray-900">{stats.published}</p>
             </div>
             <div className="p-3 bg-lime-100 rounded-lg">
               <Users className="h-6 w-6 text-lime-600" />
@@ -242,8 +343,16 @@ const ExamManagement = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredExams.map((exam) => (
-                <tr key={exam.id} className="hover:bg-gray-50 transition-colors">
+              {loading ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-12 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+                    <p className="text-gray-500">Đang tải danh sách đề thi...</p>
+                  </td>
+                </tr>
+              ) : (
+                filteredExams.map((exam) => (
+                  <tr key={exam._id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className={`flex-shrink-0 h-10 w-10 rounded-lg flex items-center justify-center ${
@@ -255,7 +364,7 @@ const ExamManagement = () => {
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">{exam.title}</div>
-                        <div className="text-sm text-gray-500">ID: {exam.id}</div>
+                        <div className="text-sm text-gray-500">ID: {exam._id}</div>
                       </div>
                     </div>
                   </td>
@@ -294,16 +403,35 @@ const ExamManagement = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <button className="text-green-600 hover:text-green-700 p-2 hover:bg-green-50 rounded-lg transition-colors">
+                      <button 
+                        onClick={() => handleToggleStatus(exam._id, exam.status)}
+                        className={`px-3 py-1 rounded-lg text-xs font-medium ${
+                          exam.status === 'published'
+                            ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                            : 'bg-green-100 text-green-800 hover:bg-green-200'
+                        } transition-colors`}
+                        title={exam.status === 'published' ? 'Ẩn đề thi' : 'Xuất bản đề thi'}
+                      >
+                        {exam.status === 'published' ? 'Ẩn' : 'Xuất bản'}
+                      </button>
+                      <button 
+                        className="text-green-600 hover:text-green-700 p-2 hover:bg-green-50 rounded-lg transition-colors"
+                        title="Chỉnh sửa"
+                      >
                         <Edit className="h-4 w-4" />
                       </button>
-                      <button className="text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors">
+                      <button 
+                        onClick={() => handleDeleteExam(exam._id)}
+                        className="text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Xóa"
+                      >
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>

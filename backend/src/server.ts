@@ -20,6 +20,7 @@ import chatbotRoutes from './routes/chatbot';
 import learningRoutes from './routes/learning';
 import progressRoutes from './routes/progress';
 import userRoutes from './routes/user';
+import ieltsRoutes from './routes/ielts';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -82,6 +83,7 @@ app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/learning', learningRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/ielts', ieltsRoutes);
 
 // Test database endpoint
 app.get('/api/test-db', async (req: Request, res: Response) => {

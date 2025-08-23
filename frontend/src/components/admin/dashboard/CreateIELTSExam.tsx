@@ -209,35 +209,45 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onBack, onSave }) => 
   const handleAudioUpload = async (sectionId: string, file: File) => {
     setUploadingAudio(sectionId);
     
-    // Simulate upload to Cloudinary
     try {
-      // In real implementation, upload to Cloudinary here
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', 'your_upload_preset');
+      formData.append('audio', file);
+      formData.append('examId', 'temp');
+      formData.append('sectionId', sectionId);
       
-      // const response = await fetch('https://api.cloudinary.com/v1_1/your_cloud_name/upload', {
-      //   method: 'POST',
-      //   body: formData
-      // });
-      // const data = await response.json();
+      const response = await fetch('/api/ielts/upload-audio', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      });
       
-      // For demo, create a URL
-      const audioUrl = URL.createObjectURL(file);
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+      
+      const data = await response.json();
       
       setExamData(prev => ({
         ...prev,
         sections: prev.sections!.map(section =>
           section.id === sectionId
-            ? { ...section, audioFile: file, audioUrl }
+            ? { 
+                ...section, 
+                audioFile: file, 
+                audioUrl: data.data.audioUrl,
+                audioPublicId: data.data.audioPublicId
+              }
             : section
         )
       }));
       
-      setTimeout(() => setUploadingAudio(null), 1000);
+      setUploadingAudio(null);
     } catch (error) {
       console.error('Upload failed:', error);
       setUploadingAudio(null);
+      alert('Upload file thất bại. Vui lòng thử lại.');
     }
   };
 
@@ -250,12 +260,38 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onBack, onSave }) => 
     return 0;
   };
 
-  const handleSave = () => {
-    const finalExamData = {
-      ...examData,
-      totalQuestions: calculateTotalQuestions()
-    };
-    onSave(finalExamData);
+  const handleSave = async () => {
+    try {
+      const finalExamData = {
+        ...examData,
+        totalQuestions: calculateTotalQuestions()
+      };
+      
+      const response = await fetch('/api/ielts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(finalExamData)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create exam');
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        alert('Tạo đề thi thành công!');
+        onSave(data.data);
+      } else {
+        throw new Error(data.message || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('Error creating exam:', error);
+      alert('Lỗi khi tạo đề thi. Vui lòng thử lại.');
+    }
   };
 
   return (

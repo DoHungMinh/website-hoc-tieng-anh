@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   BookOpen, 
   Headphones, 
@@ -13,11 +13,53 @@ import {
 } from 'lucide-react';
 import IELTSPractice from './IELTSPractice';
 import IELTSTest from './IELTSTest';
+import IELTSExamCard from './IELTSExamCard';
+
+interface IELTSExam {
+  _id: string;
+  title: string;
+  type: 'reading' | 'listening';
+  difficulty: string;
+  duration: number;
+  totalQuestions: number;
+  description: string;
+}
 
 type ViewType = 'home' | 'practice' | 'test';
 
 const IELTSCenter = () => {
   const [currentView, setCurrentView] = useState<ViewType>('home');
+  const [exams, setExams] = useState<IELTSExam[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch published IELTS exams
+  useEffect(() => {
+    const fetchExams = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/ielts?limit=6');
+        if (response.ok) {
+          const data = await response.json();
+          setExams(data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching exams:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (currentView === 'home') {
+      fetchExams();
+    }
+  }, [currentView]);
+
+  const handleStartExam = (examId: string, type: 'reading' | 'listening') => {
+    // Navigate to specific exam
+    setCurrentView('test');
+    // Store exam info for the test component
+    sessionStorage.setItem('currentExam', JSON.stringify({ examId, type }));
+  };
 
   const stats = [
     {
@@ -207,6 +249,58 @@ const IELTSCenter = () => {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Available IELTS Exams Section */}
+      <div className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-800 to-lime-600 bg-clip-text text-transparent mb-6">
+              Đề Thi IELTS Mới Nhất
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Thực hành với các đề thi IELTS chính thức, được cập nhật liên tục để phù hợp với format thi mới nhất
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {exams.map((exam) => (
+                <IELTSExamCard
+                  key={exam._id}
+                  exam={exam}
+                  onStartExam={handleStartExam}
+                />
+              ))}
+            </div>
+          )}
+
+          {!loading && exams.length === 0 && (
+            <div className="text-center py-12">
+              <div className="mx-auto h-24 w-24 text-gray-400 mb-4">
+                <BookOpen className="h-full w-full" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có đề thi nào</h3>
+              <p className="text-gray-500">Các đề thi IELTS sẽ được cập nhật sớm nhất có thể.</p>
+            </div>
+          )}
+
+          {!loading && exams.length > 0 && (
+            <div className="text-center mt-12">
+              <button
+                onClick={() => setCurrentView('practice')}
+                className="bg-gradient-to-r from-green-600 to-lime-600 hover:from-green-700 hover:to-lime-700 text-white px-8 py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center gap-3 mx-auto"
+              >
+                Xem tất cả đề thi
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
