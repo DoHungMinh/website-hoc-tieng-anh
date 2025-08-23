@@ -1,8 +1,24 @@
-import React from 'react';
-import { PlayCircle, CheckCircle, Star, Clock } from 'lucide-react';
+import { useState } from 'react';
+import { PlayCircle, CheckCircle, Star, Clock, ArrowRight, Trophy, Target } from 'lucide-react';
+import IELTSCenter from './ielts/IELTSCenter';
 
 const Practice = () => {
+  const [showIELTS, setShowIELTS] = useState(false);
+
+  if (showIELTS) {
+    return <IELTSCenter />;
+  }
   const practiceItems = [
+    {
+      title: 'IELTS Practice Center',
+      level: 'All Levels',
+      duration: 'Flexible',
+      completed: 0,
+      rating: 4.9,
+      image: 'https://images.pexels.com/photos/3184338/pexels-photo-3184338.jpeg?auto=compress&cs=tinysrgb&w=400',
+      isIELTS: true,
+      description: 'Luyện thi IELTS Reading & Listening với bộ đề thực tế và AI hỗ trợ'
+    },
     {
       title: 'Bài tập từ vựng cơ bản',
       level: 'Beginner',
@@ -20,20 +36,12 @@ const Practice = () => {
       image: 'https://images.pexels.com/photos/3184302/pexels-photo-3184302.jpeg?auto=compress&cs=tinysrgb&w=400'
     },
     {
-      title: 'Thực hành giao tiếp hàng ngày',
+      title: 'Luyện nghe BBC News',
       level: 'Advanced',
       duration: '30 phút',
       completed: 45,
       rating: 4.7,
       image: 'https://images.pexels.com/photos/3184338/pexels-photo-3184338.jpeg?auto=compress&cs=tinysrgb&w=400'
-    },
-    {
-      title: 'Đề thi IELTS Speaking mô phỏng',
-      level: 'Expert',
-      duration: '45 phút',
-      completed: 20,
-      rating: 4.9,
-      image: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400'
     }
   ];
 
@@ -53,8 +61,15 @@ const Practice = () => {
           {practiceItems.map((item, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 group"
+              className={`bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 group ${
+                item.isIELTS ? 'ring-2 ring-green-500 relative' : ''
+              }`}
             >
+              {item.isIELTS && (
+                <div className="absolute top-2 right-2 z-10 bg-gradient-to-r from-green-500 to-lime-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                  HOT
+                </div>
+              )}
               <div className="relative">
                 <img
                   src={item.image}
@@ -70,7 +85,8 @@ const Practice = () => {
                     item.level === 'Beginner' ? 'bg-green-500 text-white' :
                     item.level === 'Intermediate' ? 'bg-lime-500 text-green-900' :
                     item.level === 'Advanced' ? 'bg-orange-500 text-white' :
-                    'bg-red-500 text-white'
+                    item.level === 'Expert' ? 'bg-red-500 text-white' :
+                    'bg-gradient-to-r from-green-500 to-lime-500 text-white'
                   }`}>
                     {item.level}
                   </span>
@@ -81,6 +97,10 @@ const Practice = () => {
                 <h3 className="text-lg font-bold text-gray-900 mb-3 group-hover:text-green-700 transition-colors duration-300">
                   {item.title}
                 </h3>
+
+                {item.description && (
+                  <p className="text-sm text-gray-600 mb-3">{item.description}</p>
+                )}
 
                 <div className="flex items-center gap-4 mb-4 text-sm text-gray-600">
                   <div className="flex items-center gap-1">
@@ -93,22 +113,31 @@ const Practice = () => {
                   </div>
                 </div>
 
-                <div className="mb-4">
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-600">Tiến độ hoàn thành</span>
-                    <span className="font-medium text-green-700">{item.completed}%</span>
+                {!item.isIELTS && (
+                  <div className="mb-4">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-gray-600">Tiến độ hoàn thành</span>
+                      <span className="font-medium text-green-700">{item.completed}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-gradient-to-r from-green-500 to-lime-500 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${item.completed}%` }}
+                      ></div>
+                    </div>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-gradient-to-r from-green-500 to-lime-500 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${item.completed}%` }}
-                    ></div>
-                  </div>
-                </div>
+                )}
 
-                <button className="w-full bg-gradient-to-r from-green-600 to-lime-600 hover:from-green-700 hover:to-lime-700 text-white py-3 rounded-xl font-medium transition-all duration-300 flex items-center justify-center gap-2">
+                <button 
+                  onClick={() => item.isIELTS ? setShowIELTS(true) : null}
+                  className={`w-full py-3 rounded-xl font-medium transition-all duration-300 flex items-center justify-center gap-2 ${
+                    item.isIELTS 
+                      ? 'bg-gradient-to-r from-green-600 to-lime-600 hover:from-green-700 hover:to-lime-700 text-white shadow-lg hover:shadow-xl' 
+                      : 'bg-gradient-to-r from-green-600 to-lime-600 hover:from-green-700 hover:to-lime-700 text-white'
+                  }`}
+                >
                   <CheckCircle className="h-5 w-5" />
-                  Tiếp tục học
+                  {item.isIELTS ? 'Vào IELTS Center' : 'Tiếp tục học'}
                 </button>
               </div>
             </div>
