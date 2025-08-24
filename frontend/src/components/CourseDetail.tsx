@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Play, 
   Clock, 
@@ -16,7 +16,7 @@ import {
   Globe
 } from 'lucide-react';
 
-interface Course {
+interface DetailCourse {
   id: string;
   title: string;
   level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
@@ -41,17 +41,39 @@ interface Course {
   whatYouLearn: string[];
   requirements: string[];
   isPopular?: boolean;
+  vocabulary?: Array<{
+    id: string;
+    word: string;
+    pronunciation?: string;
+    meaning: string;
+    example?: string;
+  }>;
+  grammar?: Array<{
+    id: string;
+    rule: string;
+    structure?: string;
+    explanation: string;
+    example: string;
+  }>;
 }
 
 interface CourseDetailProps {
-  course: Course;
+  course: DetailCourse;
   onBack: () => void;
   onEnroll: (courseId: string) => void;
+  isPurchased?: boolean;
 }
 
-const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll }) => {
+const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, isPurchased: externalIsPurchased }) => {
   const [expandedModule, setExpandedModule] = useState<number | null>(null);
   const [showPayment, setShowPayment] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [isPurchased, setIsPurchased] = useState(externalIsPurchased || false); // Use external purchased status
+
+  // Update internal state when external prop changes
+  useEffect(() => {
+    setIsPurchased(externalIsPurchased || false);
+  }, [externalIsPurchased]);
 
   const getLevelColor = (level: string) => {
     const colors = {
@@ -357,6 +379,141 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll })
               </div>
             </div>
 
+            {/* Vocabulary Content */}
+            {course.vocabulary && course.vocabulary.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-2xl font-bold text-gray-900">Từ vựng</h2>
+                  {!isPurchased && !showPreview && (
+                    <button
+                      onClick={() => setShowPreview(true)}
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-100 text-blue-600 rounded-md hover:bg-blue-200 transition-colors"
+                    >
+                      <Play className="w-3 h-3" />
+                      Xem trước
+                    </button>
+                  )}
+                </div>
+
+                {!isPurchased && !showPreview ? (
+                  <div className="text-center py-8 bg-gray-50 rounded-lg">
+                    <BookOpen className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+                    <p className="text-gray-600 mb-2">Nội dung từ vựng sẽ được mở khóa sau khi mua khóa học</p>
+                    <p className="text-sm text-gray-500">
+                      {course.vocabulary.length} từ vựng đang chờ bạn khám phá
+                    </p>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {course.vocabulary.slice(0, isPurchased ? undefined : 2).map((vocab, index) => (
+                        <div key={vocab.id || index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                          <div className="flex items-start justify-between mb-2">
+                            <h3 className="text-lg font-semibold text-blue-600">{vocab.word}</h3>
+                            {vocab.pronunciation && (
+                              <span className="text-sm text-gray-500 italic">/{vocab.pronunciation}/</span>
+                            )}
+                          </div>
+                          <p className="text-gray-700 mb-2">
+                            <span className="font-medium">Nghĩa:</span> {vocab.meaning}
+                          </p>
+                          {vocab.example && (
+                            <p className="text-gray-600 text-sm">
+                              <span className="font-medium">Ví dụ:</span> {vocab.example}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {!isPurchased && showPreview && course.vocabulary.length > 2 && (
+                      <div className="relative mt-4">
+                        <div className="absolute inset-0 bg-gradient-to-t from-white via-white/60 to-transparent pointer-events-none"></div>
+                        <div className="text-center pt-6 pb-2">
+                          <p className="text-gray-600 text-sm mb-3">
+                            Còn {course.vocabulary.length - 2} từ vựng nữa...
+                          </p>
+                          <button
+                            onClick={() => onEnroll(course.id)}
+                            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+                          >
+                            Mua khóa học để xem toàn bộ
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Grammar Content */}
+            {course.grammar && course.grammar.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-2xl font-bold text-gray-900">Ngữ pháp</h2>
+                  {!isPurchased && !showPreview && (
+                    <button
+                      onClick={() => setShowPreview(true)}
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm bg-green-100 text-green-600 rounded-md hover:bg-green-200 transition-colors"
+                    >
+                      <Play className="w-3 h-3" />
+                      Xem trước
+                    </button>
+                  )}
+                </div>
+
+                {!isPurchased && !showPreview ? (
+                  <div className="text-center py-8 bg-gray-50 rounded-lg">
+                    <BookOpen className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+                    <p className="text-gray-600 mb-2">Nội dung ngữ pháp sẽ được mở khóa sau khi mua khóa học</p>
+                    <p className="text-sm text-gray-500">
+                      {course.grammar.length} nội dung ngữ pháp đang chờ bạn khám phá
+                    </p>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <div className="space-y-4">
+                      {course.grammar.slice(0, isPurchased ? undefined : 2).map((grammar, index) => (
+                        <div key={grammar.id || index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                          <h3 className="text-lg font-semibold text-green-600 mb-2">{grammar.rule}</h3>
+                          {grammar.structure && (
+                            <p className="text-gray-700 mb-2">
+                              <span className="font-medium">Cấu trúc:</span> 
+                              <code className="bg-gray-100 px-2 py-1 rounded ml-2">{grammar.structure}</code>
+                            </p>
+                          )}
+                          <p className="text-gray-700 mb-2">
+                            <span className="font-medium">Giải thích:</span> {grammar.explanation}
+                          </p>
+                          <p className="text-gray-600 text-sm">
+                            <span className="font-medium">Ví dụ:</span> {grammar.example}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {!isPurchased && showPreview && course.grammar.length > 2 && (
+                      <div className="relative mt-4">
+                        <div className="absolute inset-0 bg-gradient-to-t from-white via-white/60 to-transparent pointer-events-none"></div>
+                        <div className="text-center pt-6 pb-2">
+                          <p className="text-gray-600 text-sm mb-3">
+                            Còn {course.grammar.length - 2} nội dung ngữ pháp nữa...
+                          </p>
+                          <button
+                            onClick={() => onEnroll(course.id)}
+                            className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
+                          >
+                            Mua khóa học để xem toàn bộ
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Requirements */}
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Yêu cầu</h2>
@@ -392,16 +549,6 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll })
           <div className="lg:col-span-1">
             <div className="sticky top-8">
               <div className="bg-white rounded-xl shadow-lg p-6">
-                {/* Course Video Preview */}
-                <div className="aspect-video bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center mb-6">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
-                      <Play className="w-8 h-8 text-blue-600" />
-                    </div>
-                    <p className="text-gray-600 font-medium">Xem trước khóa học</p>
-                  </div>
-                </div>
-
                 {/* Price */}
                 <div className="text-center mb-6">
                   <div className="flex items-center justify-center gap-3 mb-2">

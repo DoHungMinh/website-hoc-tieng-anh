@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BookOpen, 
   Target, 
@@ -20,6 +20,7 @@ import {
   GraduationCap,
   Zap
 } from 'lucide-react';
+import { courseAPI, Course as APICourse } from '../services/courseAPI';
 
 interface Course {
   id: string;
@@ -244,6 +245,32 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
   onBack 
 }) => {
   const [activeType, setActiveType] = useState<CourseType | null>(selectedType || null);
+  const [courses, setCourses] = useState<APICourse[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Load courses from API
+  useEffect(() => {
+    const loadCourses = async () => {
+      if (!activeType) return;
+      
+      setLoading(true);
+      try {
+        const response = await courseAPI.getPublicCourses({
+          type: activeType
+        });
+        
+        if (response.success) {
+          setCourses(response.data);
+        }
+      } catch (error) {
+        console.error('Error loading courses:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCourses();
+  }, [activeType]);
 
   const getLevelColor = (level: string) => {
     const colors = {
@@ -419,6 +446,88 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
     };
   };
 
+  // API Course Card Component
+  const APICourseCard: React.FC<{ course: APICourse }> = ({ course }) => {
+    const levelColors = {
+      'A1': 'bg-green-100 text-green-800',
+      'A2': 'bg-blue-100 text-blue-800', 
+      'B1': 'bg-yellow-100 text-yellow-800',
+      'B2': 'bg-orange-100 text-orange-800',
+      'C1': 'bg-purple-100 text-purple-800',
+      'C2': 'bg-red-100 text-red-800',
+      'IDIOMS': 'bg-pink-100 text-pink-800'
+    };
+
+    const typeIcons = {
+      'vocabulary': Brain,
+      'grammar': MessageSquare
+    };
+
+    const TypeIcon = typeIcons[course.type];
+    const priceVND = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(course.price);
+
+    return (
+      <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer"
+           onClick={() => onCourseSelect?.(course._id!)}>
+        <div className="relative">
+          <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-black/10"></div>
+            <TypeIcon className="h-16 w-16 text-white/90 relative z-10" />
+            <div className="absolute top-4 right-4">
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${levelColors[course.level as keyof typeof levelColors]}`}>
+                {course.level}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+            {course.title}
+          </h3>
+          
+          <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+            {course.description}
+          </p>
+
+          <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+            <div className="flex items-center gap-1">
+              <Clock className="h-4 w-4" />
+              <span>{course.duration}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <BookOpen className="h-4 w-4" />
+              <span>{course.lessonsCount} bài</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Users className="h-4 w-4" />
+              <span>{course.studentsCount}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-blue-600">{priceVND}</span>
+                {course.originalPrice && course.originalPrice > course.price && (
+                  <span className="text-sm text-gray-500 line-through">
+                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(course.originalPrice)}
+                  </span>
+                )}
+              </div>
+              <span className="text-xs text-gray-500">{course.instructor}</span>
+            </div>
+            
+            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2">
+              <Play className="h-4 w-4" />
+              Học ngay
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const CourseCard: React.FC<{ course: Course }> = ({ course }) => {
     const illustration = getCourseIllustration(course.id);
     const IconComponent = illustration.icon;
@@ -519,7 +628,6 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
   };
 
   if (activeType) {
-    const courses = activeType === 'vocabulary' ? vocabularyCourses : grammarCourses;
     const title = activeType === 'vocabulary' ? 'Từ vựng thông minh' : 'Ngữ pháp tương tác';
     const icon = activeType === 'vocabulary' ? Brain : MessageSquare;
     const Icon = icon;
@@ -549,11 +657,23 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {courses.map((course) => (
-              <CourseCard key={course.id} course={course} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <p className="mt-4 text-gray-600">Đang tải khóa học...</p>
+            </div>
+          ) : courses.length === 0 ? (
+            <div className="text-center py-12">
+              <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
+              <p className="mt-4 text-gray-600">Chưa có khóa học nào cho loại này</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {courses.map((course) => (
+                <APICourseCard key={course._id} course={course} />
+              ))}
+            </div>
+          )}
 
           <div className="mt-16 bg-white rounded-2xl shadow-lg p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">

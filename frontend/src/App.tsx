@@ -82,7 +82,7 @@ function App() {
   }
 
   if (currentPage === 'courses') {
-    return <CourseApp />;
+    return <CourseApp onBack={() => setCurrentPage('home')} />;
   }
 
   return (
