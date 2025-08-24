@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import CoursesPage from './CoursesPage';
 import CourseDetail from './CourseDetail';
 import { courseAPI, Course } from '../services/courseAPI';
+import { useAuthStore } from '../stores/authStore';
 
 // Import DetailCourse type từ CourseDetail
 type DetailCourse = {
@@ -49,12 +50,14 @@ type ViewType = 'main' | 'vocabulary' | 'grammar' | 'detail';
 
 interface CourseAppProps {
   onBack?: () => void;
+  onAuthRequired?: () => void;
 }
 
-const CourseApp: React.FC<CourseAppProps> = ({ onBack }) => {
+const CourseApp: React.FC<CourseAppProps> = ({ onBack, onAuthRequired }) => {
   const [currentView, setCurrentView] = useState<ViewType>('main');
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [purchasedCourses, setPurchasedCourses] = useState<Set<string>>(new Set()); // Track purchased courses
+  const { isAuthenticated } = useAuthStore();
 
   const handleCourseTypeSelect = (type: 'vocabulary' | 'grammar') => {
     setCurrentView(type);
@@ -85,6 +88,19 @@ const CourseApp: React.FC<CourseAppProps> = ({ onBack }) => {
   };
 
   const handleEnroll = async (courseId: string) => {
+    // Check if user is authenticated before allowing purchase
+    if (!isAuthenticated) {
+      const confirmLogin = window.confirm(
+        'Bạn cần đăng nhập để mua khóa học.\n\n' +
+        'Nhấn OK để chuyển đến trang đăng nhập, hoặc Cancel để tiếp tục xem khóa học.'
+      );
+      
+      if (confirmLogin && onAuthRequired) {
+        onAuthRequired();
+      }
+      return;
+    }
+
     // Simulate purchase confirmation
     const confirmPurchase = window.confirm(
       `Bạn có muốn mua khóa học này với giá ${selectedCourse?.price?.toLocaleString('vi-VN')}đ?\n\n` +

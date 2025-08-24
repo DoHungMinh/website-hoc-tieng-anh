@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { BookOpen, Menu, X, User, Bell } from 'lucide-react';
+import { BookOpen, Menu, X, User, Bell, LogOut } from 'lucide-react';
+import { useAuthStore } from '../stores/authStore';
 
 interface HeaderProps {
   onAuthClick?: () => void;
@@ -8,6 +9,18 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onAuthClick, onNavigate }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isAuthenticated, user, logout } = useAuthStore();
+
+  const handleAuthAction = () => {
+    if (isAuthenticated) {
+      // Đăng xuất và chuyển về trang đăng ký
+      logout();
+      onNavigate?.('auth'); // Hoặc có thể là 'register' tùy theo logic của bạn
+    } else {
+      // Mở modal đăng nhập
+      onAuthClick?.();
+    }
+  };
 
   return (
     <header className="bg-gradient-to-r from-green-800 via-green-700 to-lime-600 shadow-lg sticky top-0 z-50">
@@ -46,15 +59,29 @@ const Header: React.FC<HeaderProps> = ({ onAuthClick, onNavigate }) => {
 
           {/* User Actions */}
           <div className="hidden md:flex items-center space-x-4">
+            {isAuthenticated && (
+              <span className="text-white text-sm">
+                Xin chào, {user?.fullName}
+              </span>
+            )}
             <button className="text-white hover:text-lime-200 transition-colors duration-200">
               <Bell className="h-6 w-6" />
             </button>
             <button 
-              onClick={onAuthClick}
+              onClick={handleAuthAction}
               className="bg-lime-500 hover:bg-lime-400 text-green-900 px-4 py-2 rounded-lg font-medium transition-colors duration-200"
             >
-              <User className="h-5 w-5 inline mr-2" />
-              Đăng nhập
+              {isAuthenticated ? (
+                <>
+                  <LogOut className="h-5 w-5 inline mr-2" />
+                  Đăng xuất
+                </>
+              ) : (
+                <>
+                  <User className="h-5 w-5 inline mr-2" />
+                  Đăng nhập
+                </>
+              )}
             </button>
           </div>
 
@@ -98,11 +125,31 @@ const Header: React.FC<HeaderProps> = ({ onAuthClick, onNavigate }) => {
               <a href="#progress" className="text-white hover:text-lime-200 transition-colors duration-200 py-2 font-medium">
                 Tiến độ
               </a>
+              
+              {isAuthenticated && (
+                <div className="text-white text-sm py-2 border-t border-green-600 mt-2 pt-4">
+                  Xin chào, {user?.fullName}
+                </div>
+              )}
+              
               <button 
-                onClick={onAuthClick}
+                onClick={() => {
+                  handleAuthAction();
+                  setIsMenuOpen(false);
+                }}
                 className="bg-lime-500 hover:bg-lime-400 text-green-900 px-4 py-2 rounded-lg font-medium transition-colors duration-200 mt-4"
               >
-                Đăng nhập
+                {isAuthenticated ? (
+                  <>
+                    <LogOut className="h-5 w-5 inline mr-2" />
+                    Đăng xuất
+                  </>
+                ) : (
+                  <>
+                    <User className="h-5 w-5 inline mr-2" />
+                    Đăng nhập
+                  </>
+                )}
               </button>
             </div>
           </div>

@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Mail, Lock, BookOpen, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, BookOpen, ArrowRight, ArrowLeft } from 'lucide-react';
 import { authAPI } from '../services/auth';
 import { useAuthStore } from '../stores/authStore';
 
 interface LoginProps {
   onSwitchToRegister: () => void;
   onLoginSuccess?: () => void;
+  onBackToHome?: () => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess }) => {
+const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess, onBackToHome }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -247,6 +248,18 @@ const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess }) => 
                 Facebook
               </button>
             </div>
+          </div>
+
+          {/* Back to Home Button */}
+          <div className="mt-6 text-center">
+            <button
+              type="button"
+              onClick={onBackToHome}
+              className="inline-flex items-center gap-2 text-green-100 hover:text-white transition-colors duration-200"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Quay lại trang chủ
+            </button>
           </div>
         </div>
       </div>

@@ -15,16 +15,21 @@ import CourseApp from './components/CourseApp';
 import NewCourseNotification from './components/NewCourseNotification';
 import { useAuthStore } from './stores/authStore';
 
-type Page = 'home' | 'login' | 'register' | 'placement-test' | 'dashboard' | 'courses';
+type Page = 'home' | 'login' | 'register' | 'auth' | 'placement-test' | 'dashboard' | 'courses';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const { user, isAuthenticated } = useAuthStore();
 
   const handleNavigation = (page: string) => {
-    const validPages: Page[] = ['home', 'login', 'register', 'placement-test', 'dashboard', 'courses'];
+    const validPages: Page[] = ['home', 'login', 'register', 'auth', 'placement-test', 'dashboard', 'courses'];
     if (validPages.includes(page as Page)) {
-      setCurrentPage(page as Page);
+      // Nếu navigate đến 'auth', chuyển đến 'register' (trang đăng ký)
+      if (page === 'auth') {
+        setCurrentPage('register');
+      } else {
+        setCurrentPage(page as Page);
+      }
     }
   };
 
@@ -60,6 +65,7 @@ function App() {
       <Login
         onLoginSuccess={handleAuthSuccess}
         onSwitchToRegister={() => setCurrentPage('register')}
+        onBackToHome={() => setCurrentPage('home')}
       />
     );
   }
@@ -69,6 +75,7 @@ function App() {
       <Register
         onRegisterSuccess={handleAuthSuccess}
         onSwitchToLogin={() => setCurrentPage('login')}
+        onBackToHome={() => setCurrentPage('home')}
       />
     );
   }
@@ -82,7 +89,10 @@ function App() {
   }
 
   if (currentPage === 'courses') {
-    return <CourseApp onBack={() => setCurrentPage('home')} />;
+    return <CourseApp 
+      onBack={() => setCurrentPage('home')} 
+      onAuthRequired={() => setCurrentPage('login')} 
+    />;
   }
 
   return (
