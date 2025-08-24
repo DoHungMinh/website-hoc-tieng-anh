@@ -3,9 +3,10 @@ import { BookOpen, Menu, X, User, Bell } from 'lucide-react';
 
 interface HeaderProps {
   onAuthClick?: () => void;
+  onNavigate?: (page: string) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onAuthClick }) => {
+const Header: React.FC<HeaderProps> = ({ onAuthClick, onNavigate }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -20,12 +21,18 @@ const Header: React.FC<HeaderProps> = ({ onAuthClick }) => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-8">
-            <a href="#home" className="text-white hover:text-lime-200 transition-colors duration-200 font-medium">
+            <button 
+              onClick={() => onNavigate?.('home')}
+              className="text-white hover:text-lime-200 transition-colors duration-200 font-medium"
+            >
               Trang chủ
-            </a>
-            <a href="#courses" className="text-white hover:text-lime-200 transition-colors duration-200 font-medium">
+            </button>
+            <button 
+              onClick={() => onNavigate?.('courses')}
+              className="text-white hover:text-lime-200 transition-colors duration-200 font-medium"
+            >
               Khóa học
-            </a>
+            </button>
             <a href="#practice" className="text-white hover:text-lime-200 transition-colors duration-200 font-medium">
               Luyện tập
             </a>
@@ -64,12 +71,24 @@ const Header: React.FC<HeaderProps> = ({ onAuthClick }) => {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-green-600">
             <div className="flex flex-col space-y-2">
-              <a href="#home" className="text-white hover:text-lime-200 transition-colors duration-200 py-2 font-medium">
+              <button 
+                onClick={() => {
+                  onNavigate?.('home');
+                  setIsMenuOpen(false);
+                }}
+                className="text-white hover:text-lime-200 transition-colors duration-200 py-2 font-medium text-left"
+              >
                 Trang chủ
-              </a>
-              <a href="#courses" className="text-white hover:text-lime-200 transition-colors duration-200 py-2 font-medium">
+              </button>
+              <button 
+                onClick={() => {
+                  onNavigate?.('courses');
+                  setIsMenuOpen(false);
+                }}
+                className="text-white hover:text-lime-200 transition-colors duration-200 py-2 font-medium text-left"
+              >
                 Khóa học
-              </a>
+              </button>
               <a href="#practice" className="text-white hover:text-lime-200 transition-colors duration-200 py-2 font-medium">
                 Luyện tập
               </a>

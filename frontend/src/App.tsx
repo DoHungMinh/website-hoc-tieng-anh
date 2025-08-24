@@ -11,11 +11,22 @@ import Register from './components/Register';
 import AdminDashboard from './components/admin/AdminDashboard';
 import PlacementTest from './components/assessment/PlacementTest';
 import ProgressDashboard from './components/dashboard/ProgressDashboard';
+import CourseApp from './components/CourseApp';
+import NewCourseNotification from './components/NewCourseNotification';
 import { useAuthStore } from './stores/authStore';
 
+type Page = 'home' | 'login' | 'register' | 'placement-test' | 'dashboard' | 'courses';
+
 function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'login' | 'register' | 'placement-test' | 'dashboard'>('home');
+  const [currentPage, setCurrentPage] = useState<Page>('home');
   const { user, isAuthenticated } = useAuthStore();
+
+  const handleNavigation = (page: string) => {
+    const validPages: Page[] = ['home', 'login', 'register', 'placement-test', 'dashboard', 'courses'];
+    if (validPages.includes(page as Page)) {
+      setCurrentPage(page as Page);
+    }
+  };
 
   const handleAuthClick = () => {
     setCurrentPage('login');
@@ -70,15 +81,20 @@ function App() {
     return <ProgressDashboard />;
   }
 
+  if (currentPage === 'courses') {
+    return <CourseApp />;
+  }
+
   return (
     <div className="min-h-screen bg-white">
-      <Header onAuthClick={handleAuthClick} />
+      <Header onAuthClick={handleAuthClick} onNavigate={handleNavigation} />
       <Hero />
-      <Features />
+      <Features onNavigate={handleNavigation} />
       <Practice />
       <Progress />
       <Footer />
       <Chatbot />
+      <NewCourseNotification onNavigate={handleNavigation} />
     </div>
   );
 }
