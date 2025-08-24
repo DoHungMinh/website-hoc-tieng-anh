@@ -21,6 +21,7 @@ import learningRoutes from './routes/learning';
 import progressRoutes from './routes/progress';
 import userRoutes from './routes/user';
 import ieltsRoutes from './routes/ielts';
+import coursesRoutes from './routes/courses';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -84,6 +85,7 @@ app.use('/api/learning', learningRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/ielts', ieltsRoutes);
+app.use('/api/courses', coursesRoutes);
 
 // Test database endpoint
 app.get('/api/test-db', async (req: Request, res: Response) => {

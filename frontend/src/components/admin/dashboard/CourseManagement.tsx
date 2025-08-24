@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Plus,
   Search,
@@ -18,227 +18,171 @@ import {
   Target,
   Lightbulb,
   FileText,
-  CheckCircle
+  CheckCircle,
+  Archive,
+  AlertCircle
 } from 'lucide-react';
-
-interface VocabularyItem {
-  id: string;
-  word: string;
-  meaning: string;
-  example: string;
-  pronunciation?: string;
-}
-
-interface GrammarItem {
-  id: string;
-  rule: string;
-  explanation: string;
-  example: string;
-  structure?: string;
-}
-
-interface Course {
-  id: string;
-  title: string;
-  type: 'vocabulary' | 'grammar';
-  level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'IDIOMS';
-  price: number;
-  originalPrice?: number;
-  duration: string;
-  lessonsCount: number;
-  studentsCount: number;
-  rating: number;
-  description: string;
-  features: string[];
-  isPopular?: boolean;
-  thumbnail: string;
-  vocabulary?: VocabularyItem[];
-  grammar?: GrammarItem[];
-  instructor: string;
-  status: 'active' | 'draft' | 'archived';
-  createdAt: string;
-  updatedAt: string;
-}
+import { courseAPI, Course, CourseFilters } from '../../../services/courseAPI';
 
 const CourseManagement: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'vocabulary' | 'grammar'>('all');
   const [filterLevel, setFilterLevel] = useState<'all' | 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'IDIOMS'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'draft' | 'active' | 'archived'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    draft: 0,
+    archived: 0,
+    vocabulary: 0,
+    grammar: 0
+  });
 
   const itemsPerPage = 10;
 
-  // Mock data - trong thực tế sẽ gọi API
-  useEffect(() => {
-    loadCourses();
-  }, []);
+  // Fetch courses
+  const fetchCourses = useCallback(async () => {
+    try {
+      setLoading(true);
+      const filters: CourseFilters = {
+        search: searchTerm || undefined,
+        type: filterType !== 'all' ? filterType : undefined,
+        level: filterLevel !== 'all' ? filterLevel : undefined,
+        status: filterStatus !== 'all' ? filterStatus : undefined,
+        page: currentPage,
+        limit: itemsPerPage
+      };
 
-  const loadCourses = () => {
-    setLoading(true);
-    // Mock API call
-    setTimeout(() => {
-      const mockCourses: Course[] = [
-        {
-          id: 'vocab-a1',
-          title: 'Từ vựng cơ bản hàng ngày',
-          type: 'vocabulary',
-          level: 'A1',
-          price: 299000,
-          originalPrice: 399000,
-          duration: '4 tuần',
-          lessonsCount: 20,
-          studentsCount: 1250,
-          rating: 4.8,
-          description: 'Học 500+ từ vựng thiết yếu cho cuộc sống hàng ngày với phương pháp ghi nhớ thông minh',
-          features: ['Học từ theo chủ đề', 'Flashcard thông minh', 'Game ôn tập', 'Phát âm chuẩn'],
-          thumbnail: '/api/placeholder/300/200',
-          instructor: 'Ms. Sarah Johnson',
-          status: 'active',
-          createdAt: '2024-01-15',
-          updatedAt: '2024-08-20',
-          vocabulary: [
-            {
-              id: 'v1',
-              word: 'Hello',
-              meaning: 'Xin chào',
-              example: 'Hello, how are you today?',
-              pronunciation: '/həˈloʊ/'
-            },
-            {
-              id: 'v2',
-              word: 'Goodbye',
-              meaning: 'Tạm biệt',
-              example: 'Goodbye, see you tomorrow!',
-              pronunciation: '/ɡʊdˈbaɪ/'
-            }
-          ]
-        },
-        {
-          id: 'grammar-a1',
-          title: 'Ngữ pháp cơ bản',
-          type: 'grammar',
-          level: 'A1',
-          price: 249000,
-          originalPrice: 349000,
-          duration: '3 tuần',
-          lessonsCount: 15,
-          studentsCount: 1543,
-          rating: 4.7,
-          description: 'Nắm vững các cấu trúc ngữ pháp cơ bản nhất với bài tập tương tác',
-          features: ['Present tenses', 'Basic sentence structure', 'Interactive exercises', 'Instant feedback'],
-          thumbnail: '/api/placeholder/300/200',
-          instructor: 'Mr. David Wilson',
-          status: 'active',
-          createdAt: '2024-02-10',
-          updatedAt: '2024-08-18',
-          grammar: [
-            {
-              id: 'g1',
-              rule: 'Present Simple Tense',
-              explanation: 'Thì hiện tại đơn diễn tả hành động xảy ra thường xuyên',
-              example: 'I go to school every day.',
-              structure: 'S + V(s/es) + O'
-            },
-            {
-              id: 'g2',
-              rule: 'Present Continuous Tense',
-              explanation: 'Thì hiện tại tiếp diễn diễn tả hành động đang xảy ra',
-              example: 'I am studying English now.',
-              structure: 'S + am/is/are + V-ing + O'
-            }
-          ]
-        }
-      ];
-      setCourses(mockCourses);
+      const response = await courseAPI.getCourses(filters);
+      
+      if (response.success) {
+        setCourses(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+      alert('Lỗi khi tải danh sách khóa học');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
+  }, [searchTerm, filterType, filterLevel, filterStatus, currentPage, itemsPerPage]);
+
+  // Fetch stats
+  const fetchStats = async () => {
+    try {
+      const response = await courseAPI.getCourseStats();
+      if (response.success) {
+        setStats(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
   };
 
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  // Generate initial course data
   const getInitialCourse = (): Course => ({
-    id: '',
     title: '',
+    description: '',
     type: 'vocabulary',
     level: 'A1',
-    price: 0,
     duration: '',
-    lessonsCount: 0,
-    studentsCount: 0,
-    rating: 0,
-    description: '',
-    features: [],
-    thumbnail: '',
+    price: 0,
+    originalPrice: 0,
     instructor: '',
     status: 'draft',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    studentsCount: 0,
+    lessonsCount: 0,
     vocabulary: [],
-    grammar: []
+    grammar: [],
+    requirements: [],
+    benefits: [],
+    curriculum: []
   });
 
-  const filteredCourses = courses.filter(course => {
-    const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         course.instructor.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = filterType === 'all' || course.type === filterType;
-    const matchesLevel = filterLevel === 'all' || course.level === filterLevel;
-    
-    return matchesSearch && matchesType && matchesLevel;
-  });
-
-  const paginatedCourses = filteredCourses.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const totalPages = Math.ceil(filteredCourses.length / itemsPerPage);
-
+  // Handle create
   const handleCreate = () => {
     setSelectedCourse(getInitialCourse());
     setIsCreating(true);
     setIsEditing(true);
+    setShowDetails(false);
   };
 
+  // Handle edit
   const handleEdit = (course: Course) => {
     setSelectedCourse({ ...course });
     setIsEditing(true);
     setIsCreating(false);
+    setShowDetails(false);
   };
 
-  const handleDelete = (courseId: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa khóa học này?')) {
-      setCourses(courses.filter(c => c.id !== courseId));
+  // Handle delete
+  const handleDelete = async (courseId: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa khóa học này?')) {
+      return;
+    }
+
+    try {
+      await courseAPI.deleteCourse(courseId);
+      alert('Xóa khóa học thành công!');
+      fetchCourses();
+      fetchStats();
+    } catch (error) {
+      console.error('Error deleting course:', error);
+      alert('Lỗi khi xóa khóa học');
     }
   };
 
-  const handleSave = () => {
+  // Handle save
+  const handleSave = async () => {
     if (!selectedCourse) return;
 
-    if (isCreating) {
-      const newCourse = {
-        ...selectedCourse,
-        id: `course-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      setCourses([...courses, newCourse]);
-    } else {
-      setCourses(courses.map(c => 
-        c.id === selectedCourse.id 
-          ? { ...selectedCourse, updatedAt: new Date().toISOString() }
-          : c
-      ));
+    try {
+      if (isCreating) {
+        await courseAPI.createCourse(selectedCourse);
+        alert('Tạo khóa học thành công!');
+      } else {
+        await courseAPI.updateCourse(selectedCourse._id!, selectedCourse);
+        alert('Cập nhật khóa học thành công!');
+      }
+      
+      setIsEditing(false);
+      setIsCreating(false);
+      setSelectedCourse(null);
+      fetchCourses();
+      fetchStats();
+    } catch (error) {
+      console.error('Error saving course:', error);
+      alert('Lỗi khi lưu khóa học');
     }
-
-    setIsEditing(false);
-    setIsCreating(false);
-    setSelectedCourse(null);
   };
 
+  // Handle status change
+  const handleStatusChange = async (courseId: string, newStatus: string) => {
+    try {
+      await courseAPI.updateCourseStatus(courseId, newStatus);
+      fetchCourses();
+      fetchStats();
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Lỗi khi cập nhật trạng thái');
+    }
+  };
+
+  // Handle cancel
   const handleCancel = () => {
     setIsEditing(false);
     setIsCreating(false);
@@ -246,60 +190,14 @@ const CourseManagement: React.FC = () => {
     setShowDetails(false);
   };
 
-  const addVocabularyItem = () => {
-    if (!selectedCourse) return;
-    const newItem: VocabularyItem = {
-      id: `vocab-${Date.now()}`,
-      word: '',
-      meaning: '',
-      example: '',
-      pronunciation: ''
-    };
-    setSelectedCourse({
-      ...selectedCourse,
-      vocabulary: [...(selectedCourse.vocabulary || []), newItem]
-    });
-  };
-
-  const updateVocabularyItem = (index: number, field: keyof VocabularyItem, value: string) => {
-    if (!selectedCourse || !selectedCourse.vocabulary) return;
-    const updatedVocab = [...selectedCourse.vocabulary];
-    updatedVocab[index] = { ...updatedVocab[index], [field]: value };
-    setSelectedCourse({ ...selectedCourse, vocabulary: updatedVocab });
-  };
-
-  const removeVocabularyItem = (index: number) => {
-    if (!selectedCourse || !selectedCourse.vocabulary) return;
-    const updatedVocab = selectedCourse.vocabulary.filter((_, i) => i !== index);
-    setSelectedCourse({ ...selectedCourse, vocabulary: updatedVocab });
-  };
-
-  const addGrammarItem = () => {
-    if (!selectedCourse) return;
-    const newItem: GrammarItem = {
-      id: `grammar-${Date.now()}`,
-      rule: '',
-      explanation: '',
-      example: '',
-      structure: ''
-    };
-    setSelectedCourse({
-      ...selectedCourse,
-      grammar: [...(selectedCourse.grammar || []), newItem]
-    });
-  };
-
-  const updateGrammarItem = (index: number, field: keyof GrammarItem, value: string) => {
-    if (!selectedCourse || !selectedCourse.grammar) return;
-    const updatedGrammar = [...selectedCourse.grammar];
-    updatedGrammar[index] = { ...updatedGrammar[index], [field]: value };
-    setSelectedCourse({ ...selectedCourse, grammar: updatedGrammar });
-  };
-
-  const removeGrammarItem = (index: number) => {
-    if (!selectedCourse || !selectedCourse.grammar) return;
-    const updatedGrammar = selectedCourse.grammar.filter((_, i) => i !== index);
-    setSelectedCourse({ ...selectedCourse, grammar: updatedGrammar });
+  // Utility functions
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'draft': return 'bg-yellow-100 text-yellow-800';
+      case 'archived': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
   const getLevelColor = (level: string) => {
@@ -308,20 +206,10 @@ const CourseManagement: React.FC = () => {
       'A2': 'bg-blue-100 text-blue-800',
       'B1': 'bg-yellow-100 text-yellow-800',
       'B2': 'bg-orange-100 text-orange-800',
-      'C1': 'bg-purple-100 text-purple-800',
-      'C2': 'bg-red-100 text-red-800',
-      'IDIOMS': 'bg-pink-100 text-pink-800'
+      'C1': 'bg-red-100 text-red-800',
+      'C2': 'bg-purple-100 text-purple-800'
     };
     return colors[level as keyof typeof colors] || 'bg-gray-100 text-gray-800';
-  };
-
-  const getStatusColor = (status: string) => {
-    const colors = {
-      'active': 'bg-green-100 text-green-800',
-      'draft': 'bg-yellow-100 text-yellow-800',
-      'archived': 'bg-gray-100 text-gray-800'
-    };
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
   const formatPrice = (price: number) => {
@@ -330,6 +218,133 @@ const CourseManagement: React.FC = () => {
       currency: 'VND'
     }).format(price);
   };
+
+  // Add vocabulary item
+  const addVocabularyItem = () => {
+    if (!selectedCourse) return;
+    const newItem = {
+      id: Date.now().toString(),
+      word: '',
+      pronunciation: '',
+      meaning: '',
+      example: ''
+    };
+    setSelectedCourse({
+      ...selectedCourse,
+      vocabulary: [...(selectedCourse.vocabulary || []), newItem]
+    });
+  };
+
+  // Update vocabulary item
+  const updateVocabularyItem = (index: number, field: string, value: string) => {
+    if (!selectedCourse?.vocabulary) return;
+    const updated = [...selectedCourse.vocabulary];
+    updated[index] = { ...updated[index], [field]: value };
+    setSelectedCourse({ ...selectedCourse, vocabulary: updated });
+  };
+
+  // Remove vocabulary item
+  const removeVocabularyItem = (index: number) => {
+    if (!selectedCourse?.vocabulary) return;
+    const updated = selectedCourse.vocabulary.filter((_, i) => i !== index);
+    setSelectedCourse({ ...selectedCourse, vocabulary: updated });
+  };
+
+  // Add grammar item
+  const addGrammarItem = () => {
+    if (!selectedCourse) return;
+    const newItem = {
+      id: Date.now().toString(),
+      rule: '',
+      structure: '',
+      explanation: '',
+      example: ''
+    };
+    setSelectedCourse({
+      ...selectedCourse,
+      grammar: [...(selectedCourse.grammar || []), newItem]
+    });
+  };
+
+  // Update grammar item
+  const updateGrammarItem = (index: number, field: string, value: string) => {
+    if (!selectedCourse?.grammar) return;
+    const updated = [...selectedCourse.grammar];
+    updated[index] = { ...updated[index], [field]: value };
+    setSelectedCourse({ ...selectedCourse, grammar: updated });
+  };
+
+  // Remove grammar item
+  const removeGrammarItem = (index: number) => {
+    if (!selectedCourse?.grammar) return;
+    const updated = selectedCourse.grammar.filter((_, i) => i !== index);
+    setSelectedCourse({ ...selectedCourse, grammar: updated });
+  };
+
+  // Add requirement
+  const addRequirement = () => {
+    if (!selectedCourse) return;
+    setSelectedCourse({
+      ...selectedCourse,
+      requirements: [...selectedCourse.requirements, '']
+    });
+  };
+
+  // Update requirement
+  const updateRequirement = (index: number, value: string) => {
+    if (!selectedCourse) return;
+    const updated = [...selectedCourse.requirements];
+    updated[index] = value;
+    setSelectedCourse({ ...selectedCourse, requirements: updated });
+  };
+
+  // Remove requirement
+  const removeRequirement = (index: number) => {
+    if (!selectedCourse) return;
+    const updated = selectedCourse.requirements.filter((_, i) => i !== index);
+    setSelectedCourse({ ...selectedCourse, requirements: updated });
+  };
+
+  // Add benefit
+  const addBenefit = () => {
+    if (!selectedCourse) return;
+    setSelectedCourse({
+      ...selectedCourse,
+      benefits: [...selectedCourse.benefits, '']
+    });
+  };
+
+  // Update benefit
+  const updateBenefit = (index: number, value: string) => {
+    if (!selectedCourse) return;
+    const updated = [...selectedCourse.benefits];
+    updated[index] = value;
+    setSelectedCourse({ ...selectedCourse, benefits: updated });
+  };
+
+  // Remove benefit
+  const removeBenefit = (index: number) => {
+    if (!selectedCourse) return;
+    const updated = selectedCourse.benefits.filter((_, i) => i !== index);
+    setSelectedCourse({ ...selectedCourse, benefits: updated });
+  };
+
+  // Filter courses based on search and filters
+  const filteredCourses = courses.filter(course => {
+    const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         course.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesLevel = filterLevel === 'all' || course.level === filterLevel;
+    const matchesStatus = filterStatus === 'all' || course.status === filterStatus;
+    return matchesSearch && matchesLevel && matchesStatus;
+  });
+
+  // Paginate filtered courses
+  const paginatedCourses = filteredCourses.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalPages = Math.ceil(filteredCourses.length / itemsPerPage);
 
   if (isEditing && selectedCourse) {
     return (
@@ -724,12 +739,12 @@ const CourseManagement: React.FC = () => {
               </div>
 
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">Tính năng nổi bật</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {selectedCourse.features.map((feature, index) => (
+                <h4 className="font-medium text-gray-900 mb-2">Lợi ích khóa học</h4>
+                <div className="grid grid-cols-1 gap-2">
+                  {selectedCourse.benefits.map((benefit, index) => (
                     <div key={index} className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span className="text-sm text-gray-600">{feature}</span>
+                      <span className="text-sm text-gray-600">{benefit}</span>
                     </div>
                   ))}
                 </div>
@@ -738,14 +753,6 @@ const CourseManagement: React.FC = () => {
 
             {/* Stats */}
             <div className="space-y-4">
-              <div className="bg-purple-50 rounded-lg p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <Star className="h-5 w-5 text-yellow-500" />
-                  <span className="font-medium">Đánh giá</span>
-                </div>
-                <p className="text-2xl font-bold text-purple-600">{selectedCourse.rating}/5.0</p>
-              </div>
-
               <div className="bg-green-50 rounded-lg p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <Users className="h-5 w-5 text-green-600" />
@@ -926,7 +933,7 @@ const CourseManagement: React.FC = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {paginatedCourses.map((course) => (
-                    <tr key={course.id} className="hover:bg-gray-50">
+                    <tr key={course._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10">
@@ -976,9 +983,9 @@ const CourseManagement: React.FC = () => {
                           </span>
                         </div>
                         <div className="flex items-center mt-1">
-                          <Star className="h-4 w-4 text-yellow-400 mr-1" />
+                          <Users className="h-4 w-4 text-gray-400 mr-1" />
                           <span className="text-sm text-gray-600">
-                            {course.rating}
+                            {course.studentsCount.toLocaleString()} học viên
                           </span>
                         </div>
                       </td>
@@ -1008,7 +1015,7 @@ const CourseManagement: React.FC = () => {
                             <Edit3 className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => handleDelete(course.id)}
+                            onClick={() => handleDelete(course._id!)}
                             className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded"
                             title="Xóa"
                           >

@@ -1,5 +1,5 @@
 // API service cho authentication
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export interface LoginData {
   email: string;
@@ -28,7 +28,7 @@ export interface AuthResponse {
 export const authAPI = {
   login: async (data: LoginData): Promise<AuthResponse> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -53,7 +53,7 @@ export const authAPI = {
 
   register: async (data: RegisterData): Promise<AuthResponse> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -79,7 +79,7 @@ export const authAPI = {
   logout: async (): Promise<void> => {
     const token = localStorage.getItem('token');
     try {
-      await fetch(`${API_BASE_URL}/api/auth/logout`, {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
