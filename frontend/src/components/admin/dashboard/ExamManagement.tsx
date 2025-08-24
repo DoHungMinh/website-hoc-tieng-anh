@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Edit, Trash2, BookOpen, FileText, Volume2, Clock, Users } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, BookOpen, FileText, Volume2, Clock, Users, X } from 'lucide-react';
 import CreateIELTSExam from './CreateIELTSExam';
+import EditIELTSExam from './EditIELTSExam';
 
 interface Exam {
   _id: string;
@@ -12,23 +13,28 @@ interface Exam {
   status: 'draft' | 'published';
   createdAt: string;
   updatedAt: string;
+  passages?: unknown[];
+  sections?: unknown[];
+  description?: string;
 }
 
 const ExamManagement = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editingExam, setEditingExam] = useState<Exam | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterLevel, setFilterLevel] = useState('all');
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    total: 0,
-    reading: 0,
-    listening: 0,
-    published: 0
-  });
-  
+
   // Replace mock data with API calls
   const [exams, setExams] = useState<Exam[]>([]);
+  const [stats, setStats] = useState({
+    totalExams: 0,
+    readingExams: 0,
+    listeningExams: 0,
+    publishedExams: 0
+  });
 
   // Fetch exams from API
   const fetchExams = async () => {
@@ -106,24 +112,30 @@ const ExamManagement = () => {
     fetchStats();
   }, []);
 
-  const handleCreateExam = async () => {
-    // Exam is already created in CreateIELTSExam component
-    // Just refresh the list and go back
-    await fetchExams();
-    await fetchStats();
-    setShowCreateForm(false);
+  // Handle edit exam
+  const handleEditExam = (exam: Exam) => {
+    setEditingExam(exam);
+    setShowEditForm(true);
   };
 
+  // Handle delete exam with confirmation
   const handleDeleteExam = async (examId: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa đề thi này không?')) {
+    if (!confirm('Bạn có chắc chắn muốn xóa đề thi này không? Hành động này không thể hoàn tác.')) {
       return;
     }
 
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Vui lòng đăng nhập lại');
+        return;
+      }
+
       const response = await fetch(`/api/ielts/${examId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
@@ -185,135 +197,179 @@ const ExamManagement = () => {
 
   if (showCreateForm) {
     return (
-      <CreateIELTSExam
-        onBack={() => setShowCreateForm(false)}
-        onSave={handleCreateExam}
-      />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowCreateForm(false)}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              <X className="h-5 w-5" />
+              Quay lại
+            </button>
+            <h1 className="text-2xl font-bold text-gray-900">Tạo đề thi mới</h1>
+          </div>
+        </div>
+        <CreateIELTSExam />
+        <div className="mt-6">
+          <button
+            onClick={() => {
+              setShowCreateForm(false);
+              fetchExams();
+              fetchStats();
+            }}
+            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
+          >
+            Quay lại
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (showEditForm && editingExam) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => {
+                setShowEditForm(false);
+                setEditingExam(null);
+              }}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              <X className="h-5 w-5" />
+              Quay lại
+            </button>
+            <h1 className="text-2xl font-bold text-gray-900">Chỉnh sửa đề thi</h1>
+          </div>
+        </div>
+        <EditIELTSExam 
+          examData={editingExam}
+          onSave={(updatedData) => {
+            console.log('Exam updated:', updatedData);
+            setShowEditForm(false);
+            setEditingExam(null);
+            fetchExams();
+            fetchStats();
+          }}
+          onCancel={() => {
+            setShowEditForm(false);
+            setEditingExam(null);
+          }}
+        />
+      </div>
     );
   }
 
   return (
-    <div className="p-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-green-800 to-lime-600 bg-clip-text text-transparent">
-            Quản lý đề thi
-          </h1>
-          <p className="text-gray-600 mt-2">Tạo và quản lý các đề thi IELTS Reading và Listening</p>
+          <h1 className="text-2xl font-bold text-gray-900">Quản lý đề thi</h1>
+          <p className="text-gray-600">Tạo và quản lý các đề thi IELTS Reading và Listening</p>
         </div>
         <button
           onClick={() => setShowCreateForm(true)}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-lime-600 hover:from-green-700 hover:to-lime-700 text-white rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
         >
           <Plus className="h-5 w-5" />
           Tạo đề thi mới
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-xl shadow-lg p-6">
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Tổng đề thi</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+              <p className="text-sm font-medium text-gray-600">Tổng đề thi</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalExams}</p>
             </div>
-            <div className="p-3 bg-green-100 rounded-lg">
+            <div className="p-3 bg-green-100 rounded-xl">
               <FileText className="h-6 w-6 text-green-600" />
             </div>
           </div>
         </div>
-        
-        <div className="bg-white rounded-xl shadow-lg p-6">
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Reading Tests</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.reading}</p>
+              <p className="text-sm font-medium text-gray-600">Reading Tests</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.readingExams}</p>
             </div>
-            <div className="p-3 bg-blue-100 rounded-lg">
+            <div className="p-3 bg-blue-100 rounded-xl">
               <BookOpen className="h-6 w-6 text-blue-600" />
             </div>
           </div>
         </div>
-        
-        <div className="bg-white rounded-xl shadow-lg p-6">
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Listening Tests</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.listening}</p>
+              <p className="text-sm font-medium text-gray-600">Listening Tests</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.listeningExams}</p>
             </div>
-            <div className="p-3 bg-purple-100 rounded-lg">
+            <div className="p-3 bg-purple-100 rounded-xl">
               <Volume2 className="h-6 w-6 text-purple-600" />
             </div>
           </div>
         </div>
-        
-        <div className="bg-white rounded-xl shadow-lg p-6">
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Đã xuất bản</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.published}</p>
+              <p className="text-sm font-medium text-gray-600">Đã xuất bản</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.publishedExams}</p>
             </div>
-            <div className="p-3 bg-lime-100 rounded-lg">
-              <Users className="h-6 w-6 text-lime-600" />
+            <div className="p-3 bg-green-100 rounded-xl">
+              <Users className="h-6 w-6 text-green-600" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Filters and Search */}
-      <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <input
-                type="text"
-                placeholder="Tìm kiếm đề thi..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all"
-              />
-            </div>
+      {/* Filters */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <input
+              type="text"
+              placeholder="Tìm kiếm đề thi..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
           </div>
-          
-          {/* Type Filter */}
-          <div className="lg:w-48">
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all"
-            >
-              <option value="all">Tất cả loại</option>
-              <option value="reading">Reading</option>
-              <option value="listening">Listening</option>
-            </select>
-          </div>
-          
-          {/* Level Filter */}
-          <div className="lg:w-48">
-            <select
-              value={filterLevel}
-              onChange={(e) => setFilterLevel(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all"
-            >
-              <option value="all">Tất cả cấp độ</option>
-              <option value="4.0">Band 4.0-5.0</option>
-              <option value="5.0">Band 5.0-6.0</option>
-              <option value="6.0">Band 6.0-7.0</option>
-              <option value="7.0">Band 7.0-8.0</option>
-              <option value="8.0">Band 8.0-9.0</option>
-            </select>
-          </div>
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          >
+            <option value="all">Tất cả loại</option>
+            <option value="reading">Reading</option>
+            <option value="listening">Listening</option>
+          </select>
+          <select
+            value={filterLevel}
+            onChange={(e) => setFilterLevel(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          >
+            <option value="all">Tất cả cấp độ</option>
+            <option value="Beginner">Beginner</option>
+            <option value="Intermediate">Intermediate</option>
+            <option value="Advanced">Advanced</option>
+          </select>
         </div>
       </div>
 
       {/* Exams Table */}
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -380,9 +436,9 @@ const ExamManagement = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {exam.difficulty}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900">
-                      <Clock className="h-4 w-4 text-gray-400 mr-1" />
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4 text-gray-400" />
                       {exam.duration} phút
                     </div>
                   </td>
@@ -415,6 +471,7 @@ const ExamManagement = () => {
                         {exam.status === 'published' ? 'Ẩn' : 'Xuất bản'}
                       </button>
                       <button 
+                        onClick={() => handleEditExam(exam)}
                         className="text-green-600 hover:text-green-700 p-2 hover:bg-green-50 rounded-lg transition-colors"
                         title="Chỉnh sửa"
                       >
@@ -436,7 +493,7 @@ const ExamManagement = () => {
           </table>
         </div>
         
-        {filteredExams.length === 0 && (
+        {filteredExams.length === 0 && !loading && (
           <div className="text-center py-12">
             <div className="mx-auto h-24 w-24 text-gray-400 mb-4">
               <FileText className="h-full w-full" />
@@ -448,15 +505,12 @@ const ExamManagement = () => {
                 : 'Chưa có đề thi nào được tạo.'
               }
             </p>
-            {!searchTerm && filterType === 'all' && filterLevel === 'all' && (
-              <button
-                onClick={() => setShowCreateForm(true)}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-lime-600 hover:from-green-700 hover:to-lime-700 text-white rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
-              >
-                <Plus className="h-5 w-5" />
-                Tạo đề thi đầu tiên
-              </button>
-            )}
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              Tạo đề thi đầu tiên
+            </button>
           </div>
         )}
       </div>

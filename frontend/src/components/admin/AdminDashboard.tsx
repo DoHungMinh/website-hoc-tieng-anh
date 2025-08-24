@@ -3,7 +3,7 @@ import AdminLayout from './AdminLayout';
 import DashboardStats from './dashboard/DashboardStats';
 import UserManagement from './dashboard/UserManagement';
 import CourseManagement from './dashboard/CourseManagement';
-import ExamManagement from './dashboard/ExamManagement';
+import ExamManagement from './dashboard/ExamManagementNew';
 import PaymentManagement from './dashboard/PaymentManagement';
 import AIManagement from './dashboard/AIManagement';
 import Settings from './dashboard/Settings';

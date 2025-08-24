@@ -54,11 +54,11 @@ interface ExamData {
 }
 
 interface CreateIELTSExamProps {
-  onBack: () => void;
-  onSave: (examData: ExamData) => void;
+  onCancel?: () => void;
+  onSuccess?: () => void;
 }
 
-const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onBack, onSave }) => {
+const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onCancel, onSuccess }) => {
   const [examType, setExamType] = useState<'reading' | 'listening'>('reading');
   const [examData, setExamData] = useState<ExamData>({
     title: '',
@@ -284,7 +284,9 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onBack, onSave }) => 
       
       if (data.success) {
         alert('Tạo đề thi thành công!');
-        onSave(data.data);
+        if (onSuccess) {
+          onSuccess();
+        }
       } else {
         throw new Error(data.message || 'Unknown error');
       }
@@ -299,7 +301,7 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onBack, onSave }) => 
       {/* Header */}
       <div className="mb-8">
         <button
-          onClick={onBack}
+          onClick={onCancel}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4 transition-colors"
         >
           <ArrowLeft className="h-5 w-5" />
