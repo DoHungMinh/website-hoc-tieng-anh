@@ -6,6 +6,11 @@ interface User {
   email: string;
   fullName: string;
   role?: string;
+  phone?: string;
+  birthDate?: string;
+  bio?: string;
+  learningGoal?: string;
+  level?: string;
 }
 
 interface AuthState {

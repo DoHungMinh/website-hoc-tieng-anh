@@ -13,16 +13,17 @@ import PlacementTest from './components/assessment/PlacementTest';
 import ProgressDashboard from './components/dashboard/ProgressDashboard';
 import CourseApp from './components/CourseApp';
 import NewCourseNotification from './components/NewCourseNotification';
+import UserProfile from './components/UserProfile';
 import { useAuthStore } from './stores/authStore';
 
-type Page = 'home' | 'login' | 'register' | 'auth' | 'placement-test' | 'dashboard' | 'courses';
+type Page = 'home' | 'login' | 'register' | 'auth' | 'placement-test' | 'dashboard' | 'courses' | 'profile';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const { user, isAuthenticated } = useAuthStore();
 
   const handleNavigation = (page: string) => {
-    const validPages: Page[] = ['home', 'login', 'register', 'auth', 'placement-test', 'dashboard', 'courses'];
+    const validPages: Page[] = ['home', 'login', 'register', 'auth', 'placement-test', 'dashboard', 'courses', 'profile'];
     if (validPages.includes(page as Page)) {
       // Nếu navigate đến 'auth', chuyển đến 'register' (trang đăng ký)
       if (page === 'auth') {
@@ -56,7 +57,10 @@ function App() {
       return <PlacementTest />;
     }
     if (currentPage === 'dashboard') {
-      return <ProgressDashboard />;
+      return <ProgressDashboard onNavigate={handleNavigation} />;
+    }
+    if (currentPage === 'profile') {
+      return <UserProfile onBack={() => setCurrentPage('home')} />;
     }
   }
 
@@ -85,7 +89,7 @@ function App() {
   }
 
   if (currentPage === 'dashboard') {
-    return <ProgressDashboard />;
+    return <ProgressDashboard onNavigate={handleNavigation} />;
   }
 
   if (currentPage === 'courses') {

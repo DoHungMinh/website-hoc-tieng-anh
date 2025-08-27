@@ -1,8 +1,12 @@
 import { useState } from 'react';
-import { TrendingUp, Calendar, Award, Target, Trophy, Medal, Star, BookOpen } from 'lucide-react';
+import { TrendingUp, Calendar, Award, Target, Trophy, Medal, Star, BookOpen, User } from 'lucide-react';
 import { Progress as ProgressData } from '../../types';
 
-const ProgressDashboard = () => {
+interface ProgressDashboardProps {
+  onNavigate?: (page: string) => void;
+}
+
+const ProgressDashboard: React.FC<ProgressDashboardProps> = ({ onNavigate }) => {
   // Mock data - sẽ được thay thế bằng data thật từ API
   const [progressData] = useState<ProgressData>({
     _id: '1',
@@ -124,14 +128,23 @@ const ProgressDashboard = () => {
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">Chào mừng trở lại! 👋</h2>
                 <p className="text-gray-600">Hãy tiếp tục hành trình học tiếng Anh của bạn</p>
               </div>
-              <div className="text-right">
-                <div className={`inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r ${levelColors[progressData.level]} text-white font-semibold`}>
-                  <Star className="h-5 w-5 mr-2" />
-                  Trình độ {progressData.level}
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => onNavigate?.('profile')}
+                  className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2"
+                >
+                  <User className="h-4 w-4" />
+                  <span>Thông tin cá nhân</span>
+                </button>
+                <div className="text-right">
+                  <div className={`inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r ${levelColors[progressData.level]} text-white font-semibold`}>
+                    <Star className="h-5 w-5 mr-2" />
+                    Trình độ {progressData.level}
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Tổng thời gian học: {progressData.totalStudyTime}h
+                  </p>
                 </div>
-                <p className="text-sm text-gray-500 mt-2">
-                  Tổng thời gian học: {progressData.totalStudyTime}h
-                </p>
               </div>
             </div>
           </div>
