@@ -14,16 +14,17 @@ import ProgressDashboard from './components/dashboard/ProgressDashboard';
 import CourseApp from './components/CourseApp';
 import NewCourseNotification from './components/NewCourseNotification';
 import UserProfile from './components/UserProfile';
+import IELTSExamList from './components/ielts/IELTSExamList';
 import { useAuthStore } from './stores/authStore';
 
-type Page = 'home' | 'login' | 'register' | 'auth' | 'placement-test' | 'dashboard' | 'courses' | 'profile';
+type Page = 'home' | 'login' | 'register' | 'auth' | 'placement-test' | 'dashboard' | 'courses' | 'profile' | 'practice';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const { user, isAuthenticated } = useAuthStore();
 
   const handleNavigation = (page: string) => {
-    const validPages: Page[] = ['home', 'login', 'register', 'auth', 'placement-test', 'dashboard', 'courses', 'profile'];
+    const validPages: Page[] = ['home', 'login', 'register', 'auth', 'placement-test', 'dashboard', 'courses', 'profile', 'practice'];
     if (validPages.includes(page as Page)) {
       // Nếu navigate đến 'auth', chuyển đến 'register' (trang đăng ký)
       if (page === 'auth') {
@@ -97,6 +98,10 @@ function App() {
       onBack={() => setCurrentPage('home')} 
       onAuthRequired={() => setCurrentPage('login')} 
     />;
+  }
+
+  if (currentPage === 'practice') {
+    return <IELTSExamList onBack={() => setCurrentPage('home')} />;
   }
 
   return (

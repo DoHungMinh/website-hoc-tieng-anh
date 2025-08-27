@@ -44,9 +44,12 @@ const Header: React.FC<HeaderProps> = ({ onAuthClick, onNavigate }) => {
             >
               Khóa học
             </button>
-            <a href="#practice" className="text-white hover:text-lime-200 transition-colors duration-200 font-medium">
+            <button 
+              onClick={() => onNavigate?.('practice')}
+              className="text-white hover:text-lime-200 transition-colors duration-200 font-medium"
+            >
               Luyện tập
-            </a>
+            </button>
             <a href="#tests" className="text-white hover:text-lime-200 transition-colors duration-200 font-medium">
               Kiểm tra
             </a>
@@ -105,9 +108,15 @@ const Header: React.FC<HeaderProps> = ({ onAuthClick, onNavigate }) => {
               >
                 Khóa học
               </button>
-              <a href="#practice" className="text-white hover:text-lime-200 transition-colors duration-200 py-2 font-medium">
+              <button 
+                onClick={() => {
+                  onNavigate?.('practice');
+                  setIsMenuOpen(false);
+                }}
+                className="text-white hover:text-lime-200 transition-colors duration-200 py-2 font-medium text-left"
+              >
                 Luyện tập
-              </a>
+              </button>
               <a href="#tests" className="text-white hover:text-lime-200 transition-colors duration-200 py-2 font-medium">
                 Kiểm tra
               </a>
