@@ -112,19 +112,34 @@ export const createCourse = async (req: Request, res: Response) => {
   try {
     const courseData = req.body;
     
+    // Validate required fields
+    if (!courseData.title || !courseData.description || !courseData.type || 
+        !courseData.level || !courseData.duration || !courseData.instructor) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu thông tin bắt buộc'
+      });
+    }
+
+    // Ensure price is a valid number
+    if (typeof courseData.price !== 'number' || isNaN(courseData.price)) {
+      courseData.price = 0;
+    }
+
     const course = new Course(courseData);
     await course.save();
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Tạo khóa học thành công',
       data: course
     });
   } catch (error) {
     console.error('Create course error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: 'Lỗi khi tạo khóa học'
+      message: 'Lỗi khi tạo khóa học',
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 };
@@ -142,21 +157,20 @@ export const updateCourse = async (req: Request, res: Response) => {
     );
 
     if (!course) {
-      res.status(404).json({
+      return res.status(404).json({
         success: false,
         message: 'Không tìm thấy khóa học'
       });
-      return;
     }
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Cập nhật khóa học thành công',
       data: course
     });
   } catch (error) {
     console.error('Update course error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Lỗi khi cập nhật khóa học'
     });
@@ -171,20 +185,19 @@ export const deleteCourse = async (req: Request, res: Response) => {
     const course = await Course.findByIdAndDelete(id);
 
     if (!course) {
-      res.status(404).json({
+      return res.status(404).json({
         success: false,
         message: 'Không tìm thấy khóa học'
       });
-      return;
     }
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Xóa khóa học thành công'
     });
   } catch (error) {
     console.error('Delete course error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Lỗi khi xóa khóa học'
     });
@@ -204,21 +217,20 @@ export const updateCourseStatus = async (req: Request, res: Response) => {
     );
 
     if (!course) {
-      res.status(404).json({
+      return res.status(404).json({
         success: false,
         message: 'Không tìm thấy khóa học'
       });
-      return;
     }
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Cập nhật trạng thái thành công',
       data: course
     });
   } catch (error) {
     console.error('Update course status error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Lỗi khi cập nhật trạng thái'
     });
@@ -235,7 +247,7 @@ export const getCourseStats = async (req: Request, res: Response) => {
     const vocabulary = await Course.countDocuments({ type: 'vocabulary' });
     const grammar = await Course.countDocuments({ type: 'grammar' });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         total,
@@ -248,7 +260,7 @@ export const getCourseStats = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Get course stats error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Lỗi khi lấy thống kê khóa học'
     });

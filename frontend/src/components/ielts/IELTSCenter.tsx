@@ -38,16 +38,22 @@ const IELTSCenter = () => {
       try {
         setLoading(true);
         console.log('Fetching IELTS exams...');
-        const response = await fetch('/api/ielts?limit=6');
+        const response = await fetch('/api/ielts?limit=6&status=published');
         console.log('Response status:', response.status);
         if (response.ok) {
           const data = await response.json();
           console.log('Fetched exams data:', data);
           console.log('Exams array:', data.data);
           console.log('Number of exams:', data.data?.length);
-          setExams(data.data || []);
+          if (data.success && Array.isArray(data.data)) {
+            setExams(data.data);
+          } else {
+            console.log('No exams found or invalid data structure');
+            setExams([]);
+          }
         } else {
           console.error('Failed to fetch exams:', response.status);
+          setExams([]);
         }
       } catch (error) {
         console.error('Error fetching exams:', error);

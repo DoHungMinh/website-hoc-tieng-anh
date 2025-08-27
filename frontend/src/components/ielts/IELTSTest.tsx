@@ -73,28 +73,47 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
         const currentExam = sessionStorage.getItem('currentExam');
         if (!currentExam) {
           console.error('No exam selected');
+          alert('Vui lòng chọn đề thi từ danh sách');
+          onBackToCenter?.();
           return;
         }
 
         const { examId } = JSON.parse(currentExam);
+        if (!examId) {
+          console.error('Invalid exam data');
+          alert('Dữ liệu đề thi không hợp lệ');
+          onBackToCenter?.();
+          return;
+        }
+
         const response = await fetch(`/api/ielts/${examId}`);
         
         if (response.ok) {
           const data = await response.json();
-          setExamData(data.data);
-          setTimeRemaining(data.data.duration * 60); // Convert minutes to seconds
+          if (data.success && data.data) {
+            setExamData(data.data);
+            setTimeRemaining(data.data.duration * 60); // Convert minutes to seconds
+          } else {
+            console.error('Invalid exam data structure:', data);
+            alert('Dữ liệu đề thi không hợp lệ');
+            onBackToCenter?.();
+          }
         } else {
-          console.error('Failed to fetch exam data');
+          console.error('Failed to fetch exam data:', response.status);
+          alert('Không thể tải đề thi. Vui lòng thử lại');
+          onBackToCenter?.();
         }
       } catch (error) {
         console.error('Error fetching exam data:', error);
+        alert('Lỗi khi tải đề thi');
+        onBackToCenter?.();
       } finally {
         setLoading(false);
       }
     };
 
     fetchExamData();
-  }, []);
+  }, [onBackToCenter]);
 
   // Timer effect
   useEffect(() => {

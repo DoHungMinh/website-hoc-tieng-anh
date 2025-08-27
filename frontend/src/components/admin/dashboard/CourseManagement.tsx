@@ -434,8 +434,8 @@ const CourseManagement: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Giá (VNĐ)</label>
                   <input
                     type="number"
-                    value={selectedCourse.price}
-                    onChange={(e) => setSelectedCourse({ ...selectedCourse, price: parseInt(e.target.value) })}
+                    value={selectedCourse.price || ''}
+                    onChange={(e) => setSelectedCourse({ ...selectedCourse, price: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     placeholder="299000"
                   />
