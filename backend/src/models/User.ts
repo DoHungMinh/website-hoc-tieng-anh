@@ -11,6 +11,9 @@ export interface IUser extends Document {
   role: 'user' | 'admin';
   level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
   isEmailVerified: boolean;
+  accountStatus: 'active' | 'disabled';
+  isOnline: boolean;
+  lastSeen: Date;
   learningGoals: string[];
   preferences: {
     language: string;
@@ -66,6 +69,19 @@ const userSchema = new Schema<IUser>({
   isEmailVerified: {
     type: Boolean,
     default: false
+  },
+  accountStatus: {
+    type: String,
+    enum: ['active', 'disabled'],
+    default: 'active'
+  },
+  isOnline: {
+    type: Boolean,
+    default: false
+  },
+  lastSeen: {
+    type: Date,
+    default: null
   },
   learningGoals: [{
     type: String

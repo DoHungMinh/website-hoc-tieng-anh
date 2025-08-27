@@ -16,12 +16,16 @@ import NewCourseNotification from './components/NewCourseNotification';
 import UserProfile from './components/UserProfile';
 import IELTSExamList from './components/ielts/IELTSExamList';
 import { useAuthStore } from './stores/authStore';
+import { useHeartbeat } from './hooks/useHeartbeat';
 
 type Page = 'home' | 'login' | 'register' | 'auth' | 'placement-test' | 'dashboard' | 'courses' | 'profile' | 'practice';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const { user, isAuthenticated } = useAuthStore();
+  
+  // Initialize heartbeat for authenticated users
+  useHeartbeat();
 
   const handleNavigation = (page: string) => {
     const validPages: Page[] = ['home', 'login', 'register', 'auth', 'placement-test', 'dashboard', 'courses', 'profile', 'practice'];

@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User';
+import { setUserOffline } from '../middleware/userActivity';
+import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 
@@ -104,6 +106,15 @@ router.post('/login', async (req: Request, res: Response) => {
       return;
     }
 
+    // Check if account is disabled
+    if (user.accountStatus === 'disabled') {
+      res.status(403).json({
+        success: false,
+        message: 'Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ admin.'
+      });
+      return;
+    }
+
     // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
@@ -113,6 +124,11 @@ router.post('/login', async (req: Request, res: Response) => {
       });
       return;
     }
+
+    // Update user online status
+    user.isOnline = true;
+    user.lastSeen = new Date();
+    await user.save({ validateModifiedOnly: true });
 
     // Generate token
     const token = generateToken(user._id);
@@ -136,6 +152,27 @@ router.post('/login', async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi đăng nhập'
+    });
+  }
+});
+
+// Logout
+router.post('/logout', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    if (req.user && req.user._id) {
+      // Set user offline
+      await setUserOffline(req.user._id);
+    }
+
+    res.json({
+      success: true,
+      message: 'Đăng xuất thành công'
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi đăng xuất'
     });
   }
 });

@@ -41,13 +41,30 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      logout: () => {
-        localStorage.removeItem('token');
-        set({ 
-          user: null, 
-          token: null, 
-          isAuthenticated: false 
-        });
+      logout: async () => {
+        try {
+          const token = localStorage.getItem('token');
+          if (token) {
+            // Call logout API to set user offline
+            await fetch('http://localhost:5002/api/auth/logout', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Logout API error:', error);
+        } finally {
+          // Clear local storage and state regardless of API call result
+          localStorage.removeItem('token');
+          set({ 
+            user: null, 
+            token: null, 
+            isAuthenticated: false 
+          });
+        }
       },
 
       setLoading: (loading: boolean) => {

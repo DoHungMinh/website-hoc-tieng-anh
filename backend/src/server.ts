@@ -26,6 +26,8 @@ import coursesRoutes from './routes/courses';
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/logger';
+import { updateUserActivity, startUserActivityCleanup } from './middleware/userActivity';
+import { optionalAuth } from './middleware/auth';
 
 // Initialize Express app
 const app = express();
@@ -66,6 +68,12 @@ app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(requestLogger);
+
+// Optional authentication (sets req.user if token exists)
+app.use('/api', optionalAuth);
+
+// User activity tracking middleware (for authenticated routes)
+app.use('/api', updateUserActivity);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
@@ -229,6 +237,9 @@ connectDB()
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`🌐 Environment: ${process.env.NODE_ENV}`);
       console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL}`);
+      
+      // Start user activity cleanup
+      startUserActivityCleanup();
     });
   })
   .catch((error: any) => {
