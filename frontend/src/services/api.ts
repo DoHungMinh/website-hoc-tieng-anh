@@ -46,6 +46,36 @@ class ApiService {
     }
   }
 
+  // Public request without authentication requirement
+  private async publicRequest<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<ApiResponse<T>> {
+    const url = `${this.baseURL}${endpoint}`;
+    
+    const config: RequestInit = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    };
+
+    try {
+      const response = await fetch(url, config);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'API request failed');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('API Error:', error);
+      throw error;
+    }
+  }
+
   // Authentication methods
   async login(email: string, password: string) {
     const response = await this.request(API_ENDPOINTS.AUTH.LOGIN, {
@@ -171,22 +201,80 @@ class ApiService {
     return this.request(API_ENDPOINTS.LEARNING.RECOMMENDATIONS);
   }
 
-  // Chatbot methods
-  async sendMessage(message: string) {
-    return this.request(API_ENDPOINTS.CHATBOT.SEND_MESSAGE, {
-      method: 'POST',
-      body: JSON.stringify({ message }),
-    });
+  // Chatbot methods - Smart routing based on authentication
+  async sendMessage(message: string, type: string = 'general') {
+    // Check if user is authenticated
+    const isAuthenticated = this.isAuthenticated();
+    
+    if (isAuthenticated) {
+      // Use real data endpoint for authenticated users
+      return this.request('/chatbot/message', {
+        method: 'POST',
+        body: JSON.stringify({ message, type }),
+      });
+    } else {
+      // Use simple endpoint for guests
+      return this.publicRequest('/chatbot/simple/message', {
+        method: 'POST',
+        body: JSON.stringify({ message, type }),
+      });
+    }
   }
 
-  async getChatHistory() {
-    return this.request(API_ENDPOINTS.CHATBOT.CONVERSATION_HISTORY);
+  async generateProgressAnalysis() {
+    const isAuthenticated = this.isAuthenticated();
+    
+    if (isAuthenticated) {
+      return this.request('/chatbot/analysis', {
+        method: 'POST',
+      });
+    } else {
+      return this.publicRequest('/chatbot/simple/analysis', {
+        method: 'POST',
+      });
+    }
+  }
+
+  async generateLearningRecommendations() {
+    const isAuthenticated = this.isAuthenticated();
+    
+    if (isAuthenticated) {
+      return this.request('/chatbot/recommendations', {
+        method: 'POST',
+      });
+    } else {
+      return this.publicRequest('/chatbot/simple/recommendations', {
+        method: 'POST',
+      });
+    }
+  }
+
+  // Legacy methods for backward compatibility
+  async getChatHistory(limit?: number, page?: number) {
+    const params = new URLSearchParams();
+    if (limit) params.append('limit', limit.toString());
+    if (page) params.append('page', page.toString());
+    
+    const queryString = params.toString();
+    const endpoint = queryString ? `/chatbot/history?${queryString}` : '/chatbot/history';
+    
+    return this.request(endpoint); // Requires auth
+  }
+
+  async getChatSession(sessionId: string) {
+    return this.request(`/chatbot/session/${sessionId}`); // Requires auth
+  }
+
+  async generateAssessmentFeedback(assessmentId: string) {
+    return this.publicRequest(`/chatbot/feedback/${assessmentId}`, {
+      method: 'POST',
+    });
   }
 
   async clearChatHistory() {
-    return this.request(API_ENDPOINTS.CHATBOT.CLEAR_HISTORY, {
+    return this.request('/chatbot/history', {
       method: 'DELETE',
-    });
+    }); // Requires auth
   }
 
   // Utility methods

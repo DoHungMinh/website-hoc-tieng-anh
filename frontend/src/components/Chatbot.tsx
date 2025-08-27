@@ -1,27 +1,40 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Send, X, Bot, User, Minimize2 } from 'lucide-react';
+import { MessageCircle, Send, X, Bot, User, Minimize2, TrendingUp, Award, BookOpen } from 'lucide-react';
+import { apiService } from '../services/api';
 
 interface Message {
-  id: number;
+  id: string;
   text: string;
   isBot: boolean;
   timestamp: Date;
+  type?: string;
 }
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      text: 'Xin chào! Tôi là AI Assistant của EnglishPro. Tôi có thể giúp bạn luyện tập tiếng Anh, giải đáp thắc mắc và hỗ trợ học tập. Bạn muốn bắt đầu với gì?',
-      isBot: true,
-      timestamp: new Date()
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [sessionId, setSessionId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Check authentication status
+  const isAuthenticated = apiService.isAuthenticated();
+
+  // Initial welcome message based on auth status
+  useEffect(() => {
+    const welcomeMessage = {
+      id: 'welcome',
+      text: isAuthenticated 
+        ? 'Xin chào! Tôi là AI Assistant của EnglishPro. Vì bạn đã đăng nhập, tôi có thể phân tích dữ liệu học tập thực tế của bạn, đưa ra phản hồi dựa trên kết quả bài thi và gợi ý lộ trình cá nhân hóa. Bạn muốn bắt đầu với gì?'
+        : 'Xin chào! Tôi là AI Assistant của EnglishPro. Hiện tại bạn đang ở chế độ khách - tôi có thể trả lời câu hỏi chung và đưa ra gợi ý cơ bản. Để nhận phân tích cá nhân dựa trên dữ liệu học tập thực tế, hãy đăng nhập và hoàn thành ít nhất 1 bài test nhé! 🚀',
+      isBot: true,
+      timestamp: new Date(),
+      type: 'welcome'
+    };
+    setMessages([welcomeMessage]);
+  }, [isAuthenticated]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -31,11 +44,44 @@ const Chatbot = () => {
     scrollToBottom();
   }, [messages]);
 
+  // Load chat history when component mounts
+  useEffect(() => {
+    if (isOpen) {
+      loadChatHistory();
+    }
+  }, [isOpen]);
+
+  const loadChatHistory = async () => {
+    try {
+      const response = await apiService.getChatHistory(20, 1);
+      if (response.success && response.history?.length > 0) {
+        // Get the latest session
+        const latestSession = response.history[0];
+        if (latestSession.sessionId) {
+          const sessionResponse = await apiService.getChatSession(latestSession.sessionId);
+          if (sessionResponse.success && sessionResponse.session?.messages) {
+            const formattedMessages = sessionResponse.session.messages.map((msg: any) => ({
+              id: msg._id || `${msg.timestamp}-${msg.role}`,
+              text: msg.content,
+              isBot: msg.role === 'assistant',
+              timestamp: new Date(msg.timestamp),
+              type: msg.metadata?.type
+            }));
+            setMessages(prev => [...prev, ...formattedMessages]);
+            setSessionId(sessionResponse.session.id);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load chat history:', error);
+    }
+  };
+
   const handleSend = async () => {
     if (!inputText.trim()) return;
 
     const userMessage: Message = {
-      id: Date.now(),
+      id: `user-${Date.now()}`,
       text: inputText,
       isBot: false,
       timestamp: new Date()
@@ -45,28 +91,95 @@ const Chatbot = () => {
     setInputText('');
     setIsTyping(true);
 
-    // Simulate bot response
-    setTimeout(() => {
-      const botResponses = [
-        'Câu hỏi thú vị! Để học từ vựng hiệu quả, bạn nên áp dụng phương pháp lặp lại ngắt quãng. Bạn có muốn tôi tạo một bài luyện tập từ vựng không?',
-        'Tuyệt vời! Để cải thiện kỹ năng nghe, tôi khuyên bạn nên bắt đầu với các video có phụ đề. Bạn muốn thử một bài luyện nghe level nào?',
-        'Ngữ pháp tiếng Anh có thể khó nhưng đừng lo! Hãy bắt đầu với những cấu trúc cơ bản nhất. Tôi có thể giải thích bất kỳ điểm ngữ pháp nào bạn thắc mắc.',
-        'Rất tốt! Để luyện phát âm, bạn nên tập trung vào các âm khó nhất trước. Tôi có thể phân tích phát âm của bạn và đưa ra lời khuyên cụ thể.',
-        'IELTS là một kỳ thi quan trọng! Tôi có thể giúp bạn lập kế hoạch ôn thi chi tiết và cung cấp tips làm bài hiệu quả. Bạn đang chuẩn bị cho band điểm nào?'
-      ];
-
-      const randomResponse = botResponses[Math.floor(Math.random() * botResponses.length)];
+    try {
+      const response = await apiService.sendMessage(inputText, 'general');
       
-      const botMessage: Message = {
-        id: Date.now() + 1,
-        text: randomResponse,
+      if (response.success) {
+        const botMessage: Message = {
+          id: `bot-${Date.now()}`,
+          text: response.response,
+          isBot: true,
+          timestamp: new Date(),
+          type: 'response'
+        };
+
+        setMessages(prev => [...prev, botMessage]);
+        setSessionId(response.sessionId);
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      
+      const errorMessage: Message = {
+        id: `error-${Date.now()}`,
+        text: 'Xin lỗi, tôi gặp sự cố kỹ thuật. Vui lòng thử lại sau.',
         isBot: true,
+        timestamp: new Date(),
+        type: 'error'
+      };
+
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const handleQuickAction = async (action: string) => {
+    setIsTyping(true);
+    
+    try {
+      let response;
+      let actionMessage = '';
+
+      switch (action) {
+        case 'progress':
+          response = await apiService.generateProgressAnalysis();
+          actionMessage = 'Phân tích tiến độ học tập của tôi';
+          break;
+        case 'recommendations':
+          response = await apiService.generateLearningRecommendations();
+          actionMessage = 'Gợi ý lộ trình học tập cho tôi';
+          break;
+        default:
+          return;
+      }
+
+      // Add user action message
+      const userMessage: Message = {
+        id: `user-${Date.now()}`,
+        text: actionMessage,
+        isBot: false,
         timestamp: new Date()
       };
 
-      setMessages(prev => [...prev, botMessage]);
+      setMessages(prev => [...prev, userMessage]);
+
+      if (response.success) {
+        const botMessage: Message = {
+          id: `bot-${Date.now()}`,
+          text: response.analysis || response.recommendations,
+          isBot: true,
+          timestamp: new Date(),
+          type: action
+        };
+
+        setMessages(prev => [...prev, botMessage]);
+        setSessionId(response.sessionId);
+      }
+    } catch (error) {
+      console.error(`Failed to ${action}:`, error);
+      
+      const errorMessage: Message = {
+        id: `error-${Date.now()}`,
+        text: 'Xin lỗi, tôi không thể thực hiện yêu cầu này lúc này. Vui lòng thử lại sau.',
+        isBot: true,
+        timestamp: new Date(),
+        type: 'error'
+      };
+
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -101,7 +214,16 @@ const Chatbot = () => {
               </div>
               <div>
                 <h3 className="font-semibold">AI Assistant</h3>
-                <p className="text-xs text-green-100">Trực tuyến</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-green-100">Trực tuyến</p>
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    isAuthenticated 
+                      ? 'bg-yellow-500/20 text-yellow-100' 
+                      : 'bg-blue-500/20 text-blue-100'
+                  }`}>
+                    {isAuthenticated ? '🔒 Dữ liệu thật' : '👤 Chế độ khách'}
+                  </span>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -122,6 +244,28 @@ const Chatbot = () => {
 
           {!isMinimized && (
             <>
+              {/* Quick Actions */}
+              <div className="p-3 border-b border-gray-100">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleQuickAction('progress')}
+                    className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm hover:bg-blue-100 transition-colors"
+                    disabled={isTyping}
+                  >
+                    <TrendingUp className="h-4 w-4" />
+                    Phân tích tiến độ
+                  </button>
+                  <button
+                    onClick={() => handleQuickAction('recommendations')}
+                    className="flex items-center gap-2 px-3 py-2 bg-purple-50 text-purple-700 rounded-lg text-sm hover:bg-purple-100 transition-colors"
+                    disabled={isTyping}
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    Gợi ý học tập
+                  </button>
+                </div>
+              </div>
+
               {/* Messages */}
               <div className="flex-1 p-4 overflow-y-auto space-y-4">
                 {messages.map((message) => (

@@ -1,5 +1,5 @@
 // API service cho authentication
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002/api';
 
 export interface LoginData {
   email: string;
@@ -28,7 +28,9 @@ export interface AuthResponse {
 export const authAPI = {
   login: async (data: LoginData): Promise<AuthResponse> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const url = `${API_BASE_URL}/auth/login`;
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -44,6 +46,7 @@ export const authAPI = {
       
       return result;
     } catch (error) {
+      console.error('❌ Login error:', error);
       if (error instanceof Error) {
         throw error;
       }
