@@ -37,10 +37,17 @@ const IELTSCenter = () => {
     const fetchExams = async () => {
       try {
         setLoading(true);
+        console.log('Fetching IELTS exams...');
         const response = await fetch('/api/ielts?limit=6');
+        console.log('Response status:', response.status);
         if (response.ok) {
           const data = await response.json();
-          setExams(data.data);
+          console.log('Fetched exams data:', data);
+          console.log('Exams array:', data.data);
+          console.log('Number of exams:', data.data?.length);
+          setExams(data.data || []);
+        } else {
+          console.error('Failed to fetch exams:', response.status);
         }
       } catch (error) {
         console.error('Error fetching exams:', error);
@@ -135,7 +142,7 @@ const IELTSCenter = () => {
   }
 
   if (currentView === 'test') {
-    return <IELTSTest />;
+    return <IELTSTest onBackToCenter={() => setCurrentView('home')} />;
   }
 
   return (
@@ -269,15 +276,18 @@ const IELTSCenter = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {exams.map((exam) => (
-                <IELTSExamCard
-                  key={exam._id}
-                  exam={exam}
-                  onStartExam={handleStartExam}
-                />
-              ))}
-            </div>
+            <>
+              {console.log('Rendering exams, loading:', loading, 'exams.length:', exams.length, 'exams:', exams)}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {exams.map((exam) => (
+                  <IELTSExamCard
+                    key={exam._id}
+                    exam={exam}
+                    onStartExam={handleStartExam}
+                  />
+                ))}
+              </div>
+            </>
           )}
 
           {!loading && exams.length === 0 && (

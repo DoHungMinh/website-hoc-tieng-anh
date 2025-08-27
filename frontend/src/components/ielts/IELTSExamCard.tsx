@@ -14,6 +14,8 @@ interface IELTSExamCardProps {
 }
 
 const IELTSExamCard: React.FC<IELTSExamCardProps> = ({ exam, onStartExam }) => {
+  console.log('IELTSExamCard rendering with exam:', exam);
+
   const getDifficultyColor = (difficulty: string) => {
     if (difficulty.includes('4.0') || difficulty.includes('5.0')) {
       return 'bg-green-100 text-green-800';
@@ -37,7 +39,10 @@ const IELTSExamCard: React.FC<IELTSExamCardProps> = ({ exam, onStartExam }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
+    <div 
+      className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
+      style={{ border: '2px solid red', minHeight: '200px' }} // Debug CSS
+    >
       {/* Header */}
       <div className={`bg-gradient-to-r ${getTypeColor()} p-6 text-white`}>
         <div className="flex items-center justify-between mb-3">

@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+require('dotenv').config();
 
 // Define User schema (same as in models/User.ts)
 const userSchema = new mongoose.Schema({

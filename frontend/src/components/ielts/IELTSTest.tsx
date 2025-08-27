@@ -51,7 +51,11 @@ interface ExamData {
   sections?: Section[];
 }
 
-const IELTSTest = () => {
+interface IELTSTestProps {
+  onBackToCenter?: () => void;
+}
+
+const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
   const [examData, setExamData] = useState<ExamData | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentSection, setCurrentSection] = useState(0);
@@ -129,7 +133,11 @@ const IELTSTest = () => {
 
   const handleBackToCenter = () => {
     sessionStorage.removeItem('currentExam');
-    window.location.reload(); // Simple way to go back to IELTS Center
+    if (onBackToCenter) {
+      onBackToCenter();
+    } else {
+      window.location.reload(); // Fallback
+    }
   };
 
   const getCurrentQuestions = (): Question[] => {

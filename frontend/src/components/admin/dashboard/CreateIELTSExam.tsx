@@ -38,6 +38,7 @@ interface Section {
   description: string;
   audioFile?: File;
   audioUrl?: string;
+  audioPublicId?: string;
   duration: number; // in minutes
   questions: Question[];
 }
@@ -262,10 +263,22 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onCancel, onSuccess }
 
   const handleSave = async () => {
     try {
-      const finalExamData = {
+      // Clean data before sending - remove audioFile and other non-serializable fields
+      const cleanExamData = {
         ...examData,
-        totalQuestions: calculateTotalQuestions()
+        totalQuestions: calculateTotalQuestions(),
+        sections: examData.sections?.map(section => ({
+          id: section.id,
+          title: section.title,
+          description: section.description,
+          audioUrl: section.audioUrl,
+          audioPublicId: section.audioPublicId,
+          duration: section.duration,
+          questions: section.questions
+        }))
       };
+      
+      console.log('Sending exam data:', cleanExamData);
       
       const response = await fetch('/api/ielts', {
         method: 'POST',
@@ -273,11 +286,13 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onCancel, onSuccess }
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(finalExamData)
+        body: JSON.stringify(cleanExamData)
       });
       
       if (!response.ok) {
-        throw new Error('Failed to create exam');
+        const errorData = await response.json();
+        console.error('Server error:', errorData);
+        throw new Error(errorData.message || 'Failed to create exam');
       }
       
       const data = await response.json();

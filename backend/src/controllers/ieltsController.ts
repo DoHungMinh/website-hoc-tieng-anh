@@ -64,6 +64,8 @@ export const getIELTSExams = async (req: Request, res: Response) => {
       search 
     } = req.query;
 
+    console.log('getIELTSExams called with params:', { type, difficulty, status, page, limit, search });
+
     // Build filter object
     const filter: any = {};
     
@@ -83,6 +85,8 @@ export const getIELTSExams = async (req: Request, res: Response) => {
       filter.title = { $regex: search, $options: 'i' };
     }
 
+    console.log('Filter object:', filter);
+
     const skip = (Number(page) - 1) * Number(limit);
     
     const exams = await IELTSExam.find(filter)
@@ -92,6 +96,8 @@ export const getIELTSExams = async (req: Request, res: Response) => {
       .limit(Number(limit));
 
     const total = await IELTSExam.countDocuments(filter);
+    
+    console.log(`Found ${exams.length} exams out of ${total} total`);
     
     res.json({
       success: true,
@@ -153,11 +159,32 @@ export const createIELTSExam = async (req: Request, res: Response) => {
       sections
     } = req.body;
 
+    console.log('Received exam data:', {
+      title,
+      type,
+      difficulty,
+      duration,
+      description,
+      passagesLength: passages?.length,
+      sectionsLength: sections?.length,
+      userId: req.user?.id
+    });
+
     // Validate required fields
     if (!title || !type || !difficulty || !duration) {
+      console.log('Validation failed - missing required fields:', { title, type, difficulty, duration });
       return res.status(400).json({
         success: false,
         message: 'Thiếu thông tin bắt buộc'
+      });
+    }
+
+    // Validate user
+    if (!req.user?.id) {
+      console.log('User not authenticated');
+      return res.status(401).json({
+        success: false,
+        message: 'Chưa xác thực người dùng'
       });
     }
 
@@ -171,6 +198,8 @@ export const createIELTSExam = async (req: Request, res: Response) => {
         total + (section.questions ? section.questions.length : 0), 0);
     }
 
+    console.log('Calculated total questions:', totalQuestions);
+
     // Create exam object
     const examData = {
       title,
@@ -181,12 +210,16 @@ export const createIELTSExam = async (req: Request, res: Response) => {
       description,
       passages: type === 'reading' ? passages : undefined,
       sections: type === 'listening' ? sections : undefined,
-      createdBy: req.user?.id,
+      createdBy: req.user.id,
       status: 'published'  // Changed from 'draft' to 'published'
     };
 
+    console.log('Creating exam with data:', examData);
+
     const exam = new IELTSExam(examData);
     const savedExam = await exam.save();
+
+    console.log('Exam created successfully:', savedExam._id);
 
     return res.status(201).json({
       success: true,
@@ -195,10 +228,21 @@ export const createIELTSExam = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error creating IELTS exam:', error);
+    
+    // Provide more detailed error information
+    if (error instanceof Error) {
+      return res.status(500).json({
+        success: false,
+        message: 'Lỗi khi tạo đề thi',
+        error: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message: 'Lỗi khi tạo đề thi',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: 'Unknown error'
     });
   }
 };
