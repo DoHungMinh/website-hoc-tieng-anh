@@ -1,6 +1,6 @@
-import User, { IUser } from '../models/User';
-import Progress, { IProgress } from '../models/Progress';
-import Assessment, { IAssessment } from '../models/Assessment';
+import { User, IUser } from '../models/User';
+import { Progress, IProgress } from '../models/Progress';
+import { Assessment, IAssessment } from '../models/Assessment';
 import { IELTSExam } from '../models/IELTSExam';
 
 export class AnalyticsService {
@@ -32,7 +32,7 @@ export class AnalyticsService {
         .lean();
 
       // Calculate additional stats
-      const stats = await this.calculateUserStats(userId, progress, recentAssessments);
+      const stats = await this.calculateUserStats(userId, progress as IProgress, recentAssessments);
 
       return {
         user: user as IUser,
@@ -140,7 +140,7 @@ export class AnalyticsService {
   }
 
   // Create default progress for new users
-  private async createDefaultProgress(userId: string): Promise<IProgress> {
+  private async createDefaultProgress(userId: string): Promise<any> {
     const defaultProgress = new Progress({
       userId,
       vocabulary: { learned: 0, target: 100, recentWords: [] },
@@ -153,7 +153,8 @@ export class AnalyticsService {
       achievements: []
     });
 
-    return await defaultProgress.save();
+    const saved = await defaultProgress.save();
+    return saved.toObject();
   }
 
   // Compare with previous assessments
@@ -181,8 +182,8 @@ export class AnalyticsService {
       scoreChange: currentScore - previousScore,
       improvement: currentScore > previousScore,
       previousAttempts: previousAssessments.length,
-      bestScore: Math.max(...previousAssessments.map(a => a.results?.percentage || 0)),
-      averageScore: previousAssessments.reduce((sum, a) => sum + (a.results?.percentage || 0), 0) / previousAssessments.length
+      bestScore: Math.max(...previousAssessments.map((a: IAssessment) => a.results?.percentage || 0)),
+      averageScore: previousAssessments.reduce((sum: number, a: IAssessment) => sum + (a.results?.percentage || 0), 0) / previousAssessments.length
     };
   }
 

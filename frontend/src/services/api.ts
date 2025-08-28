@@ -99,7 +99,7 @@ class ApiService {
 
   // Authentication methods
   async login(email: string, password: string) {
-    const response = await this.request(API_ENDPOINTS.AUTH.LOGIN, {
+    const response = await this.request<{token: string, user: any}>(API_ENDPOINTS.AUTH.LOGIN, {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });

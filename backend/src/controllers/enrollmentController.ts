@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import Enrollment, { IEnrollment } from '../models/Enrollment';
+import type { IEnrollment } from '../models/Enrollment.js';
+import Enrollment from '../models/Enrollment.js';
 import Course from '../models/Course';
 import { Progress } from '../models/Progress';
 import mongoose from 'mongoose';
@@ -148,7 +149,7 @@ export const updateLessonProgress = async (req: Request, res: Response) => {
     }
 
     if (updated) {
-      enrollment.progress.lastAccessedAt = new Date();
+      enrollment.lastAccessedAt = new Date();
       
       // Get course to calculate completion percentage
       const course = await Course.findById(courseId);
@@ -305,7 +306,7 @@ export const getCourseProgress = async (req: Request, res: Response) => {
         completedVocabulary: enrollment.progress.completedVocabulary,
         completedGrammar: enrollment.progress.completedGrammar,
         completedLessons: enrollment.progress.completedLessons,
-        lastAccessedAt: enrollment.progress.lastAccessedAt
+        lastAccessedAt: enrollment.lastAccessedAt
       },
       quiz: enrollment.quiz,
       achievements: enrollment.achievements

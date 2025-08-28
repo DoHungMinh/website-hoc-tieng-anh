@@ -22,7 +22,8 @@ import progressRoutes from './routes/progress';
 import userRoutes from './routes/user';
 import ieltsRoutes from './routes/ielts';
 import coursesRoutes from './routes/courses';
-// import enrollmentRoutes from './routes/enrollment'; // Tạm comment để fix lỗi
+import simpleEnrollmentRoutes from './routes/simpleEnrollment';
+import enrollmentRoutes from './routes/enrollment';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -95,7 +96,8 @@ app.use('/api/progress', progressRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/ielts', ieltsRoutes);
 app.use('/api/courses', coursesRoutes);
-// app.use('/api/enrollment', enrollmentRoutes); // Tạm comment để fix lỗi
+app.use('/api/enrollment', simpleEnrollmentRoutes);
+app.use('/api/enrollment-advanced', enrollmentRoutes); // Renamed to avoid conflict
 
 // Test database endpoint
 app.get('/api/test-db', async (req: Request, res: Response) => {
