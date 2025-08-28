@@ -10,8 +10,11 @@ import {
   Timer,
   ArrowLeft,
   FileText,
-  BookOpen
+  BookOpen,
+  Award,
+  Target
 } from 'lucide-react';
+import { calculateIELTSScore, calculateSimpleScore, getBandScoreColor } from '../../utils/ieltsScoring';
 
 interface Question {
   id: string;
@@ -205,6 +208,55 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
     return examData.sections[currentSection]?.audioUrl || '';
   };
 
+  const calculateIELTSScoring = () => {
+    // Get all questions from all sections/passages
+    const allQuestions: Question[] = [];
+    
+    if (examData?.type === 'reading' && examData.passages) {
+      examData.passages.forEach(passage => {
+        allQuestions.push(...passage.questions);
+      });
+    } else if (examData?.type === 'listening' && examData.sections) {
+      examData.sections.forEach(section => {
+        allQuestions.push(...section.questions);
+      });
+    }
+
+    // Count correct answers
+    const correctAnswers = Object.keys(answers).reduce((count, questionId) => {
+      const question = allQuestions.find((q: Question) => q.id === questionId);
+      if (question && answers[questionId] === question.correctAnswer) {
+        return count + 1;
+      }
+      return count;
+    }, 0);
+
+    const totalQuestions = allQuestions.length;
+    
+    // Check if questions have correct answers for IELTS scoring
+    const hasCorrectAnswers = allQuestions.some(q => q.correctAnswer !== undefined);
+    
+    if (hasCorrectAnswers && (examData?.type === 'listening' || examData?.type === 'reading')) {
+      if (examData?.type === 'listening') {
+        return calculateIELTSScore('listening', correctAnswers);
+      } else if (examData?.type === 'reading') {
+        return calculateIELTSScore('reading', correctAnswers);
+      }
+    }
+    
+    // Fallback to simple scoring if no correct answers available
+    const answeredQuestions = Object.keys(answers).length;
+    const simpleResult = calculateSimpleScore(answeredQuestions, totalQuestions);
+    
+    return {
+      totalQuestions,
+      correctAnswers: hasCorrectAnswers ? correctAnswers : answeredQuestions,
+      bandScore: 0,
+      percentage: simpleResult.percentage,
+      description: simpleResult.description
+    };
+  };
+
   const handleSubmitTest = () => {
     if (confirm('Bạn có chắc chắn muốn nộp bài không?')) {
       setShowResults(true);
@@ -268,9 +320,9 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
 
   // Show results screen
   if (showResults) {
+    const testResult = calculateIELTSScoring();
     const totalQuestions = examData.totalQuestions;
     const answeredQuestions = Object.keys(answers).length;
-    const score = Math.round((answeredQuestions / totalQuestions) * 100);
 
     return (
       <div className="min-h-screen bg-gray-50 py-12">
@@ -280,14 +332,29 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
             <h1 className="text-3xl font-bold text-gray-900 mb-4">Hoàn thành bài thi</h1>
             <p className="text-xl text-gray-600 mb-8">{examData.title}</p>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {/* IELTS Band Score Display */}
+            {testResult.bandScore > 0 && (
+              <div className="mb-8">
+                <div className={`inline-flex items-center justify-center w-24 h-24 rounded-full text-4xl font-bold text-white mb-4 ${getBandScoreColor(testResult.bandScore)}`}>
+                  {testResult.bandScore}
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">IELTS Band Score</h2>
+                <p className="text-lg text-gray-600 mb-4">{testResult.description}</p>
+              </div>
+            )}
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               <div className="bg-blue-50 rounded-xl p-6">
                 <div className="text-2xl font-bold text-blue-600">{answeredQuestions}/{totalQuestions}</div>
                 <div className="text-blue-600">Câu đã trả lời</div>
               </div>
               <div className="bg-green-50 rounded-xl p-6">
-                <div className="text-2xl font-bold text-green-600">{score}%</div>
-                <div className="text-green-600">Tỷ lệ hoàn thành</div>
+                <div className="text-2xl font-bold text-green-600">{testResult.correctAnswers}/{testResult.totalQuestions}</div>
+                <div className="text-green-600">Câu trả lời đúng</div>
+              </div>
+              <div className="bg-yellow-50 rounded-xl p-6">
+                <div className="text-2xl font-bold text-yellow-600">{testResult.percentage}%</div>
+                <div className="text-yellow-600">Tỷ lệ chính xác</div>
               </div>
               <div className="bg-purple-50 rounded-xl p-6">
                 <div className="text-2xl font-bold text-purple-600">
