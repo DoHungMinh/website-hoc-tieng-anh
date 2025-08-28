@@ -50,6 +50,14 @@ const Header: React.FC<HeaderProps> = ({ onAuthClick, onNavigate }) => {
             >
               Luyện tập
             </button>
+            {isAuthenticated && (
+              <button 
+                onClick={() => onNavigate?.('progress-tracker')}
+                className="text-white hover:text-lime-200 transition-colors duration-200 font-medium"
+              >
+                Progress Tracker
+              </button>
+            )}
             <a href="#tests" className="text-white hover:text-lime-200 transition-colors duration-200 font-medium">
               Kiểm tra
             </a>

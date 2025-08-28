@@ -1,4 +1,5 @@
 import { API_BASE_URL, API_ENDPOINTS } from '../utils/constants';
+import { Toast } from '../utils/toast';
 
 // Types for API responses
 interface ApiResponse<T = any> {
@@ -36,6 +37,19 @@ class ApiService {
       const data = await response.json();
 
       if (!response.ok) {
+        // Handle account disabled error (403) or unauthorized (401)
+        if ((response.status === 403 || response.status === 401) && 
+            (data.message?.includes('vô hiệu hóa') || data.message?.includes('disabled'))) {
+          this.handleAccountDisabled(data.message);
+          throw new Error(data.message || 'Account disabled');
+        }
+        
+        // Handle general 401 unauthorized
+        if (response.status === 401) {
+          this.handleAccountDisabled('Phiên đăng nhập đã hết hạn hoặc tài khoản bị vô hiệu hóa');
+          throw new Error('Unauthorized');
+        }
+        
         throw new Error(data.message || 'API request failed');
       }
 
@@ -43,6 +57,13 @@ class ApiService {
     } catch (error) {
       console.error('API Error:', error);
       throw error;
+    }
+  }
+
+  private handleAccountDisabled(message: string): void {
+    // Chỉ show toast, không logout ngay - để heartbeat hook xử lý
+    if (typeof window !== 'undefined') {
+      Toast.error(message || 'Tài khoản đã bị vô hiệu hóa.', 3000);
     }
   }
 
@@ -124,6 +145,13 @@ class ApiService {
     return this.request(API_ENDPOINTS.USER.UPDATE_PROFILE, {
       method: 'PUT',
       body: JSON.stringify(profileData),
+    });
+  }
+
+  async changePassword(passwordData: { currentPassword: string; newPassword: string }) {
+    return this.request(API_ENDPOINTS.USER.CHANGE_PASSWORD, {
+      method: 'PUT',
+      body: JSON.stringify(passwordData),
     });
   }
 

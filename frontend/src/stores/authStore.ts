@@ -21,6 +21,7 @@ interface AuthState {
   
   setUser: (user: User, token: string) => void;
   logout: () => void;
+  forceLogout: (message?: string) => void;
   setLoading: (loading: boolean) => void;
 }
 
@@ -64,6 +65,47 @@ export const useAuthStore = create<AuthState>()(
             token: null, 
             isAuthenticated: false 
           });
+        }
+      },
+
+      forceLogout: (message?: string) => {
+        // Show notification if message provided
+        if (message) {
+          if (typeof window !== 'undefined') {
+            // Create a simple notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg max-w-sm';
+            notification.innerHTML = `
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium">${message}</span>
+                <button class="ml-4 text-white hover:text-gray-200 text-lg font-bold" onclick="this.parentElement.parentElement.remove()">&times;</button>
+              </div>
+            `;
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+              if (notification.parentElement) {
+                notification.remove();
+              }
+            }, 5000);
+          }
+        }
+        
+        // Force clear all auth data
+        localStorage.removeItem('token');
+        localStorage.removeItem('auth-storage');
+        set({ 
+          user: null, 
+          token: null, 
+          isAuthenticated: false 
+        });
+        
+        // Redirect to home
+        if (typeof window !== 'undefined') {
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 1000);
         }
       },
 

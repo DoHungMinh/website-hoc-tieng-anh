@@ -22,6 +22,7 @@ import progressRoutes from './routes/progress';
 import userRoutes from './routes/user';
 import ieltsRoutes from './routes/ielts';
 import coursesRoutes from './routes/courses';
+// import enrollmentRoutes from './routes/enrollment'; // Tạm comment để fix lỗi
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -49,7 +50,7 @@ app.use(compression());
 // Rate limiting
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'), // limit each IP to 100 requests per windowMs
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '1000'), // limit each IP to 1000 requests per windowMs
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -94,6 +95,7 @@ app.use('/api/progress', progressRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/ielts', ieltsRoutes);
 app.use('/api/courses', coursesRoutes);
+// app.use('/api/enrollment', enrollmentRoutes); // Tạm comment để fix lỗi
 
 // Test database endpoint
 app.get('/api/test-db', async (req: Request, res: Response) => {

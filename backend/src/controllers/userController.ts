@@ -288,7 +288,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
 export const updateUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { fullName, phone, role, level } = req.body;
+    const { fullName, phone, role, level, password } = req.body;
 
     const user = await User.findById(id);
     
@@ -305,6 +305,18 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
     if (phone) user.phone = phone;
     if (role) user.role = role;
     if (level) user.level = level;
+    
+    // Update password if provided (admin can change without current password)
+    if (password) {
+      if (password.length < 6) {
+        res.status(400).json({
+          success: false,
+          message: 'Mật khẩu phải có ít nhất 6 ký tự'
+        });
+        return;
+      }
+      user.password = password;
+    }
 
     await user.save({ validateModifiedOnly: true });
 

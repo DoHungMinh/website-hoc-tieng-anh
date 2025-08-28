@@ -48,6 +48,16 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
       return;
     }
 
+    // Check if account is disabled
+    if (user.accountStatus === 'disabled') {
+      console.log(`🔒 ACCOUNT DISABLED: User ${user.email} (${user._id}) tried to access API but account is disabled`);
+      res.status(403).json({
+        success: false,
+        message: 'Tài khoản đã bị vô hiệu hóa. Vui lòng đăng nhập lại.'
+      });
+      return;
+    }
+
     req.user = user;
     next();
   } catch (error) {
@@ -121,7 +131,7 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
       if (jwtSecret) {
         const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
         const user = await User.findById(decoded.userId).select('-password');
-        if (user) {
+        if (user && user.accountStatus !== 'disabled') {
           req.user = user;
         }
       }

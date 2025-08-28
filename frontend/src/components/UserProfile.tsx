@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { User, Mail, Calendar, Edit3, Save, X, LogOut, ArrowLeft, Shield, BookOpen, BarChart3, Award, Clock, Target, Phone, MapPin, GraduationCap, Heart, Lock, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Calendar, Edit3, Save, X, LogOut, ArrowLeft, Shield, BookOpen, BarChart3, Award, Target, Phone, MapPin, GraduationCap, Heart, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
+import ProgressTracker from './ProgressTracker';
 
 interface UserProfileProps {
   onBack: () => void;
@@ -90,8 +91,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
     }));
   };
 
-  const handlePasswordSave = () => {
-    // TODO: Validate and save password
+  const handlePasswordSave = async () => {
+    // Validate password
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       alert('Mật khẩu mới và xác nhận mật khẩu không khớp!');
       return;
@@ -100,13 +101,41 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
       alert('Mật khẩu mới phải có ít nhất 6 ký tự!');
       return;
     }
-    // TODO: Call API to change password
-    alert('Đổi mật khẩu thành công!');
-    setPasswordForm({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    });
+    if (!passwordForm.currentPassword) {
+      alert('Vui lòng nhập mật khẩu hiện tại!');
+      return;
+    }
+
+    try {
+      // Call API to change password
+      const response = await fetch('http://localhost:5002/api/user/change-password', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('Đổi mật khẩu thành công!');
+        setPasswordForm({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+      } else {
+        alert(data.message || 'Có lỗi xảy ra khi đổi mật khẩu!');
+      }
+    } catch (error) {
+      console.error('Error changing password:', error);
+      alert('Có lỗi xảy ra khi đổi mật khẩu!');
+    }
   };
 
   const renderPasswordContent = () => (
@@ -442,84 +471,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
   );
 
   const renderProgressContent = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-r from-green-50 to-lime-50 rounded-xl p-6 border border-green-100">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-lime-500 rounded-xl flex items-center justify-center">
-                <Target className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Từ vựng</h3>
-                <p className="text-sm text-gray-500">Đã học</p>
-              </div>
-            </div>
-            <span className="text-2xl font-bold text-green-600">156</span>
-          </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Tiến độ</span>
-              <span>15.6%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-gradient-to-r from-green-500 to-lime-500 h-2 rounded-full transition-all duration-300" style={{ width: '15.6%' }}></div>
-            </div>
-            <p className="text-xs text-gray-500">Mục tiêu: 1000 từ</p>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-r from-green-50 to-lime-50 rounded-xl p-6 border border-green-100">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-lime-500 rounded-xl flex items-center justify-center">
-                <Clock className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Thời gian</h3>
-                <p className="text-sm text-gray-500">Tuần này</p>
-              </div>
-            </div>
-            <span className="text-2xl font-bold text-green-600">12.5h</span>
-          </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Hoàn thành</span>
-              <span>71%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-gradient-to-r from-green-500 to-lime-500 h-2 rounded-full transition-all duration-300" style={{ width: '71%' }}></div>
-            </div>
-            <p className="text-xs text-gray-500">Mục tiêu: 18 giờ/tuần</p>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-r from-green-50 to-lime-50 rounded-xl p-6 border border-green-100">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-lime-500 rounded-xl flex items-center justify-center">
-                <Award className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Điểm số</h3>
-                <p className="text-sm text-gray-500">Trung bình</p>
-              </div>
-            </div>
-            <span className="text-2xl font-bold text-green-600">8.2</span>
-          </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Xếp hạng</span>
-              <span>Giỏi</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-gradient-to-r from-green-500 to-lime-500 h-2 rounded-full transition-all duration-300" style={{ width: '82%' }}></div>
-            </div>
-            <p className="text-xs text-gray-500">Tốt hơn 82% học viên</p>
-          </div>
-        </div>
-      </div>
-    </div>
+    <ProgressTracker />
   );
 
   const renderAchievementsContent = () => (

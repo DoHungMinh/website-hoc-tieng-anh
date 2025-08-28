@@ -15,6 +15,7 @@ import {
   Smartphone,
   Globe
 } from 'lucide-react';
+import { useEnrollment } from '../hooks/useEnrollment';
 
 interface DetailCourse {
   id: string;
@@ -69,11 +70,38 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
   const [showPayment, setShowPayment] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [isPurchased, setIsPurchased] = useState(externalIsPurchased || false); // Use external purchased status
+  const [enrolling, setEnrolling] = useState(false);
+  
+  const { enrollInCourse, enrollments, loading: enrollmentLoading } = useEnrollment();
+
+  // Check if user is already enrolled
+  const isEnrolled = enrollments?.some(enrollment => enrollment.courseId._id === course.id) || false;
 
   // Update internal state when external prop changes
   useEffect(() => {
     setIsPurchased(externalIsPurchased || false);
   }, [externalIsPurchased]);
+
+  const handleEnrollClick = async () => {
+    if (isEnrolled) {
+      return;
+    }
+
+    try {
+      setEnrolling(true);
+      const result = await enrollInCourse(course.id);
+      
+      if (result.success) {
+        alert('✅ Đăng ký khóa học thành công!');
+        // Call the original onEnroll callback if provided
+        onEnroll?.(course.id);
+      }
+    } catch (error: any) {
+      alert(`❌ Lỗi đăng ký: ${error.message}`);
+    } finally {
+      setEnrolling(false);
+    }
+  };
 
   const getLevelColor = (level: string) => {
     const colors = {
@@ -252,11 +280,19 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
                   </div>
 
                   <button 
-                    onClick={() => onEnroll(course.id)}
-                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
+                    onClick={handleEnrollClick}
+                    disabled={enrolling || isEnrolled}
+                    className={`w-full font-semibold py-4 px-6 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 ${
+                      isEnrolled 
+                        ? 'bg-green-100 text-green-600 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white'
+                    }`}
                   >
                     <Shield className="w-5 h-5" />
-                    <span>Hoàn tất thanh toán</span>
+                    <span>
+                      {enrolling ? 'Đang đăng ký...' : 
+                       isEnrolled ? 'Đã đăng ký' : 'Hoàn tất thanh toán'}
+                    </span>
                   </button>
                   
                   <p className="text-xs text-gray-500 text-center mt-4">
@@ -434,10 +470,16 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
                             Còn {course.vocabulary.length - 2} từ vựng nữa...
                           </p>
                           <button
-                            onClick={() => onEnroll(course.id)}
-                            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+                            onClick={handleEnrollClick}
+                            disabled={enrolling || isEnrolled}
+                            className={`px-4 py-2 text-sm rounded-md transition-colors ${
+                              isEnrolled 
+                                ? 'bg-green-100 text-green-600 cursor-not-allowed'
+                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                            }`}
                           >
-                            Mua khóa học để xem toàn bộ
+                            {enrolling ? 'Đang đăng ký...' : 
+                             isEnrolled ? 'Đã đăng ký' : 'Mua khóa học để xem toàn bộ'}
                           </button>
                         </div>
                       </div>
@@ -501,10 +543,16 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
                             Còn {course.grammar.length - 2} nội dung ngữ pháp nữa...
                           </p>
                           <button
-                            onClick={() => onEnroll(course.id)}
-                            className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
+                            onClick={handleEnrollClick}
+                            disabled={enrolling || isEnrolled}
+                            className={`px-4 py-2 text-sm rounded-md transition-colors ${
+                              isEnrolled 
+                                ? 'bg-green-100 text-green-600 cursor-not-allowed'
+                                : 'bg-green-600 text-white hover:bg-green-700'
+                            }`}
                           >
-                            Mua khóa học để xem toàn bộ
+                            {enrolling ? 'Đang đăng ký...' : 
+                             isEnrolled ? 'Đã đăng ký' : 'Mua khóa học để xem toàn bộ'}
                           </button>
                         </div>
                       </div>

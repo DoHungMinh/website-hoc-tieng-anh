@@ -9,7 +9,6 @@ import {
   PowerOff, 
   Users,
   UserCheck,
-  UserX,
   Globe,
   RefreshCw
 } from 'lucide-react';
@@ -37,6 +36,8 @@ interface UserStats {
   adminUsers: number;
   regularUsers: number;
   newUsers: number;
+  onlineAdminUsers: number;
+  onlineRegularUsers: number;
 }
 
 const UserManagement: React.FC = () => {
@@ -48,7 +49,9 @@ const UserManagement: React.FC = () => {
     onlineUsers: 0,
     adminUsers: 0,
     regularUsers: 0,
-    newUsers: 0
+    newUsers: 0,
+    onlineAdminUsers: 0,
+    onlineRegularUsers: 0
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -59,7 +62,9 @@ const UserManagement: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [viewingUser, setViewingUser] = useState<User | null>(null);
   const [updatingUsers, setUpdatingUsers] = useState<Set<string>>(new Set());
 
   // Fetch users
@@ -108,7 +113,45 @@ const UserManagement: React.FC = () => {
 
       const data = await response.json();
       if (data.success) {
-        setStats(data.data);
+        // Calculate online admin and regular users from backend data
+        const baseStats = data.data;
+        
+        // Try to get detailed user info to calculate online stats by role
+        const allUsersResponse = await fetch('http://localhost:5002/api/user?page=1&limit=1000', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (allUsersResponse.ok) {
+          const allUsersData = await allUsersResponse.json();
+          if (allUsersData.success) {
+            const allUsers = allUsersData.data.users;
+            const onlineAdminUsers = allUsers.filter((user: User) => user.role === 'admin' && user.isOnline).length;
+            const onlineRegularUsers = allUsers.filter((user: User) => user.role === 'user' && user.isOnline).length;
+            
+            setStats({
+              ...baseStats,
+              onlineAdminUsers,
+              onlineRegularUsers
+            });
+          } else {
+            // Fallback if detailed data not available
+            setStats({
+              ...baseStats,
+              onlineAdminUsers: 0,
+              onlineRegularUsers: baseStats.onlineUsers
+            });
+          }
+        } else {
+          // Fallback if detailed data not available
+          setStats({
+            ...baseStats,
+            onlineAdminUsers: 0,
+            onlineRegularUsers: baseStats.onlineUsers
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -294,8 +337,22 @@ const UserManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
+              <p className="text-sm font-medium text-gray-600">Tổng Admin</p>
+              <p className="text-2xl font-bold text-purple-600">{stats.onlineAdminUsers}/{stats.adminUsers}</p>
+              <p className="text-xs text-gray-500 mt-1">Đang online/Tổng số</p>
+            </div>
+            <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
+              <UserCheck className="h-6 w-6 text-purple-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
               <p className="text-sm font-medium text-gray-600">Tổng người dùng</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
+              <p className="text-2xl font-bold text-blue-600">{stats.onlineRegularUsers}/{stats.regularUsers}</p>
+              <p className="text-xs text-gray-500 mt-1">Đang online/Tổng số</p>
             </div>
             <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
               <Users className="h-6 w-6 text-blue-600" />
@@ -307,10 +364,11 @@ const UserManagement: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Tài khoản hoạt động</p>
-              <p className="text-2xl font-bold text-green-600">{stats.activeUsers}</p>
+              <p className="text-2xl font-bold text-green-600">{stats.activeUsers}/{stats.totalUsers}</p>
+              <p className="text-xs text-gray-500 mt-1">Kích hoạt/Tổng số</p>
             </div>
             <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <UserCheck className="h-6 w-6 text-green-600" />
+              <Globe className="h-6 w-6 text-green-600" />
             </div>
           </div>
         </div>
@@ -318,23 +376,12 @@ const UserManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Đang trực tuyến</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.onlineUsers}</p>
+              <p className="text-sm font-medium text-gray-600">Tổng đang online</p>
+              <p className="text-2xl font-bold text-emerald-600">{stats.onlineUsers}</p>
+              <p className="text-xs text-gray-500 mt-1">Người dùng hoạt động hiện tại</p>
             </div>
-            <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Globe className="h-6 w-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Tài khoản bị khóa</p>
-              <p className="text-2xl font-bold text-red-600">{stats.disabledUsers}</p>
-            </div>
-            <div className="h-12 w-12 bg-red-100 rounded-lg flex items-center justify-center">
-              <UserX className="h-6 w-6 text-red-600" />
+            <div className="h-12 w-12 bg-emerald-100 rounded-lg flex items-center justify-center">
+              <Globe className="h-6 w-6 text-emerald-600" />
             </div>
           </div>
         </div>
@@ -478,8 +525,8 @@ const UserManagement: React.FC = () => {
                         <div className="flex items-center space-x-2">
                           <button 
                             onClick={() => {
-                              setEditingUser(user);
-                              setShowEditModal(true);
+                              setViewingUser(user);
+                              setShowViewModal(true);
                             }}
                             className="text-blue-600 hover:text-blue-900 p-1 rounded"
                             title="Xem chi tiết"
@@ -618,6 +665,17 @@ const UserManagement: React.FC = () => {
             }));
             
             setShowCreateModal(false);
+          }}
+        />
+      )}
+
+      {/* View User Modal */}
+      {showViewModal && viewingUser && (
+        <ViewUserModal 
+          user={viewingUser}
+          onClose={() => {
+            setShowViewModal(false);
+            setViewingUser(null);
           }}
         />
       )}
@@ -819,36 +877,37 @@ const EditUserModal: React.FC<{
   onSuccess: (updatedUser: User) => void;
 }> = ({ user, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
-    fullName: user.fullName,
-    phone: user.phone || '',
-    role: user.role as 'user' | 'admin',
-    level: user.level
+    role: user.role as 'user' | 'admin'
   });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     setLoading(true);
 
     try {
       const token = localStorage.getItem('token');
+      
+      // Chỉ update role
+      const updateData = {
+        role: formData.role
+      };
+      
       const response = await fetch(`http://localhost:5002/api/user/${user._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(updateData)
       });
 
       const data = await response.json();
       if (data.success) {
         const updatedUser: User = {
           ...user,
-          fullName: formData.fullName,
-          phone: formData.phone,
-          role: formData.role,
-          level: formData.level
+          role: formData.role
         };
         onSuccess(updatedUser);
       } else {
@@ -865,31 +924,8 @@ const EditUserModal: React.FC<{
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h3 className="text-lg font-semibold mb-4">Chỉnh sửa người dùng</h3>
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-600">Email: {user.email}</p>
-          <p className="text-sm text-gray-600">ID: {user._id}</p>
-        </div>
+        <h3 className="text-lg font-semibold mb-4">Chỉnh sửa vai trò người dùng</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Họ và tên</label>
-            <input
-              type="text"
-              required
-              value={formData.fullName}
-              onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
-            <input
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData({...formData, phone: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
             <select
@@ -899,21 +935,6 @@ const EditUserModal: React.FC<{
             >
               <option value="user">Người dùng</option>
               <option value="admin">Admin</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Trình độ</label>
-            <select
-              value={formData.level}
-              onChange={(e) => setFormData({...formData, level: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-            >
-              <option value="A1">A1</option>
-              <option value="A2">A2</option>
-              <option value="B1">B1</option>
-              <option value="B2">B2</option>
-              <option value="C1">C1</option>
-              <option value="C2">C2</option>
             </select>
           </div>
           <div className="flex justify-end space-x-3 pt-4">
@@ -929,10 +950,129 @@ const EditUserModal: React.FC<{
               disabled={loading}
               className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
             >
-              {loading ? 'Đang cập nhật...' : 'Cập nhật'}
+              {loading ? 'Đang cập nhật...' : 'Cập nhật vai trò'}
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+};
+
+// View User Modal Component
+const ViewUserModal: React.FC<{
+  user: User;
+  onClose: () => void;
+}> = ({ user, onClose }) => {
+  const formatLastSeen = (lastSeen: string | null, createdAt: string) => {
+    if (!lastSeen) {
+      return 'Chưa đăng nhập';
+    }
+    
+    const lastSeenDate = new Date(lastSeen);
+    const createdDate = new Date(createdAt);
+    const now = new Date();
+    
+    const timeDiffCreatedLastSeen = Math.abs(lastSeenDate.getTime() - createdDate.getTime());
+    if (timeDiffCreatedLastSeen < 60000) { // 1 phút
+      return 'Chưa đăng nhập';
+    }
+    
+    const diffMs = now.getTime() - lastSeenDate.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Vừa xong';
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    return `${diffDays} ngày trước`;
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Thông tin người dùng</h3>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Họ và tên</label>
+            <p className="mt-1 text-sm text-gray-900">{user.fullName}</p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Email</label>
+            <p className="mt-1 text-sm text-gray-900">{user.email}</p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Số điện thoại</label>
+            <p className="mt-1 text-sm text-gray-900">{user.phone || 'Chưa có'}</p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Trình độ</label>
+            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">
+              {user.level || 'Chưa xác định'}
+            </span>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Vai trò</label>
+            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+              user.role === 'admin'
+                ? 'bg-purple-100 text-purple-800'
+                : 'bg-blue-100 text-blue-800'
+            }`}>
+              {user.role === 'admin' ? 'Admin' : 'Người dùng'}
+            </span>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Trạng thái tài khoản</label>
+            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+              user.accountStatus === 'active'
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+            }`}>
+              {user.accountStatus === 'active' ? 'Hoạt động' : 'Bị khóa'}
+            </span>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Trạng thái online</label>
+            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+              user.isOnline
+                ? 'bg-green-100 text-green-800'
+                : 'bg-gray-100 text-gray-800'
+            }`}>
+              {user.isOnline ? 'Đang online' : 'Offline'}
+            </span>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Lần cuối hoạt động</label>
+            <p className="mt-1 text-sm text-gray-900">
+              {formatLastSeen(user.lastSeen, user.createdAt)}
+            </p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Ngày tạo tài khoản</label>
+            <p className="mt-1 text-sm text-gray-900">
+              {new Date(user.createdAt).toLocaleDateString('vi-VN')}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <button 
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+          >
+            Đóng
+          </button>
+        </div>
       </div>
     </div>
   );

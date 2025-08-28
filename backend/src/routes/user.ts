@@ -45,8 +45,13 @@ router.delete('/:id', requireAdmin, deleteUser);
 router.post('/heartbeat', async (req: Request, res: Response) => {
   try {
     const userId = req.user?._id;
+    const userEmail = req.user?.email;
+    const accountStatus = req.user?.accountStatus;
+    
+    console.log(`💓 HEARTBEAT: User ${userEmail} (${userId}) - Status: ${accountStatus}`);
     
     if (!userId) {
+      console.log('❌ HEARTBEAT: No user ID found');
       res.status(401).json({
         success: false,
         message: 'User not authenticated'
@@ -73,6 +78,66 @@ router.post('/heartbeat', async (req: Request, res: Response) => {
 
   } catch (error) {
     console.error('Error updating heartbeat:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server'
+    });
+  }
+});
+
+// Change password endpoint (any authenticated user can change their own password)
+router.put('/change-password', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?._id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({
+        success: false,
+        message: 'Vui lòng nhập đầy đủ mật khẩu hiện tại và mật khẩu mới'
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      res.status(400).json({
+        success: false,
+        message: 'Mật khẩu mới phải có ít nhất 6 ký tự'
+      });
+      return;
+    }
+
+    // Find user with password field
+    const user = await User.findById(userId).select('+password');
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy người dùng'
+      });
+      return;
+    }
+
+    // Verify current password
+    const isValidPassword = await user.comparePassword(currentPassword);
+    if (!isValidPassword) {
+      res.status(400).json({
+        success: false,
+        message: 'Mật khẩu hiện tại không đúng'
+      });
+      return;
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Đổi mật khẩu thành công'
+    });
+
+  } catch (error) {
+    console.error('Error changing password:', error);
     res.status(500).json({
       success: false,
       message: 'Lỗi server'

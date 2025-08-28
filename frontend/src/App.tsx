@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Features from './components/Features';
@@ -15,20 +15,32 @@ import CourseApp from './components/CourseApp';
 import NewCourseNotification from './components/NewCourseNotification';
 import UserProfile from './components/UserProfile';
 import IELTSExamList from './components/ielts/IELTSExamList';
+import ProgressTracker from './components/ProgressTracker';
+import AccountDisabledNotification from './components/AccountDisabledNotification';
 import { useAuthStore } from './stores/authStore';
 import { useHeartbeat } from './hooks/useHeartbeat';
+import { useActivityHeartbeat } from './hooks/useActivityHeartbeat';
+import { setupGlobalErrorInterceptor } from './utils/errorInterceptor';
 
-type Page = 'home' | 'login' | 'register' | 'auth' | 'placement-test' | 'dashboard' | 'courses' | 'profile' | 'practice';
+type Page = 'home' | 'login' | 'register' | 'auth' | 'placement-test' | 'dashboard' | 'courses' | 'profile' | 'practice' | 'progress-tracker';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const { user, isAuthenticated } = useAuthStore();
   
-  // Initialize heartbeat for authenticated users
-  useHeartbeat();
+  // Initialize heartbeat for authenticated users and get account disabled state
+  const { accountDisabledMessage, clearAccountDisabledMessage } = useHeartbeat();
+  
+  // Initialize activity-based heartbeat for faster detection
+  useActivityHeartbeat();
+
+  // Setup global error interceptor on app start
+  useEffect(() => {
+    setupGlobalErrorInterceptor();
+  }, []);
 
   const handleNavigation = (page: string) => {
-    const validPages: Page[] = ['home', 'login', 'register', 'auth', 'placement-test', 'dashboard', 'courses', 'profile', 'practice'];
+    const validPages: Page[] = ['home', 'login', 'register', 'auth', 'placement-test', 'dashboard', 'courses', 'profile', 'practice', 'progress-tracker'];
     if (validPages.includes(page as Page)) {
       // Nếu navigate đến 'auth', chuyển đến 'register' (trang đăng ký)
       if (page === 'auth') {
@@ -66,6 +78,9 @@ function App() {
     }
     if (currentPage === 'profile') {
       return <UserProfile onBack={() => setCurrentPage('home')} />;
+    }
+    if (currentPage === 'progress-tracker') {
+      return <ProgressTracker />;
     }
   }
 
@@ -118,6 +133,14 @@ function App() {
       <Footer />
       <Chatbot />
       <NewCourseNotification onNavigate={handleNavigation} />
+      
+      {/* Account Disabled Notification */}
+      {accountDisabledMessage && (
+        <AccountDisabledNotification
+          message={accountDisabledMessage}
+          onClose={clearAccountDisabledMessage}
+        />
+      )}
     </div>
   );
 }
