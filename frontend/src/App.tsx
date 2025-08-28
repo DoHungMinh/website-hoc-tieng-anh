@@ -76,7 +76,7 @@ function App() {
       return <ProgressDashboard onNavigate={handleNavigation} />;
     }
     if (currentPage === 'profile') {
-      return <UserProfile onBack={() => setCurrentPage('home')} onNavigateToCourses={() => setCurrentPage('courses')} />;
+      return <UserProfile onBack={() => setCurrentPage('home')} />;
     }
   }
 

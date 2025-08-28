@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
-import { User, Mail, Calendar, Edit3, Save, X, LogOut, ArrowLeft, Shield, BookOpen, Award, Target, Phone, MapPin, GraduationCap, Heart, Lock, Eye, EyeOff, Play, BarChart3, Clock, CheckCircle } from 'lucide-react';
+import { User, Mail, Calendar, Edit3, Save, X, Phone, MapPin, GraduationCap, Heart, Lock, Eye, EyeOff, Target, ArrowLeft, Shield, LogOut } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
-import { useUserEnrollments } from '../hooks/useUserEnrollments';
 
 interface UserProfileProps {
   onBack: () => void;
-  onNavigateToCourses: () => void;
 }
 
-type ProfileTab = 'profile' | 'password' | 'courses' | 'achievements';
+type ProfileTab = 'profile' | 'password';
 
-const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigateToCourses }) => {
+const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
   const { user, logout, setUser, token } = useAuthStore();
-  const { enrollments, stats, loading: enrollmentsLoading, error: enrollmentsError } = useUserEnrollments();
   const [activeTab, setActiveTab] = useState<ProfileTab>('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -36,8 +33,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigateToCourses }
   const tabs = [
     { id: 'profile' as ProfileTab, label: 'Thông tin cá nhân', icon: User },
     { id: 'password' as ProfileTab, label: 'Đổi mật khẩu', icon: Lock },
-    { id: 'courses' as ProfileTab, label: 'Khóa học của tôi', icon: BookOpen },
-    { id: 'achievements' as ProfileTab, label: 'Thành tích', icon: Award },
   ];
 
   const handleEdit = () => {
@@ -454,213 +449,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigateToCourses }
     </div>
   );
 
-  const renderCoursesContent = () => {
-    if (enrollmentsLoading) {
-      return (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-          <span className="ml-3 text-gray-600">Đang tải khóa học...</span>
-        </div>
-      );
-    }
 
-    if (enrollmentsError) {
-      return (
-        <div className="text-center py-12">
-          <div className="text-red-600 mb-4">❌ Lỗi tải khóa học: {enrollmentsError}</div>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
-          >
-            Thử lại
-          </button>
-        </div>
-      );
-    }
 
-    if (!enrollments || enrollments.length === 0) {
-      return (
-        <div className="space-y-6">
-          <div className="text-center py-12">
-            <div className="w-24 h-24 bg-gradient-to-r from-green-100 to-lime-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <BookOpen className="h-12 w-12 text-green-500" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-3">Chưa có khóa học nào</h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              Bắt đầu hành trình học tiếng Anh của bạn bằng cách tham gia các khóa học chất lượng của chúng tôi.
-            </p>
-            <button 
-              onClick={onNavigateToCourses}
-              className="bg-gradient-to-r from-green-500 to-lime-500 hover:from-green-600 hover:to-lime-600 text-white px-8 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
-            >
-              Khám phá khóa học
-            </button>
-          </div>
-        </div>
-      );
-    }
 
-    return (
-      <div className="space-y-6">
-        {/* Stats Cards */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 text-white">
-              <div className="text-2xl font-bold">{stats.totalCourses}</div>
-              <div className="text-blue-100">Tổng khóa học</div>
-            </div>
-            <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-4 text-white">
-              <div className="text-2xl font-bold">{stats.activeCourses}</div>
-              <div className="text-green-100">Đang học</div>
-            </div>
-            <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-4 text-white">
-              <div className="text-2xl font-bold">{stats.completedCourses}</div>
-              <div className="text-purple-100">Hoàn thành</div>
-            </div>
-          </div>
-        )}
-
-        {/* Learning Analytics */}
-        {stats && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <BarChart3 className="h-5 w-5 text-green-600 mr-2" />
-              Tổng quan tiến độ học tập
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Overall Progress */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-600">Tiến độ tổng thể</span>
-                  <span className="text-sm font-medium text-gray-900">
-                    {stats.overallProgress}%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div 
-                    className="bg-gradient-to-r from-green-500 to-lime-500 h-3 rounded-full transition-all duration-300"
-                    style={{ width: `${stats.overallProgress}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              {/* Recent Activity */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-medium text-gray-700 flex items-center">
-                  <Clock className="h-4 w-4 text-gray-500 mr-1" />
-                  Hoạt động gần đây
-                </h4>
-                <div className="space-y-2">
-                  {enrollments.slice(0, 2).map((enrollment, index) => (
-                    <div key={index} className="flex items-center text-sm text-gray-600">
-                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                      <span className="truncate">
-                        Học {enrollment.courseId.title} - {enrollment.progress.completionPercentage}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Course List */}
-        <div className="grid gap-6">
-          {enrollments.map((enrollment) => (
-            <div key={enrollment._id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-start space-x-4">
-                <div className="w-20 h-20 bg-gradient-to-r from-green-100 to-lime-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <BookOpen className="h-8 w-8 text-green-600" />
-                </div>
-                
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">{enrollment.courseId.title}</h3>
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                      enrollment.status === 'completed'
-                        ? 'bg-green-100 text-green-800'
-                        : enrollment.status === 'active'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {enrollment.status === 'completed' ? 'Hoàn thành' : 
-                       enrollment.status === 'active' ? 'Đang học' : 'Tạm dừng'}
-                    </span>
-                  </div>
-                  
-                  <p className="text-gray-600 mb-3 line-clamp-2">{enrollment.courseId.description}</p>
-                  
-                  <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
-                    <span>📚 {enrollment.courseId.lessonsCount} bài học</span>
-                    <span>⏱️ {enrollment.courseId.duration}</span>
-                    <span>📊 {enrollment.courseId.level}</span>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="mb-4">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-gray-600">Tiến độ</span>
-                      <span className="text-sm font-medium text-gray-900">
-                        {enrollment.progress.completionPercentage}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-green-500 to-lime-500 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${enrollment.progress.completionPercentage}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex space-x-3">
-                    <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center space-x-2">
-                      <Play className="h-4 w-4" />
-                      <span>Tiếp tục học</span>
-                    </button>
-                    
-                    <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
-                      Xem chi tiết
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Add More Courses Button */}
-        <div className="text-center pt-6">
-          <button 
-            onClick={onNavigateToCourses}
-            className="bg-gradient-to-r from-green-500 to-lime-500 hover:from-green-600 hover:to-lime-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
-          >
-            Khám phá thêm khóa học
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  const renderAchievementsContent = () => (
-    <div className="space-y-6">
-      <div className="text-center py-12">
-        <div className="w-24 h-24 bg-gradient-to-r from-green-100 to-lime-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <Award className="h-12 w-12 text-green-500" />
-        </div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-3">Chưa có thành tích nào</h3>
-        <p className="text-gray-600 mb-6 max-w-md mx-auto">
-          Tiếp tục học tập chăm chỉ để mở khóa các thành tích đầu tiên của bạn!
-        </p>
-        <div className="inline-flex items-center space-x-2 text-green-600 font-medium">
-          <Target className="h-5 w-5" />
-          <span>Hãy bắt đầu với bài học đầu tiên</span>
-        </div>
-      </div>
-    </div>
-  );
 
   const renderContent = () => {
     switch (activeTab) {
@@ -668,10 +459,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigateToCourses }
         return renderProfileContent();
       case 'password':
         return renderPasswordContent();
-      case 'courses':
-        return renderCoursesContent();
-      case 'achievements':
-        return renderAchievementsContent();
       default:
         return renderProfileContent();
     }
