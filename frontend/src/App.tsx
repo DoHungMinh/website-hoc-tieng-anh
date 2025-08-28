@@ -15,14 +15,13 @@ import CourseApp from './components/CourseApp';
 import NewCourseNotification from './components/NewCourseNotification';
 import UserProfile from './components/UserProfile';
 import IELTSExamList from './components/ielts/IELTSExamList';
-import ProgressTracker from './components/ProgressTracker';
 import AccountDisabledNotification from './components/AccountDisabledNotification';
 import { useAuthStore } from './stores/authStore';
 import { useHeartbeat } from './hooks/useHeartbeat';
 import { useActivityHeartbeat } from './hooks/useActivityHeartbeat';
 import { setupGlobalErrorInterceptor } from './utils/errorInterceptor';
 
-type Page = 'home' | 'login' | 'register' | 'auth' | 'placement-test' | 'dashboard' | 'courses' | 'profile' | 'practice' | 'progress-tracker';
+type Page = 'home' | 'login' | 'register' | 'auth' | 'placement-test' | 'dashboard' | 'courses' | 'profile' | 'practice';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -40,7 +39,7 @@ function App() {
   }, []);
 
   const handleNavigation = (page: string) => {
-    const validPages: Page[] = ['home', 'login', 'register', 'auth', 'placement-test', 'dashboard', 'courses', 'profile', 'practice', 'progress-tracker'];
+    const validPages: Page[] = ['home', 'login', 'register', 'auth', 'placement-test', 'dashboard', 'courses', 'profile', 'practice'];
     if (validPages.includes(page as Page)) {
       // Nếu navigate đến 'auth', chuyển đến 'register' (trang đăng ký)
       if (page === 'auth') {
@@ -78,9 +77,6 @@ function App() {
     }
     if (currentPage === 'profile') {
       return <UserProfile onBack={() => setCurrentPage('home')} onNavigateToCourses={() => setCurrentPage('courses')} />;
-    }
-    if (currentPage === 'progress-tracker') {
-      return <ProgressTracker />;
     }
   }
 

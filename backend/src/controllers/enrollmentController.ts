@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import type { IEnrollment } from '../models/Enrollment.js';
-import Enrollment from '../models/Enrollment.js';
+import type { IEnrollment } from '../models/Enrollment';
+import Enrollment from '../models/Enrollment';
 import Course from '../models/Course';
 import { Progress } from '../models/Progress';
 import mongoose from 'mongoose';
