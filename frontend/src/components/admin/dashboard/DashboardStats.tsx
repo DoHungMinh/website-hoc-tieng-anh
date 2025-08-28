@@ -16,7 +16,7 @@ interface StatItem {
 
 interface OverviewData {
     totalUsers: StatItem;
-    activeCourses: StatItem;
+    totalCourses: StatItem;
     totalExams: StatItem;
     monthlyRevenue: StatItem;
     activeUsers: StatItem;
@@ -75,16 +75,16 @@ const DashboardStats: React.FC = () => {
     if (loading) {
         return (
             <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {[1, 2, 3, 4, 5, 6].map((item) => (
                         <div
                             key={item}
-                            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                            className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl"
                         >
                             <div className="animate-pulse">
-                                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                                <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
-                                <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+                                <div className="w-3/4 h-4 mb-2 bg-gray-200 rounded"></div>
+                                <div className="w-1/2 h-8 mb-2 bg-gray-200 rounded"></div>
+                                <div className="w-1/3 h-3 bg-gray-200 rounded"></div>
                             </div>
                         </div>
                     ))}
@@ -95,11 +95,11 @@ const DashboardStats: React.FC = () => {
 
     if (error) {
         return (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="p-4 border border-red-200 rounded-lg bg-red-50">
                 <p className="text-red-600">{error}</p>
                 <button
                     onClick={fetchOverviewStats}
-                    className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                    className="px-4 py-2 mt-2 text-white bg-red-600 rounded hover:bg-red-700"
                 >
                     Thử lại
                 </button>
@@ -112,7 +112,7 @@ const DashboardStats: React.FC = () => {
     // Tạo array stats theo đúng thứ tự trong giao diện
     const displayStats = [
         {
-            title: "Tổng người dùng",
+            title: "Tổng số người dùng",
             value: stats.totalUsers.display,
             change: `+${stats.totalUsers.growth}%`,
             changeType: stats.totalUsers.growth >= 0 ? "increase" : "decrease",
@@ -120,13 +120,12 @@ const DashboardStats: React.FC = () => {
             color: "bg-blue-500",
         },
         {
-            title: "Khóa học hoạt động",
-            value: stats.activeCourses.display,
-            change: `+${stats.activeCourses.growth}`,
-            changeType:
-                stats.activeCourses.growth >= 0 ? "increase" : "decrease",
-            icon: BookOpen,
-            color: "bg-green-500",
+            title: "Tổng số người dùng đang hoạt động",
+            value: stats.activeUsers.display,
+            change: `+${stats.activeUsers.growth}%`,
+            changeType: stats.activeUsers.growth >= 0 ? "increase" : "decrease",
+            icon: Activity,
+            color: "bg-indigo-500",
         },
         {
             title: "Đề thi",
@@ -146,12 +145,13 @@ const DashboardStats: React.FC = () => {
             color: "bg-purple-500",
         },
         {
-            title: "Người dùng hoạt động",
-            value: stats.activeUsers.display,
-            change: `+${stats.activeUsers.growth}%`,
-            changeType: stats.activeUsers.growth >= 0 ? "increase" : "decrease",
-            icon: Activity,
-            color: "bg-indigo-500",
+            title: "Tổng số khóa học",
+            value: stats.totalCourses.display,
+            change: `+${stats.totalCourses.growth}`,
+            changeType:
+                stats.totalCourses.growth >= 0 ? "increase" : "decrease",
+            icon: BookOpen,
+            color: "bg-green-500",
         },
         {
             title: "Tỷ lệ hoàn thành",
@@ -167,17 +167,17 @@ const DashboardStats: React.FC = () => {
     return (
         <div className="space-y-6">
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {displayStats.map((stat, index) => {
                     const Icon = stat.icon;
                     return (
                         <div
                             key={index}
-                            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                            className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl"
                         >
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-gray-600 mb-1">
+                                    <p className="mb-1 text-sm text-gray-600">
                                         {stat.title}
                                     </p>
                                     <p className="text-3xl font-bold text-gray-900">
@@ -194,7 +194,7 @@ const DashboardStats: React.FC = () => {
                                     </p>
                                 </div>
                                 <div className={`${stat.color} p-3 rounded-lg`}>
-                                    <Icon className="h-6 w-6 text-white" />
+                                    <Icon className="w-6 h-6 text-white" />
                                 </div>
                             </div>
                         </div>
@@ -203,13 +203,13 @@ const DashboardStats: React.FC = () => {
             </div>
 
             {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {/* User Growth Chart */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <div className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
+                    <h3 className="mb-4 text-lg font-semibold text-gray-900">
                         Tăng trưởng người dùng
                     </h3>
-                    <div className="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                    <div className="flex items-center justify-center h-64 rounded-lg bg-gray-50">
                         <p className="text-gray-500">
                             Biểu đồ sẽ được hiển thị ở đây
                         </p>
@@ -217,11 +217,11 @@ const DashboardStats: React.FC = () => {
                 </div>
 
                 {/* Revenue Chart */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <div className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
+                    <h3 className="mb-4 text-lg font-semibold text-gray-900">
                         Doanh thu theo tháng
                     </h3>
-                    <div className="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                    <div className="flex items-center justify-center h-64 rounded-lg bg-gray-50">
                         <p className="text-gray-500">
                             Biểu đồ sẽ được hiển thị ở đây
                         </p>
@@ -230,18 +230,18 @@ const DashboardStats: React.FC = () => {
             </div>
 
             {/* Recent Activity */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
+                <h3 className="mb-4 text-lg font-semibold text-gray-900">
                     Hoạt động gần đây
                 </h3>
                 <div className="space-y-4">
                     {[1, 2, 3, 4, 5].map((item) => (
                         <div
                             key={item}
-                            className="flex items-center space-x-3 py-2"
+                            className="flex items-center py-2 space-x-3"
                         >
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                <Users className="h-4 w-4 text-blue-600" />
+                            <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full">
+                                <Users className="w-4 h-4 text-blue-600" />
                             </div>
                             <div className="flex-1">
                                 <p className="text-sm text-gray-900">

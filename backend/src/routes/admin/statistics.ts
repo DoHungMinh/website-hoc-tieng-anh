@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { User } from "../../models/User";
+import Course from "../../models/Course";
 import { authenticateToken, requireAdmin } from "../../middleware/auth";
 
 const router = Router();
@@ -46,9 +47,33 @@ router.get(
                 userGrowthRate = 100;
             }
 
-            // Khóa học hoạt động (mock data - có thể thay thế bằng Course model)
-            const activeCourses = 47;
-            const courseGrowthRate = 3;
+            // Tổng số khóa học từ database
+            const totalCourses = await Course.countDocuments();
+
+            // Tính khóa học mới trong tháng hiện tại
+            const newCoursesThisMonth = await Course.countDocuments({
+                createdAt: { $gte: currentMonth },
+            });
+
+            // Tính khóa học mới trong tháng trước
+            const newCoursesPreviousMonth = await Course.countDocuments({
+                createdAt: {
+                    $gte: previousMonth,
+                    $lt: currentMonth,
+                },
+            });
+
+            // Tính tỷ lệ tăng trưởng khóa học
+            let courseGrowthRate = 0;
+            if (newCoursesPreviousMonth > 0) {
+                courseGrowthRate = Math.round(
+                    ((newCoursesThisMonth - newCoursesPreviousMonth) /
+                        newCoursesPreviousMonth) *
+                        100
+                );
+            } else if (newCoursesThisMonth > 0) {
+                courseGrowthRate = 100;
+            }
 
             // Đề thi (mock data - có thể thay thế bằng Test/Exam model)
             const totalExams = 156;
@@ -80,10 +105,10 @@ router.get(
                         growth: userGrowthRate,
                         display: totalUsers.toLocaleString(),
                     },
-                    activeCourses: {
-                        value: activeCourses,
+                    totalCourses: {
+                        value: totalCourses,
                         growth: courseGrowthRate,
-                        display: activeCourses.toString(),
+                        display: totalCourses.toString(),
                     },
                     totalExams: {
                         value: totalExams,
