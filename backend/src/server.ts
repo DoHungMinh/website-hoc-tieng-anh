@@ -75,6 +75,15 @@ const heartbeatLimiter = rateLimit({
     },
 });
 
+// Admin statistics rate limiter - moderate limits for admin dashboard
+const adminStatsLimiter = rateLimit({
+    windowMs: 60000, // 1 minute
+    max: 60, // allow 60 requests per minute for admin statistics
+    message: "Too many statistics requests, please try again later.",
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // CORS configuration
 app.use(
     cors({
@@ -89,10 +98,16 @@ app.use(
 // Apply heartbeat-specific rate limiting first
 app.use("/api/user/heartbeat", heartbeatLimiter);
 
+// Apply admin statistics rate limiter
+app.use("/api/admin/statistics", adminStatsLimiter);
+
 // Apply general rate limiting to all other routes
 app.use((req, res, next) => {
-    if (req.path.includes("/heartbeat")) {
-        // Skip general rate limiting for heartbeat
+    if (
+        req.path.includes("/heartbeat") ||
+        req.path.includes("/admin/statistics")
+    ) {
+        // Skip general rate limiting for heartbeat and admin statistics
         return next();
     }
     return limiter(req, res, next);

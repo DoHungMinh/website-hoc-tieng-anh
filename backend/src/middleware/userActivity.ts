@@ -3,7 +3,11 @@ import { User } from "../models/User";
 
 // Cache to track last update time for each user to prevent excessive DB updates
 const userActivityCache = new Map<string, number>();
-const ACTIVITY_UPDATE_THRESHOLD = 30000; // Only update if last update was more than 30 seconds ago
+const ACTIVITY_UPDATE_THRESHOLD = 10000; // Only update if last update was more than 10 seconds ago
+
+// Counter for cache cleanup optimization
+let cleanupCounter = 0;
+const CACHE_CLEANUP_INTERVAL = 12; // Clean cache every 12 cycles (12 * 5s = 1 minute)
 
 // Middleware to update user online status when they make requests
 export const updateUserActivity = async (
@@ -20,9 +24,7 @@ export const updateUserActivity = async (
 
             // Only update if enough time has passed since last update
             if (currentTime - lastUpdate > ACTIVITY_UPDATE_THRESHOLD) {
-                console.log(
-                    `Updating activity for user: ${req.user.email} on ${req.method} ${req.originalUrl}`
-                );
+                // Uncomment for debugging: console.log(`Updating activity for user: ${req.user.email}`);
 
                 // Update user's online status and last seen time
                 await User.findByIdAndUpdate(
@@ -68,13 +70,15 @@ export const setUserOffline = async (userId: string) => {
 // Function to set inactive users offline (run periodically)
 export const updateInactiveUsers = async () => {
     try {
-        // Set users offline if they haven't been active for more than 5 minutes
-        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        // Set users offline if they haven't been active for more than 2 minutes
+        // But exclude admin users to prevent dashboard reload issues
+        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
 
-        await User.updateMany(
+        const result = await User.updateMany(
             {
                 isOnline: true,
-                lastSeen: { $lt: fiveMinutesAgo },
+                lastSeen: { $lt: twoMinutesAgo },
+                role: { $ne: "admin" }, // Exclude admin users
             },
             {
                 isOnline: false,
@@ -82,22 +86,39 @@ export const updateInactiveUsers = async () => {
             { runValidators: false }
         );
 
-        // Clean up old cache entries (older than 1 hour)
-        const oneHourAgo = Date.now() - 60 * 60 * 1000;
-        for (const [userId, lastUpdate] of userActivityCache.entries()) {
-            if (lastUpdate < oneHourAgo) {
-                userActivityCache.delete(userId);
-            }
-        }
+        // Increment cleanup counter
+        cleanupCounter++;
 
-        console.log("Updated inactive users offline status and cleaned cache");
+        // Clean up old cache entries only every CACHE_CLEANUP_INTERVAL cycles (every ~1 minute)
+        if (cleanupCounter >= CACHE_CLEANUP_INTERVAL) {
+            const oneHourAgo = Date.now() - 60 * 60 * 1000;
+            let cleanedCount = 0;
+
+            for (const [userId, lastUpdate] of userActivityCache.entries()) {
+                if (lastUpdate < oneHourAgo) {
+                    userActivityCache.delete(userId);
+                    cleanedCount++;
+                }
+            }
+
+            if (result.modifiedCount > 0 || cleanedCount > 0) {
+                console.log(
+                    `🔄 User activity cleanup completed - ${result.modifiedCount} users set offline, ${cleanedCount} cache entries cleaned`
+                );
+            }
+            cleanupCounter = 0; // Reset counter
+        } else if (result.modifiedCount > 0) {
+            console.log(
+                `🔄 ${result.modifiedCount} inactive users set offline`
+            );
+        }
     } catch (error) {
         console.error("Error updating inactive users:", error);
     }
 };
 
-// Set up periodic cleanup of inactive users (every 2 minutes)
+// Set up periodic cleanup of inactive users (every 30 seconds)
 export const startUserActivityCleanup = () => {
-    setInterval(updateInactiveUsers, 2 * 60 * 1000); // Run every 2 minutes
-    console.log("🕐 User activity cleanup started - running every 2 minutes");
+    setInterval(updateInactiveUsers, 30 * 1000); // Run every 30 seconds
+    console.log("🕐 User activity cleanup started - running every 30 seconds");
 };
