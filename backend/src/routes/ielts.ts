@@ -8,6 +8,9 @@ import {
   toggleExamStatus,
   uploadAudio,
   getExamStats,
+  submitTestResult,
+  getUserTestHistory,
+  getTestResultDetail,
   upload
 } from '../controllers/ieltsController';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
@@ -29,5 +32,10 @@ router.post('/upload-audio', authenticateToken, requireAdmin, upload.single('aud
 
 // Statistics route
 router.get('/admin/stats', authenticateToken, requireAdmin, getExamStats);
+
+// Test result routes (for students)
+router.post('/:examId/submit', authenticateToken, submitTestResult);
+router.get('/results/history', authenticateToken, getUserTestHistory);
+router.get('/results/:resultId', authenticateToken, getTestResultDetail);
 
 export default router;

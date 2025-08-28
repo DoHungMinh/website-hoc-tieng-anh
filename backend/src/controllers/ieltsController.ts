@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { IELTSExam } from '../models/IELTSExam';
+import IELTSTestResult from '../models/IELTSTestResult';
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 import { Readable } from 'stream';
@@ -438,5 +439,225 @@ export const getExamStats = async (req: Request, res: Response) => {
       message: 'Lỗi khi lấy thống kê đề thi',
       error: error instanceof Error ? error.message : 'Unknown error'
     });
+  }
+};
+
+// Submit test result
+export const submitTestResult = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { examId } = req.params;
+    const { answers, timeSpent } = req.body;
+    
+    // Get user from auth middleware
+    const userId = req.user?.id || req.user?._id;
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'Vui lòng đăng nhập để lưu kết quả'
+      });
+      return;
+    }
+
+    // Get exam info
+    const exam = await IELTSExam.findById(examId);
+    if (!exam) {
+      res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy đề thi'
+      });
+      return;
+    }
+
+    // Calculate score by collecting all questions
+    const allQuestions: any[] = [];
+    if (exam.type === 'reading' && exam.passages) {
+      exam.passages.forEach(passage => {
+        allQuestions.push(...passage.questions);
+      });
+    } else if (exam.type === 'listening' && exam.sections) {
+      exam.sections.forEach(section => {
+        allQuestions.push(...section.questions);
+      });
+    }
+
+    // Process answers and calculate score
+    const processedAnswers = [];
+    let correctCount = 0;
+
+    for (const [questionId, userAnswer] of Object.entries(answers)) {
+      const question = allQuestions.find(q => q.id === questionId);
+      const isCorrect = question && question.correctAnswer !== undefined && 
+                       userAnswer === question.correctAnswer;
+      
+      if (isCorrect) correctCount++;
+
+      processedAnswers.push({
+        questionId,
+        userAnswer,
+        correctAnswer: question?.correctAnswer,
+        isCorrect: !!isCorrect
+      });
+    }
+
+    const totalQuestions = allQuestions.length;
+    const percentage = Math.round((correctCount / totalQuestions) * 100);
+
+    // Calculate IELTS band score if possible
+    let bandScore: number | undefined;
+    let description: string | undefined;
+    
+    if (exam.type === 'listening' || exam.type === 'reading') {
+      // Use IELTS scoring tables (simplified)
+      if (exam.type === 'listening') {
+        if (correctCount >= 38) bandScore = 9.0;
+        else if (correctCount >= 36) bandScore = 8.0;
+        else if (correctCount >= 32) bandScore = 7.0;
+        else if (correctCount >= 26) bandScore = 6.0;
+        else if (correctCount >= 18) bandScore = 5.0;
+        else if (correctCount >= 12) bandScore = 4.0;
+        else bandScore = 3.0;
+      } else if (exam.type === 'reading') {
+        if (correctCount >= 38) bandScore = 9.0;
+        else if (correctCount >= 36) bandScore = 8.0;
+        else if (correctCount >= 32) bandScore = 7.0;
+        else if (correctCount >= 27) bandScore = 6.0;
+        else if (correctCount >= 19) bandScore = 5.0;
+        else if (correctCount >= 13) bandScore = 4.0;
+        else bandScore = 3.0;
+      }
+
+      if (bandScore && bandScore >= 8.5) description = 'Xuất sắc';
+      else if (bandScore && bandScore >= 7.0) description = 'Tốt';
+      else if (bandScore && bandScore >= 6.0) description = 'Khá';
+      else if (bandScore && bandScore >= 5.0) description = 'Trung bình';
+      else description = 'Cần cải thiện';
+    }
+
+    // Save result to database
+    const testResult = new IELTSTestResult({
+      userId,
+      examId,
+      examTitle: exam.title,
+      examType: exam.type,
+      answers: processedAnswers,
+      score: {
+        correctAnswers: correctCount,
+        totalQuestions,
+        percentage,
+        bandScore,
+        description
+      },
+      timeSpent,
+      completedAt: new Date()
+    });
+
+    await testResult.save();
+
+    res.json({
+      success: true,
+      message: 'Kết quả đã được lưu thành công',
+      data: {
+        resultId: testResult._id,
+        score: testResult.score
+      }
+    });
+
+  } catch (error) {
+    console.error('Error submitting test result:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lưu kết quả bài thi',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    return;
+  }
+};
+
+// Get user's test history
+export const getUserTestHistory = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id || req.user?._id;
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'Vui lòng đăng nhập'
+      });
+      return;
+    }
+
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const results = await IELTSTestResult.find({ userId })
+      .sort({ completedAt: -1 })
+      .limit(Number(limit))
+      .skip(skip)
+      .select('-answers'); // Exclude detailed answers for list view
+
+    const totalResults = await IELTSTestResult.countDocuments({ userId });
+
+    res.json({
+      success: true,
+      data: results,
+      pagination: {
+        currentPage: Number(page),
+        totalPages: Math.ceil(totalResults / Number(limit)),
+        totalResults,
+        hasNext: skip + results.length < totalResults,
+        hasPrev: Number(page) > 1
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching test history:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lấy lịch sử làm bài',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    return;
+  }
+};
+
+// Get detailed test result
+export const getTestResultDetail = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { resultId } = req.params;
+    const userId = req.user?.id || req.user?._id;
+    
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'Vui lòng đăng nhập'
+      });
+      return;
+    }
+
+    const result = await IELTSTestResult.findOne({
+      _id: resultId,
+      userId
+    });
+
+    if (!result) {
+      res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy kết quả bài thi'
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: result
+    });
+
+  } catch (error) {
+    console.error('Error fetching test result detail:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lấy chi tiết kết quả',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    return;
   }
 };

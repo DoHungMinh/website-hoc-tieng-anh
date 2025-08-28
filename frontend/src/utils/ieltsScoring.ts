@@ -130,6 +130,17 @@ export function getBandScoreColor(bandScore: number): string {
 }
 
 /**
+ * Get band score background color for circular display
+ */
+export function getBandScoreBackground(bandScore: number): string {
+  if (bandScore >= 8.5) return 'bg-green-600';
+  if (bandScore >= 7.5) return 'bg-lime-600';
+  if (bandScore >= 6.5) return 'bg-yellow-600';
+  if (bandScore >= 5.5) return 'bg-orange-600';
+  return 'bg-red-600';
+}
+
+/**
  * Simple score calculation for tests without correct answers
  * This maintains compatibility with existing tests
  */

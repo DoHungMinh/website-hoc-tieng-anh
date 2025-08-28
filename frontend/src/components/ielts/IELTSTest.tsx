@@ -10,11 +10,9 @@ import {
   Timer,
   ArrowLeft,
   FileText,
-  BookOpen,
-  Award,
-  Target
+  BookOpen
 } from 'lucide-react';
-import { calculateIELTSScore, calculateSimpleScore, getBandScoreColor } from '../../utils/ieltsScoring';
+import { calculateIELTSScore, calculateSimpleScore, getBandScoreColor, getBandScoreBackground } from '../../utils/ieltsScoring';
 
 interface Question {
   id: string;
@@ -67,7 +65,9 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string | number>>({});
   const [testStarted, setTestStarted] = useState(false);
+  const [testStartTime, setTestStartTime] = useState<number>(0);
   const [showResults, setShowResults] = useState(false);
+  const [showDetailedResults, setShowDetailedResults] = useState(false);
 
   // Fetch exam data
   useEffect(() => {
@@ -257,14 +257,100 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
     };
   };
 
-  const handleSubmitTest = () => {
+  const getQuestionDetails = () => {
+    // Get all questions from all sections/passages with their details
+    const questionDetails: Array<{
+      id: string;
+      question: string;
+      type: string;
+      options?: string[];
+      correctAnswer?: string | number;
+      userAnswer?: string | number;
+      isCorrect?: boolean;
+      sectionTitle?: string;
+    }> = [];
+    
+    if (examData?.type === 'reading' && examData.passages) {
+      examData.passages.forEach((passage, passageIndex) => {
+        passage.questions.forEach(question => {
+          const userAnswer = answers[question.id];
+          const isCorrect = question.correctAnswer !== undefined && 
+                           userAnswer === question.correctAnswer;
+          
+          questionDetails.push({
+            id: question.id,
+            question: question.question,
+            type: question.type,
+            options: question.options,
+            correctAnswer: question.correctAnswer,
+            userAnswer: userAnswer,
+            isCorrect: isCorrect,
+            sectionTitle: `Passage ${passageIndex + 1}: ${passage.title}`
+          });
+        });
+      });
+    } else if (examData?.type === 'listening' && examData.sections) {
+      examData.sections.forEach((section, sectionIndex) => {
+        section.questions.forEach(question => {
+          const userAnswer = answers[question.id];
+          const isCorrect = question.correctAnswer !== undefined && 
+                           userAnswer === question.correctAnswer;
+          
+          questionDetails.push({
+            id: question.id,
+            question: question.question,
+            type: question.type,
+            options: question.options,
+            correctAnswer: question.correctAnswer,
+            userAnswer: userAnswer,
+            isCorrect: isCorrect,
+            sectionTitle: `Section ${sectionIndex + 1}: ${section.title}`
+          });
+        });
+      });
+    }
+    
+    return questionDetails;
+  };
+
+  const handleSubmitTest = async () => {
     if (confirm('Bạn có chắc chắn muốn nộp bài không?')) {
+      // Save result to backend
+      try {
+        const token = localStorage.getItem('token');
+        if (token && examData) {
+          const timeSpent = Date.now() - testStartTime;
+          
+          const response = await fetch(`/api/ielts/${examData._id}/submit`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              answers: answers,
+              timeSpent: Math.floor(timeSpent / 1000) // Convert to seconds
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log('Test result saved:', data);
+          } else {
+            console.error('Failed to save test result:', response.status);
+          }
+        }
+      } catch (error) {
+        console.error('Error saving test result:', error);
+      }
+      
       setShowResults(true);
     }
   };
 
   const handleStartTest = () => {
     setTestStarted(true);
+    setTestStartTime(Date.now());
   };
 
   const nextQuestion = () => {
@@ -318,7 +404,194 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
     );
   }
 
-  // Show results screen
+  // Show detailed results screen (check this FIRST)
+  if (showDetailedResults) {
+    const questionDetails = getQuestionDetails();
+    const testResult = calculateIELTSScoring();
+
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <button
+                onClick={() => setShowDetailedResults(false)}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                <ArrowLeft className="h-5 w-5" />
+                Quay lại kết quả tổng quát
+              </button>
+              <h1 className="text-2xl font-bold text-gray-900">Chi tiết kết quả bài thi</h1>
+              <div></div>
+            </div>
+
+            {/* Summary stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+              <div className="bg-blue-50 rounded-lg p-4 text-center">
+                <div className="text-xl font-bold text-blue-600">{testResult.correctAnswers}</div>
+                <div className="text-blue-600 text-sm">Câu đúng</div>
+              </div>
+              <div className="bg-red-50 rounded-lg p-4 text-center">
+                <div className="text-xl font-bold text-red-600">{testResult.totalQuestions - testResult.correctAnswers}</div>
+                <div className="text-red-600 text-sm">Câu sai</div>
+              </div>
+              <div className="bg-yellow-50 rounded-lg p-4 text-center">
+                <div className="text-xl font-bold text-yellow-600">{testResult.percentage}%</div>
+                <div className="text-yellow-600 text-sm">Tỷ lệ chính xác</div>
+              </div>
+              {testResult.bandScore > 0 && (
+                <div className={`rounded-lg p-4 text-center ${getBandScoreColor(testResult.bandScore)}`}>
+                  <div className="text-xl font-bold">{testResult.bandScore}</div>
+                  <div className="text-sm">IELTS Band</div>
+                </div>
+              )}
+            </div>
+
+            {/* Questions by section */}
+            <div className="space-y-6">
+              {(() => {
+                const groupedQuestions: { [key: string]: typeof questionDetails } = {};
+                questionDetails.forEach(q => {
+                  const section = q.sectionTitle || 'General';
+                  if (!groupedQuestions[section]) {
+                    groupedQuestions[section] = [];
+                  }
+                  groupedQuestions[section].push(q);
+                });
+
+                return Object.entries(groupedQuestions).map(([sectionTitle, questions]) => (
+                  <div key={sectionTitle} className="border rounded-lg p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">{sectionTitle}</h3>
+                    <div className="space-y-4">
+                      {questions.map((question, index) => (
+                        <div key={question.id} className={`border rounded-lg p-4 ${
+                          question.isCorrect ? 'border-green-200 bg-green-50' : 
+                          question.correctAnswer !== undefined ? 'border-red-200 bg-red-50' : 
+                          'border-gray-200 bg-gray-50'
+                        }`}>
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
+                                question.isCorrect ? 'bg-green-500' : 
+                                question.correctAnswer !== undefined ? 'bg-red-500' : 
+                                'bg-gray-500'
+                              }`}>
+                                {index + 1}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {question.isCorrect ? (
+                                  <CheckCircle className="h-5 w-5 text-green-500" />
+                                ) : question.correctAnswer !== undefined ? (
+                                  <AlertCircle className="h-5 w-5 text-red-500" />
+                                ) : (
+                                  <div className="h-5 w-5"></div>
+                                )}
+                                <span className="text-sm font-medium text-gray-600">{question.type}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mb-3">
+                            <p className="text-gray-900 font-medium">{question.question}</p>
+                          </div>
+
+                          {/* Multiple choice options */}
+                          {question.type === 'multiple-choice' && question.options && (
+                            <div className="space-y-2 mb-3">
+                              {question.options.map((option, optionIndex) => (
+                                <div key={optionIndex} className={`p-2 rounded border ${
+                                  question.correctAnswer === optionIndex ? 'border-green-500 bg-green-100' :
+                                  question.userAnswer === optionIndex ? 'border-red-500 bg-red-100' :
+                                  'border-gray-200'
+                                }`}>
+                                  <span className="font-medium">{String.fromCharCode(65 + optionIndex)}. </span>
+                                  {option}
+                                  {question.correctAnswer === optionIndex && (
+                                    <span className="ml-2 text-green-600 font-medium">(Đáp án đúng)</span>
+                                  )}
+                                  {question.userAnswer === optionIndex && question.correctAnswer !== optionIndex && (
+                                    <span className="ml-2 text-red-600 font-medium">(Bạn đã chọn)</span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* True/False/Not Given options */}
+                          {question.type === 'true-false-notgiven' && (
+                            <div className="space-y-2 mb-3">
+                              {['True', 'False', 'Not Given'].map((option) => (
+                                <div key={option} className={`p-2 rounded border ${
+                                  question.correctAnswer === option ? 'border-green-500 bg-green-100' :
+                                  question.userAnswer === option ? 'border-red-500 bg-red-100' :
+                                  'border-gray-200'
+                                }`}>
+                                  {option}
+                                  {question.correctAnswer === option && (
+                                    <span className="ml-2 text-green-600 font-medium">(Đáp án đúng)</span>
+                                  )}
+                                  {question.userAnswer === option && question.correctAnswer !== option && (
+                                    <span className="ml-2 text-red-600 font-medium">(Bạn đã chọn)</span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Fill in the blank */}
+                          {(question.type === 'fill-blank' || question.type === 'matching') && (
+                            <div className="space-y-2 mb-3">
+                              <div className="p-3 bg-gray-100 rounded">
+                                <div className="text-sm text-gray-600">Câu trả lời của bạn:</div>
+                                <div className={`font-medium ${question.isCorrect ? 'text-green-600' : 'text-red-600'}`}>
+                                  {question.userAnswer || '(Không trả lời)'}
+                                </div>
+                              </div>
+                              {question.correctAnswer && (
+                                <div className="p-3 bg-green-100 rounded">
+                                  <div className="text-sm text-green-600">Đáp án đúng:</div>
+                                  <div className="font-medium text-green-700">{question.correctAnswer}</div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-4 justify-center mt-8">
+              <button
+                onClick={() => setShowDetailedResults(false)}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors"
+              >
+                Quay lại kết quả tổng quát
+              </button>
+              <button
+                onClick={handleBackToCenter}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors"
+              >
+                Quay lại IELTS Center
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors"
+              >
+                Làm lại bài thi
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show results screen (check this AFTER detailed results)
   if (showResults) {
     const testResult = calculateIELTSScoring();
     const totalQuestions = examData.totalQuestions;
@@ -335,7 +608,7 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
             {/* IELTS Band Score Display */}
             {testResult.bandScore > 0 && (
               <div className="mb-8">
-                <div className={`inline-flex items-center justify-center w-24 h-24 rounded-full text-4xl font-bold text-white mb-4 ${getBandScoreColor(testResult.bandScore)}`}>
+                <div className={`inline-flex items-center justify-center w-24 h-24 rounded-full text-4xl font-bold text-white mb-4 ${getBandScoreBackground(testResult.bandScore)}`}>
                   {testResult.bandScore}
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">IELTS Band Score</h2>
@@ -370,6 +643,13 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                 className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors"
               >
                 Quay lại IELTS Center
+              </button>
+              <button
+                onClick={() => setShowDetailedResults(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center gap-2"
+              >
+                <FileText className="h-5 w-5" />
+                Xem chi tiết kết quả
               </button>
               <button
                 onClick={() => window.location.reload()}
