@@ -14,17 +14,7 @@ dotenv.config();
 const connectDB = require("../config/database");
 
 // Import routes
-import authRoutes from "./routes/auth";
-import assessmentRoutes from "./routes/assessment";
-import chatbotRoutes from "./routes/chatbot";
-import learningRoutes from "./routes/learning";
-import progressRoutes from "./routes/progress";
-import userRoutes from "./routes/user";
-import ieltsRoutes from "./routes/ielts";
-import coursesRoutes from "./routes/courses";
-import simpleEnrollmentRoutes from "./routes/simpleEnrollment";
-import adminStatisticsRoutes from "./routes/admin/statistics";
-// import enrollmentRoutes from './routes/enrollment'; // Tạm tắt để fix module resolution
+import allRoutes from "./routes/index";
 
 // Import middleware
 import { errorHandler } from "./middleware/errorHandler";
@@ -133,18 +123,8 @@ app.get("/health", (req: Request, res: Response) => {
     });
 });
 
-// API Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/assessment", assessmentRoutes);
-app.use("/api/chatbot", chatbotRoutes);
-app.use("/api/learning", learningRoutes);
-app.use("/api/progress", progressRoutes);
-app.use("/api/user", userRoutes);
-app.use("/api/ielts", ieltsRoutes);
-app.use("/api/courses", coursesRoutes);
-app.use("/api/enrollment", simpleEnrollmentRoutes);
-app.use("/api/admin/statistics", adminStatisticsRoutes);
-// app.use('/api/enrollment-advanced', enrollmentRoutes); // Tạm tắt để fix module resolution
+// API Routes - All routes are now consolidated in one file
+app.use("/api", allRoutes);
 
 // Test database endpoint
 app.get("/api/test-db", async (req: Request, res: Response) => {
