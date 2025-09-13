@@ -655,21 +655,21 @@ router.post(
     realDataChatbotController.generateLearningRecommendations
 );
 
-// User data management endpoints
+// User data management endpoints (sử dụng realData controller cho authenticated users)
 router.get(
     "/chatbot/history",
     authenticateToken,
-    simpleChatbotController.getChatHistory
+    realDataChatbotController.getChatHistory
 );
 router.get(
     "/chatbot/session/:sessionId",
     authenticateToken,
-    simpleChatbotController.getChatSession
+    realDataChatbotController.getChatSession
 );
 router.delete(
     "/chatbot/history",
     authenticateToken,
-    simpleChatbotController.clearChatHistory
+    realDataChatbotController.clearChatHistory
 );
 
 // =================================================================

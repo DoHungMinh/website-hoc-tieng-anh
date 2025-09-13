@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, BookOpen, ArrowRight, ArrowLeft } from 'lucide-react';
 import { authAPI } from '../services/auth';
+import { STORAGE_KEYS } from '../utils/constants';
 import { useAuthStore } from '../stores/authStore';
 
 interface LoginProps {
@@ -68,6 +69,8 @@ const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess, onBac
       if (response.success && response.user && response.token) {
         // Save user to store
         setUser(response.user, response.token);
+        // Also persist token under unified key for ApiService immediate usage
+        localStorage.setItem(STORAGE_KEYS.TOKEN, response.token);
         
         // Show success message (optional)
         console.log('Login successful:', response.message);

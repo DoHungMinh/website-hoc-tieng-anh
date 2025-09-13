@@ -41,7 +41,9 @@ const chatMessageSchema = new Schema<IChatMessage>({
     default: Date.now
   },
   metadata: {
-    type: String,
+    type: {
+      type: String
+    },
     assessmentId: String,
     auto: Boolean
   }

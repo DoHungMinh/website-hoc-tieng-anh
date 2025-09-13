@@ -23,7 +23,16 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
+    console.log('🔐 authenticateToken middleware:', { 
+      endpoint: req.originalUrl,
+      method: req.method,
+      hasAuthHeader: !!authHeader,
+      hasToken: !!token,
+      tokenPreview: token ? token.substring(0, 20) + '...' : 'null'
+    });
+
     if (!token) {
+      console.log('❌ No token provided');
       res.status(401).json({
         success: false,
         message: 'Không có token xác thực'
@@ -41,6 +50,7 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
     // Get user from database
     const user = await User.findById(decoded.userId).select('-password');
     if (!user) {
+      console.log('❌ User not found in database:', decoded.userId);
       res.status(401).json({
         success: false,
         message: 'Người dùng không tồn tại'
@@ -58,10 +68,16 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
       return;
     }
 
+    console.log('✅ Authentication successful:', { 
+      userId: user._id, 
+      email: user.email, 
+      role: user.role 
+    });
+
     req.user = user;
     next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
+    console.error('❌ Auth middleware error:', error);
     
     if (error instanceof jwt.JsonWebTokenError) {
       res.status(401).json({

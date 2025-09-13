@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Send, X, Bot, User, Minimize2, TrendingUp, Award, BookOpen } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { MessageCircle, Send, X, Bot, User, Minimize2, TrendingUp, BookOpen } from 'lucide-react';
 import { apiService } from '../services/api';
+import { useAuthStore } from '../stores/authStore';
 
 interface Message {
   id: string;
@@ -17,24 +18,41 @@ const Chatbot = () => {
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [sessionId, setSessionId] = useState<string>('');
+  const [connectionError, setConnectionError] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Check authentication status
-  const isAuthenticated = apiService.isAuthenticated();
+  // Get authentication status from AuthStore
+  const { isAuthenticated, user } = useAuthStore();
+
+  // Function to check current auth status
+  const getCurrentAuthStatus = useCallback(() => {
+    const token = localStorage.getItem('english_learning_token');
+    const userStr = localStorage.getItem('english_learning_user');
+    const hasToken = !!token;
+    const userData = userStr ? JSON.parse(userStr) : null;
+    
+    return {
+      isAuth: hasToken && isAuthenticated,
+      currentUser: userData || user
+    };
+  }, [isAuthenticated, user]);
 
   // Initial welcome message based on auth status
   useEffect(() => {
+    const { isAuth, currentUser } = getCurrentAuthStatus();
+    
     const welcomeMessage = {
       id: 'welcome',
-      text: isAuthenticated 
-        ? 'Xin chào! Tôi là AI Assistant của EnglishPro. Vì bạn đã đăng nhập, tôi có thể phân tích dữ liệu học tập thực tế của bạn, đưa ra phản hồi dựa trên kết quả bài thi và gợi ý lộ trình cá nhân hóa. Bạn muốn bắt đầu với gì?'
+      text: isAuth 
+        ? `Xin chào ${currentUser?.fullName || 'bạn'}! Tôi là AI Assistant của EnglishPro. Vì bạn đã đăng nhập, tôi có thể phân tích dữ liệu học tập thực tế của bạn, đưa ra phản hồi dựa trên kết quả bài thi và gợi ý lộ trình cá nhân hóa. Bạn muốn bắt đầu với gì?`
         : 'Xin chào! Tôi là AI Assistant của EnglishPro. Hiện tại bạn đang ở chế độ khách - tôi có thể trả lời câu hỏi chung và đưa ra gợi ý cơ bản. Để nhận phân tích cá nhân dựa trên dữ liệu học tập thực tế, hãy đăng nhập và hoàn thành ít nhất 1 bài test nhé! 🚀',
       isBot: true,
       timestamp: new Date(),
       type: 'welcome'
     };
     setMessages([welcomeMessage]);
-  }, [isAuthenticated]);
+  }, [getCurrentAuthStatus]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -44,23 +62,51 @@ const Chatbot = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Load chat history when component mounts
+  // Reset and reload when auth state changes
   useEffect(() => {
     if (isOpen) {
       loadChatHistory();
     }
-  }, [isOpen]);
+  }, [isOpen, isAuthenticated]);
 
   const loadChatHistory = async () => {
     try {
-      const response = await apiService.getChatHistory(20, 1);
-      if (response.success && response.history?.length > 0) {
+      // Only load history for authenticated users
+      if (!apiService.isAuthenticated()) {
+        setConnectionError(false);
+        return;
+      }
+
+      setIsLoadingHistory(true);
+      setConnectionError(false);
+
+      interface ChatHistoryResponse {
+        success: boolean;
+        history?: Array<{ sessionId: string }>;
+      }
+
+      interface SessionResponse {
+        success: boolean;
+        session?: {
+          id: string;
+          messages: Array<{
+            _id?: string;
+            timestamp: string;
+            role: string;
+            content: string;
+            metadata?: { type?: string };
+          }>;
+        };
+      }
+
+      const response = await apiService.getChatHistory(20, 1) as unknown as ChatHistoryResponse;
+      if (response.success && response.history?.length) {
         // Get the latest session
         const latestSession = response.history[0];
         if (latestSession.sessionId) {
-          const sessionResponse = await apiService.getChatSession(latestSession.sessionId);
+          const sessionResponse = await apiService.getChatSession(latestSession.sessionId) as unknown as SessionResponse;
           if (sessionResponse.success && sessionResponse.session?.messages) {
-            const formattedMessages = sessionResponse.session.messages.map((msg: any) => ({
+            const formattedMessages = sessionResponse.session.messages.map((msg) => ({
               id: msg._id || `${msg.timestamp}-${msg.role}`,
               text: msg.content,
               isBot: msg.role === 'assistant',
@@ -74,6 +120,13 @@ const Chatbot = () => {
       }
     } catch (error) {
       console.error('Failed to load chat history:', error);
+      // Check if it's a connection error
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        setConnectionError(true);
+      }
+      // Don't show error to user, just silently handle it
+    } finally {
+      setIsLoadingHistory(false);
     }
   };
 
@@ -92,19 +145,24 @@ const Chatbot = () => {
     setIsTyping(true);
 
     try {
-      const response = await apiService.sendMessage(inputText, 'general');
+      const response = await apiService.sendMessage(inputText, 'general', sessionId);
       
       if (response.success) {
         const botMessage: Message = {
           id: `bot-${Date.now()}`,
-          text: response.response,
+          text: (response as unknown as { response?: string }).response || '',
           isBot: true,
           timestamp: new Date(),
           type: 'response'
         };
 
         setMessages(prev => [...prev, botMessage]);
-        setSessionId(response.sessionId);
+        
+        // Cập nhật sessionId từ response (cho lần chat tiếp theo)
+        const responseWithSession = response as unknown as { sessionId?: string };
+        if (responseWithSession.sessionId) {
+          setSessionId(responseWithSession.sessionId);
+        }
       }
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -156,14 +214,18 @@ const Chatbot = () => {
       if (response.success) {
         const botMessage: Message = {
           id: `bot-${Date.now()}`,
-          text: response.analysis || response.recommendations,
+          text: (response as unknown as { analysis?: string; recommendations?: string }).analysis || 
+                (response as unknown as { analysis?: string; recommendations?: string }).recommendations || '',
           isBot: true,
           timestamp: new Date(),
           type: action
         };
 
         setMessages(prev => [...prev, botMessage]);
-        setSessionId(response.sessionId);
+        const responseWithSession = response as unknown as { sessionId?: string };
+        if (responseWithSession.sessionId) {
+          setSessionId(responseWithSession.sessionId);
+        }
       }
     } catch (error) {
       console.error(`Failed to ${action}:`, error);
@@ -215,13 +277,15 @@ const Chatbot = () => {
               <div>
                 <h3 className="font-semibold">AI Assistant</h3>
                 <div className="flex items-center gap-2">
-                  <p className="text-xs text-green-100">Trực tuyến</p>
+                  <p className={`text-xs ${connectionError ? 'text-red-200' : 'text-green-100'}`}>
+                    {connectionError ? 'Lỗi kết nối' : 'Trực tuyến'}
+                  </p>
                   <span className={`text-xs px-2 py-1 rounded-full ${
-                    isAuthenticated 
+                    getCurrentAuthStatus().isAuth 
                       ? 'bg-yellow-500/20 text-yellow-100' 
                       : 'bg-blue-500/20 text-blue-100'
                   }`}>
-                    {isAuthenticated ? '🔒 Dữ liệu thật' : '👤 Chế độ khách'}
+                    {getCurrentAuthStatus().isAuth ? '🔒 Dữ liệu thật' : '👤 Chế độ khách'}
                   </span>
                 </div>
               </div>
@@ -253,7 +317,7 @@ const Chatbot = () => {
                     disabled={isTyping}
                   >
                     <TrendingUp className="h-4 w-4" />
-                    Phân tích tiến độ
+                    {getCurrentAuthStatus() ? 'Phân tích dữ liệu thật' : 'Phân tích tiến độ'}
                   </button>
                   <button
                     onClick={() => handleQuickAction('recommendations')}
@@ -261,13 +325,31 @@ const Chatbot = () => {
                     disabled={isTyping}
                   >
                     <BookOpen className="h-4 w-4" />
-                    Gợi ý học tập
+                    {getCurrentAuthStatus() ? 'Gợi ý cá nhân' : 'Gợi ý chung'}
                   </button>
                 </div>
               </div>
 
               {/* Messages */}
               <div className="flex-1 p-4 overflow-y-auto space-y-4">
+                {/* Loading history indicator */}
+                {isLoadingHistory && (
+                  <div className="flex justify-center">
+                    <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                      Đang tải lịch sử chat...
+                    </div>
+                  </div>
+                )}
+                
+                {/* Connection error indicator */}
+                {connectionError && messages.length === 0 && (
+                  <div className="flex justify-center">
+                    <div className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg border border-red-200">
+                      ⚠️ Không thể kết nối đến server. Một số tính năng có thể không hoạt động.
+                    </div>
+                  </div>
+                )}
+
                 {messages.map((message) => (
                   <div
                     key={message.id}

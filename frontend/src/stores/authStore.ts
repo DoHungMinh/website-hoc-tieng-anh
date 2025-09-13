@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { STORAGE_KEYS, API_BASE_URL } from '../utils/constants';
 
 interface User {
   id: string;
@@ -34,7 +35,7 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
 
       setUser: (user: User, token: string) => {
-        localStorage.setItem('token', token);
+        localStorage.setItem(STORAGE_KEYS.TOKEN, token);
         set({ 
           user, 
           token, 
@@ -44,10 +45,10 @@ export const useAuthStore = create<AuthState>()(
 
       logout: async () => {
         try {
-          const token = localStorage.getItem('token');
+          const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
           if (token) {
             // Call logout API to set user offline
-            await fetch('http://localhost:5002/api/auth/logout', {
+            await fetch(`${API_BASE_URL}/auth/logout`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${token}`,
@@ -59,7 +60,7 @@ export const useAuthStore = create<AuthState>()(
           console.error('Logout API error:', error);
         } finally {
           // Clear local storage and state regardless of API call result
-          localStorage.removeItem('token');
+          localStorage.removeItem(STORAGE_KEYS.TOKEN);
           set({ 
             user: null, 
             token: null, 
@@ -93,8 +94,8 @@ export const useAuthStore = create<AuthState>()(
         }
         
         // Force clear all auth data
-        localStorage.removeItem('token');
-        localStorage.removeItem('auth-storage');
+  localStorage.removeItem(STORAGE_KEYS.TOKEN);
+  localStorage.removeItem('auth-storage');
         set({ 
           user: null, 
           token: null, 

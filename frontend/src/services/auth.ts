@@ -1,5 +1,6 @@
 // API service cho authentication
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002/api';
+const TOKEN_KEY = 'english_learning_token';
 
 export interface LoginData {
   email: string;
@@ -80,7 +81,7 @@ export const authAPI = {
   },
 
   logout: async (): Promise<void> => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem(TOKEN_KEY);
     try {
       await fetch(`${API_BASE_URL}/auth/logout`, {
         method: 'POST',
@@ -91,7 +92,7 @@ export const authAPI = {
     } catch (error) {
       console.log('Logout error (non-critical):', error);
     } finally {
-      localStorage.removeItem('token');
+      localStorage.removeItem(TOKEN_KEY);
     }
   },
 };
