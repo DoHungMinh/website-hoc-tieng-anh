@@ -25,6 +25,15 @@ export interface IUser extends Document {
   };
   streakCount: number;
   totalStudyHours: number;
+  pendingPayments?: Array<{
+    orderCode: number;
+    courseId: string;
+    amount: number;
+    status: 'pending' | 'completed' | 'failed';
+    createdAt: Date;
+    completedAt?: Date;
+    failedReason?: string;
+  }>;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -113,7 +122,36 @@ const userSchema = new Schema<IUser>({
   totalStudyHours: {
     type: Number,
     default: 0
-  }
+  },
+  pendingPayments: [{
+    orderCode: {
+      type: Number,
+      required: true
+    },
+    courseId: {
+      type: String,
+      required: true
+    },
+    amount: {
+      type: Number,
+      required: true
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'completed', 'failed'],
+      default: 'pending'
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
+    completedAt: {
+      type: Date
+    },
+    failedReason: {
+      type: String
+    }
+  }]
 }, {
   timestamps: true
 });

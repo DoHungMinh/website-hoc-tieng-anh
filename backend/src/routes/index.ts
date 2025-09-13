@@ -28,6 +28,7 @@ import {
     deleteCourse,
     updateCourseStatus,
     getCourseStats,
+    handlePayOSPaymentSuccess,
 } from "../controllers/courseController";
 import {
     getIELTSExams,
@@ -572,6 +573,9 @@ router.patch(
     updateCourseStatus
 );
 router.delete("/courses/:id", authenticateToken, requireAdmin, deleteCourse);
+
+// PayOS payment success route
+router.post("/courses/payos-payment-success", authenticateToken, handlePayOSPaymentSuccess);
 
 // =================================================================
 // IELTS ROUTES (/api/ielts)

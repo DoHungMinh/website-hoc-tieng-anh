@@ -17,6 +17,7 @@ const connectDB = require("../config/database");
 // Import routes
 import allRoutes from "./routes/index";
 
+
 // Import middleware
 import { errorHandler } from "./middleware/errorHandler";
 import { requestLogger } from "./middleware/logger";
@@ -126,6 +127,13 @@ app.get("/health", (req: Request, res: Response) => {
 
 // API Routes - All routes are now consolidated in one file
 app.use("/api", allRoutes);
+
+// PayOS Routes
+const payOSRoutes = require("../payos/payos-routes");
+app.use("/api/payos", payOSRoutes);
+
+// Trigger restart for PayOS fix
+
 
 // Test database endpoint
 app.get("/api/test-db", async (req: Request, res: Response) => {

@@ -72,6 +72,11 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
   const [isPurchased, setIsPurchased] = useState(externalIsPurchased || false); // Use external purchased status
   const [enrolling, setEnrolling] = useState(false);
   
+  // PayOS states
+  const [paymentData, setPaymentData] = useState<any>(null);
+  const [showQR, setShowQR] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<string>('');
+  
   const { enrollInCourse, enrollments, loading: enrollmentLoading } = useEnrollment();
 
   // Check if user is already enrolled
@@ -101,6 +106,135 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
     } finally {
       setEnrolling(false);
     }
+  };
+
+  // Create PayOS payment
+  const createPayOSPayment = async () => {
+    if (isEnrolled) return;
+
+    try {
+      setEnrolling(true);
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Vui lòng đăng nhập để thanh toán');
+        return;
+      }
+
+      console.log('Creating PayOS payment for course:', course.id);
+      console.log('API URL:', `${import.meta.env.VITE_API_URL}/payos/create-payment`);
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/payos/create-payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ courseId: course.id })
+      });
+
+      console.log('Response status:', response.status);
+      const result = await response.json();
+      console.log('Response data:', result);
+      
+      if (result.success && result.data) {
+        console.log('Payment data received:', result.data);
+        setPaymentData(result.data);
+        setShowQR(true);
+        
+        // Check if checkoutUrl exists before trying to open it
+        if (result.data.checkoutUrl) {
+          // Open PayOS checkout in new tab
+          window.open(result.data.checkoutUrl, '_blank');
+          // Start checking payment status
+          startPaymentStatusCheck(result.data.orderCode);
+        } else {
+          console.error('No checkoutUrl in response:', result.data);
+          alert('❌ Lỗi: Không nhận được link thanh toán từ PayOS');
+        }
+      } else {
+        console.error('Payment creation failed:', result);
+        alert(`❌ Lỗi tạo thanh toán: ${result.message || 'Unknown error'}`);
+      }
+    } catch (error: any) {
+      console.error('Payment creation error:', error);
+      alert(`❌ Lỗi kết nối: ${error.message}`);
+    } finally {
+      setEnrolling(false);
+    }
+  };
+
+  // Check payment status
+  const startPaymentStatusCheck = (orderCode: number) => {
+    const checkStatus = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/payos/payment-status/${orderCode}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          setPaymentStatus(result.status);
+          
+          if (result.status === 'PAID') {
+            // Call the payment success endpoint to complete enrollment
+            await handlePaymentSuccess(orderCode);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Error checking payment status:', error);
+      }
+      
+      // Continue checking every 3 seconds if not paid yet
+      setTimeout(checkStatus, 3000);
+    };
+
+    // Start checking after 2 seconds
+    setTimeout(checkStatus, 2000);
+  };
+
+  // Handle payment success - complete enrollment
+  const handlePaymentSuccess = async (orderCode: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/courses/payos-payment-success`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ orderCode })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        alert('✅ Thanh toán thành công! Bạn đã được đăng ký khóa học.');
+        setShowQR(false);
+        setShowPayment(false);
+        
+        // Navigate to the course page
+        onEnroll?.(course.id);
+        
+        // Refresh the page or update the UI to show enrolled state
+        window.location.reload();
+      } else {
+        console.error('Payment success handling failed:', result);
+        alert(`❌ Lỗi xử lý thanh toán: ${result.message}`);
+      }
+    } catch (error: any) {
+      console.error('Error handling payment success:', error);
+      alert(`❌ Lỗi xử lý thanh toán: ${error.message}`);
+    }
+  };
+
+  // Handle payment method selection (redirect to PayOS)
+  const handlePaymentMethodSelect = () => {
+    createPayOSPayment();
   };
 
   const getLevelColor = (level: string) => {
@@ -144,9 +278,9 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
             </div>
 
             <div className="p-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="max-w-2xl mx-auto">
                 {/* Order Summary */}
-                <div>
+                <div className="mb-8">
                   <h2 className="text-xl font-bold text-gray-900 mb-6">Thông tin đơn hàng</h2>
                   
                   <div className="bg-gray-50 rounded-xl p-6 mb-6">
@@ -178,14 +312,14 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
                           -{formatPrice((course.originalPrice || course.price) - course.price)}
                         </span>
                       </div>
-                      <div className="flex justify-between text-lg font-bold border-t pt-2">
+                      <div className="flex justify-between text-xl font-bold border-t pt-3 mt-3">
                         <span>Tổng thanh toán:</span>
                         <span className="text-blue-600">{formatPrice(course.price)}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3 mb-8">
                     <div className="flex items-center gap-3 text-sm text-green-600">
                       <Shield className="w-4 h-4" />
                       <span>Thanh toán an toàn được mã hóa 256-bit SSL</span>
@@ -199,106 +333,100 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
                       <span>Chứng chỉ hoàn thành được công nhận</span>
                     </div>
                   </div>
-                </div>
 
-                {/* Payment Form */}
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">Phương thức thanh toán</h2>
-                  
-                  <div className="space-y-4 mb-6">
-                    <div className="border-2 border-blue-500 rounded-lg p-4 bg-blue-50">
-                      <div className="flex items-center gap-3">
-                        <input type="radio" name="payment" className="text-blue-600" defaultChecked />
-                        <CreditCard className="w-5 h-5 text-blue-600" />
-                        <span className="font-semibold">Thẻ tín dụng/ghi nợ</span>
-                      </div>
-                    </div>
-                    
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center gap-3">
-                        <input type="radio" name="payment" className="text-blue-600" />
-                        <div className="w-5 h-5 bg-red-500 rounded"></div>
-                        <span className="font-semibold">Ví MoMo</span>
-                      </div>
-                    </div>
-                    
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center gap-3">
-                        <input type="radio" name="payment" className="text-blue-600" />
-                        <div className="w-5 h-5 bg-blue-600 rounded"></div>
-                        <span className="font-semibold">ZaloPay</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Card Details */}
-                  <div className="space-y-4 mb-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Số thẻ
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="1234 5678 9012 3456"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Ngày hết hạn
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="MM/YY"
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          CVV
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="123"
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Tên chủ thẻ
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="NGUYEN VAN A"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-
+                  {/* Single Payment Button */}
                   <button 
-                    onClick={handleEnrollClick}
+                    onClick={createPayOSPayment}
                     disabled={enrolling || isEnrolled}
-                    className={`w-full font-semibold py-4 px-6 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 ${
+                    className={`w-full font-semibold py-4 px-6 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 text-lg ${
                       isEnrolled 
                         ? 'bg-green-100 text-green-600 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white'
+                        : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl'
                     }`}
                   >
-                    <Shield className="w-5 h-5" />
+                    <CreditCard className="w-6 h-6" />
                     <span>
-                      {enrolling ? 'Đang đăng ký...' : 
-                       isEnrolled ? 'Đã đăng ký' : 'Hoàn tất thanh toán'}
+                      {enrolling ? 'Đang tạo mã QR thanh toán...' : 
+                       isEnrolled ? 'Đã đăng ký' : 'Thanh toán bằng QR PayOS'}
                     </span>
                   </button>
                   
                   <p className="text-xs text-gray-500 text-center mt-4">
-                    Bằng cách nhấn "Hoàn tất thanh toán", bạn đồng ý với Điều khoản sử dụng và Chính sách bảo mật của chúng tôi
+                    Bằng cách nhấn "Thanh toán bằng QR PayOS", bạn đồng ý với Điều khoản sử dụng và Chính sách bảo mật của chúng tôi
                   </p>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // QR Code Display Modal
+  if (showQR && paymentData) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4">
+          <div className="p-6">
+            {/* QR Header */}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900">Quét mã QR để thanh toán</h2>
+              <button
+                onClick={() => setShowQR(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* QR Code */}
+            <div className="text-center mb-6">
+              {paymentData.qrCode ? (
+                <img 
+                  src={`data:image/png;base64,${paymentData.qrCode}`} 
+                  alt="PayOS QR Code"
+                  className="mx-auto w-64 h-64 border-2 border-gray-200 rounded-lg"
+                />
+              ) : (
+                <div className="w-64 h-64 mx-auto border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
+                  <p className="text-gray-500">Đang tạo mã QR...</p>
+                </div>
+              )}
+            </div>
+
+            {/* Payment Info */}
+            <div className="bg-gray-50 rounded-lg p-4 mb-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-gray-600">Khóa học:</span>
+                <span className="font-semibold">{course.title}</span>
+              </div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-gray-600">Số tiền:</span>
+                <span className="font-semibold text-blue-600">
+                  {course.price.toLocaleString()} VND
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Trạng thái:</span>
+                <span className="font-semibold text-orange-600">
+                  {paymentStatus || 'Chờ thanh toán'}
+                </span>
+              </div>
+            </div>
+
+            {/* Instructions */}
+            <div className="text-sm text-gray-600 text-center mb-4">
+              <p>1. Mở ứng dụng ngân hàng hoặc ví điện tử</p>
+              <p>2. Quét mã QR hoặc click vào link đã mở</p>
+              <p>3. Xác nhận thanh toán</p>
+            </div>
+
+            {/* Status */}
+            <div className="text-center">
+              <div className="inline-flex items-center gap-2 text-blue-600">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                <span className="text-sm">Đang chờ thanh toán...</span>
               </div>
             </div>
           </div>
@@ -543,7 +671,7 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
                             Còn {course.grammar.length - 2} nội dung ngữ pháp nữa...
                           </p>
                           <button
-                            onClick={handleEnrollClick}
+                            onClick={() => setShowPayment(true)}
                             disabled={enrolling || isEnrolled}
                             className={`px-4 py-2 text-sm rounded-md transition-colors ${
                               isEnrolled 

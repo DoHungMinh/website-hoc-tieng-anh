@@ -1,5 +1,9 @@
 import { Request, Response } from 'express';
 import Course, { ICourse } from '../models/Course';
+import Enrollment from '../models/Enrollment';
+
+// Import PayOS service
+const payOSService = require('../../payos/payos-service');
 
 // Get all courses with filters
 export const getCourses = async (req: Request, res: Response) => {
@@ -263,6 +267,136 @@ export const getCourseStats = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: 'Lỗi khi lấy thống kê khóa học'
+    });
+  }
+};
+
+// Handle PayOS payment completion and course enrollment
+export const handlePayOSPaymentSuccess = async (req: Request, res: Response) => {
+  try {
+    const { orderCode } = req.body;
+    const userId = (req as any).user?.id;
+
+    console.log(`🎯 Xử lý thanh toán thành công PayOS: ${orderCode} cho user: ${userId}`);
+
+    if (!orderCode) {
+      return res.status(400).json({
+        success: false,
+        message: 'orderCode là bắt buộc'
+      });
+    }
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Người dùng chưa đăng nhập'
+      });
+    }
+
+    // Kiểm tra trạng thái payment từ PayOS
+    const paymentStatus = await payOSService.getPaymentStatus(parseInt(orderCode));
+    
+    if (!paymentStatus.success || paymentStatus.status !== 'PAID') {
+      return res.status(400).json({
+        success: false,
+        message: 'Thanh toán chưa được xác nhận hoặc chưa thành công'
+      });
+    }
+
+    // Lấy thông tin payment để biết courseId
+    const paymentData = paymentStatus.data;
+    
+    // Tìm course từ payment description hoặc từ stored data
+    // Vì PayOS không lưu metadata, ta cần parse từ description
+    const courseIdMatch = paymentData.description?.match(/course[_\s]*([a-fA-F0-9]{24})/i);
+    let courseId = null;
+
+    if (courseIdMatch) {
+      courseId = courseIdMatch[1];
+    } else {
+      // Fallback: tìm course theo tên từ description
+      const courseName = paymentData.description?.replace('Thanh toan khoa hoc: ', '');
+      if (courseName) {
+        const course = await Course.findOne({ title: { $regex: courseName, $options: 'i' } });
+        courseId = course?._id;
+      }
+    }
+
+    if (!courseId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Không thể xác định khóa học từ payment'
+      });
+    }
+
+    // Kiểm tra course có tồn tại không
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy khóa học'
+      });
+    }
+
+    // Kiểm tra user đã đăng ký chưa
+    const existingEnrollment = await Enrollment.findOne({
+      userId: userId,
+      courseId: courseId
+    });
+
+    if (existingEnrollment) {
+      return res.json({
+        success: true,
+        message: 'Bạn đã được đăng ký khóa học này rồi',
+        data: {
+          courseId: course._id,
+          courseName: course.title,
+          enrolledAt: existingEnrollment.enrolledAt
+        }
+      });
+    }
+
+    // Tạo enrollment mới
+    const newEnrollment = new Enrollment({
+      userId: userId,
+      courseId: courseId,
+      enrolledAt: new Date(),
+      status: 'active',
+      progress: {
+        completedLessons: [],
+        completedVocabulary: [],
+        completedGrammar: [],
+        completionPercentage: 0
+      },
+      quiz: {
+        attempts: 0,
+        bestScore: 0
+      },
+      lastAccessedAt: new Date(),
+      achievements: []
+    });
+
+    await newEnrollment.save();
+
+    console.log(`✅ Đã tạo enrollment thành công cho user ${userId} - course ${courseId}`);
+
+    return res.json({
+      success: true,
+      message: 'Thanh toán thành công! Bạn đã được đăng ký khóa học.',
+      data: {
+        courseId: course._id,
+        courseName: course.title,
+        enrolledAt: newEnrollment.enrolledAt,
+        orderCode: orderCode
+      }
+    });
+
+  } catch (error: any) {
+    console.error('❌ Lỗi xử lý PayOS payment success:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi xử lý thanh toán',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
