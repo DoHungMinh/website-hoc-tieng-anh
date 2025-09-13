@@ -331,7 +331,7 @@ Hãy bắt đầu với một bài test IELTS để đánh giá trình độ nh�
     }
   },
 
-  // Gợi ý học tập với dữ liệu thật và AI
+  // Gợi ý học tập với dữ liệu IELTS thật (không dùng Progress fake data)
   async generateLearningRecommendations(req: Request, res: Response) {
     try {
       const userId = req.user?._id?.toString();
@@ -343,12 +343,29 @@ Hãy bắt đầu với một bài test IELTS để đánh giá trình độ nh�
         });
       }
 
+      // Lấy dữ liệu thật từ database
       const user = await User.findById(userId);
-      const progress = await Progress.findOne({ userId });
-      const recentAssessments = await Assessment.find({ 
-        userId, 
-        status: 'completed' 
-      }).sort({ completedAt: -1 }).limit(3);
+      const assessments = await Assessment.find({ userId, status: 'completed' })
+        .sort({ completedAt: -1 });
+      const ieltsResults = await IELTSTestResult.find({ userId })
+        .sort({ completedAt: -1 });
+      const enrollments = await Enrollment.find({ userId })
+        .populate('courseId', 'title description level price')
+        .sort({ enrolledAt: -1 });
+      const availableCourses = await Course.find({ isActive: true })
+        .select('title description level price')
+        .limit(5);
+
+      console.log('🎯 RECOMMENDATION DATA:', {
+        userId,
+        userFound: !!user,
+        userName: user?.fullName,
+        userLevel: user?.level,
+        assessmentsCount: assessments.length,
+        ieltsResultsCount: ieltsResults.length,
+        enrollmentsCount: enrollments.length,
+        availableCoursesCount: availableCourses.length
+      });
 
       if (!user) {
         return res.status(404).json({ 
@@ -357,8 +374,11 @@ Hãy bắt đầu với một bài test IELTS để đánh giá trình độ nh�
         });
       }
 
-      // Kiểm tra dữ liệu học tập
-      if (!progress && recentAssessments.length === 0) {
+      // Kiểm tra dữ liệu thật
+      const hasIELTSData = ieltsResults.length > 0;
+      const hasEnrollments = enrollments.length > 0;
+
+      if (!hasIELTSData && assessments.length === 0 && !hasEnrollments) {
         return res.json({
           success: true,
           recommendations: `🎯 **GỢI Ý HỌC TẬP CƠ BẢN**
@@ -368,44 +388,32 @@ Xin chào ${user.fullName}!
 Vì bạn chưa có dữ liệu học tập cụ thể, đây là gợi ý dành cho level ${user.level}:
 
 📚 **Bước đầu tiên:**
-1. 🎯 Làm bài test đánh giá trình độ
-2. 📖 Chọn 1 khóa học phù hợp với level ${user.level}
-3. 📝 Hoàn thành ít nhất 3 bài học đầu tiên
+1. 🎯 Làm bài test IELTS Reading để đánh giá trình độ
+2. 🎧 Làm bài test IELTS Listening để đánh giá khả năng nghe  
+3. 📖 Chọn 1 khóa học phù hợp với level ${user.level}
 
 🎯 **Mục tiêu cho người mới:**
 - Học 15-20 phút mỗi ngày
-- Hoàn thành 1 bài test mỗi tuần
-- Focus vào từ vựng cơ bản trước
+- Hoàn thành 1 bài IELTS test mỗi tuần
+- Focus vào từ vựng cơ bản và ngữ pháp
 
-Sau khi có dữ liệu học tập, tôi sẽ đưa ra lộ trình cá nhân hóa chính xác hơn! 🚀`,
+Sau khi có ít nhất 3-5 bài test IELTS, tôi sẽ đưa ra lộ trình cá nhân hóa chính xác hơn! 🚀`,
           hasData: false,
           type: 'basic_recommendations'
         });
       }
 
+      // Tạo gợi ý dựa trên dữ liệu IELTS thật
       let recommendations = '';
 
       try {
-        // Sử dụng AI Service để tạo gợi ý
-        const aiService = new AIService();
-        const recommendationData = {
-          user,
-          progress: progress || {} as IProgress,
-          learningPath: user.learningGoals || [],
-          nextActivities: recentAssessments.map(a => ({
-            type: a.type,
-            score: a.results?.percentage || 0,
-            weaknesses: a.results?.weaknesses || []
-          }))
-        };
+        console.log('🔄 Building IELTS-based recommendations...');
+        recommendations = await realDataChatbotController.buildIELTSBasedRecommendations(user, ieltsResults, enrollments, availableCourses);
+        console.log('✅ IELTS-based recommendations completed');
 
-        recommendations = await aiService.generateLearningRecommendations(recommendationData);
-
-      } catch (aiError) {
-        console.error('AI Service error, falling back to rule-based recommendations:', aiError);
-        
-        // Fallback: sử dụng logic gợi ý hiện tại
-        recommendations = await this.buildPersonalizedRecommendations(user, progress, recentAssessments);
+      } catch (error) {
+        console.error('❌ Error building recommendations, using fallback:', error);
+        recommendations = `📊 **GỢI Ý HỌC TẬP - ${user.fullName}**\n\nXin lỗi, có lỗi trong quá trình tạo gợi ý. Hãy thử lại sau.`;
       }
 
       // Lưu vào chat session
@@ -1207,6 +1215,103 @@ Dựa trên dữ liệu thực tế của bạn! 📈`;
       analysis += `   • Đăng ký khóa học phù hợp với level\n`;
     }
 
+    // SMART PERSONAL RECOMMENDATIONS - Phân tích dữ liệu IELTS thật
+    if (hasIELTSData) {
+      // Tính điểm trung bình từ tất cả các bài test
+      const totalPercentage = ieltsResults.reduce((sum, result) => sum + (result.score.percentage || 0), 0);
+      const averagePercentage = Math.round(totalPercentage / ieltsResults.length);
+      
+      // Tính band score trung bình
+      const totalBandScore = ieltsResults.reduce((sum, result) => {
+        const band = parseFloat(result.score.bandScore) || 0;
+        return sum + band;
+      }, 0);
+      const averageBandScore = (totalBandScore / ieltsResults.length).toFixed(1);
+      
+      // Phân tích xu hướng
+      let trendAnalysis = '';
+      if (ieltsResults.length >= 2) {
+        const recent = ieltsResults.slice(0, 2);
+        const older = ieltsResults.slice(-2);
+        const recentAvg = recent.reduce((sum, r) => sum + r.score.percentage, 0) / recent.length;
+        const olderAvg = older.reduce((sum, r) => sum + r.score.percentage, 0) / older.length;
+        
+        if (recentAvg > olderAvg + 5) {
+          trendAnalysis = '📈 **Xu hướng cải thiện rõ rệt!**';
+        } else if (recentAvg < olderAvg - 5) {
+          trendAnalysis = '📉 **Xu hướng giảm, cần tập trung hơn!**';
+        } else {
+          trendAnalysis = '➡️ **Xu hướng ổn định.**';
+        }
+      }
+      
+      analysis += `\n🎯 **GỢI Ý CÁ NHÂN DỰA TRÊN ${ieltsResults.length} BÀI TEST IELTS:**\n`;
+      analysis += `📊 **Điểm trung bình:** ${averagePercentage}% (Band ${averageBandScore})\n`;
+      analysis += `📈 **Điểm mới nhất:** ${latestIELTS.score.percentage}% (Band ${latestIELTS.score.bandScore || 'N/A'})\n`;
+      if (trendAnalysis) {
+        analysis += `${trendAnalysis}\n`;
+      }
+      analysis += `\n`;
+      
+      // Gợi ý cụ thể dựa trên điểm trung bình
+      if (averagePercentage >= 80) {
+        analysis += `🌟 **TRÌNH ĐỘ CAO (${averagePercentage}%)** - Chiến lược nâng cao:\n`;
+        analysis += `   ✅ **Duy trì thế mạnh:** Tiếp tục luyện đề IELTS Reading & Listening nâng cao\n`;
+        analysis += `   📚 **Khóa học nên đăng ký:** Advanced English (C1-C2), IELTS Band 7.5+, hoặc khóa từ vựng Academic\n`;
+        analysis += `   💪 **Mục tiêu:** Hướng tới Band 8.0-9.0, focus vào Writing & Speaking\n`;
+        analysis += `   🎯 **Luyện tập:** 2-3 đề Reading/Listening khó mỗi tuần, đọc báo tiếng Anh hằng ngày\n`;
+      } else if (averagePercentage >= 65) {
+        analysis += `📚 **TRÌNH ĐỘ TỐT (${averagePercentage}%)** - Củng cố và phát triển:\n`;
+        analysis += `   ✅ **Điểm mạnh:** Nền tảng ổn, cần nâng cao kỹ thuật làm bài\n`;
+        analysis += `   📚 **Khóa học nên đăng ký:** Intermediate-Upper (B2), IELTS Band 6.5, hoặc khóa ngữ pháp nâng cao\n`;
+        analysis += `   💪 **Mục tiêu:** Hướng tới Band 7.0, cải thiện từ vựng academic và tốc độ đọc\n`;
+        analysis += `   🎯 **Luyện tập:** 1-2 đề Reading/Listening mỗi ngày, học 20-30 từ vựng IELTS/ngày\n`;
+      } else if (averagePercentage >= 50) {
+        analysis += `⚡ **TRÌNH ĐỘ TRUNG BÌNH (${averagePercentage}%)** - Cần cải thiện cơ bản:\n`;
+        analysis += `   ✅ **Ưu tiên:** Củng cố ngữ pháp và từ vựng cơ bản\n`;
+        analysis += `   📚 **Khóa học nên đăng ký:** Pre-Intermediate (B1), Grammar & Vocabulary, hoặc IELTS Foundation\n`;
+        analysis += `   💪 **Mục tiêu:** Hướng tới Band 6.0, tăng tốc độ đọc hiểu và nghe hiểu\n`;
+        analysis += `   🎯 **Luyện tập:** 1 đề Reading/Listening mỗi ngày, học 15-20 từ vựng cơ bản/ngày\n`;
+      } else {
+        analysis += `🔥 **CẦN XÂY DỰNG NỀN TẢNG (${averagePercentage}%)** - Kế hoạch từ cơ bản:\n`;
+        analysis += `   ✅ **Ưu tiên cao:** Ngữ pháp cơ bản và từ vựng thiết yếu\n`;
+        analysis += `   📚 **Khóa học nên đăng ký:** Elementary (A2-B1), Basic English, hoặc khóa tiếng Anh giao tiếp\n`;
+        analysis += `   💪 **Mục tiêu:** Hướng tới Band 5.5, làm quen format IELTS và phương pháp học\n`;
+        analysis += `   🎯 **Luyện tập:** 30p Reading/Listening cơ bản mỗi ngày, học 10-15 từ vựng thiết yếu/ngày\n`;
+      }
+      
+      // Phân tích điểm yếu theo từng kỹ năng
+      analysis += `\n🔍 **PHÂN TÍCH ĐIỂM YẾU VÀ ĐỀ XUẤT CỤ THỂ:**\n`;
+      
+      const readingScores = ieltsResults.filter(r => r.examType === 'reading').map(r => r.score.percentage);
+      const listeningScores = ieltsResults.filter(r => r.examType === 'listening').map(r => r.score.percentage);
+      
+      if (readingScores.length > 0) {
+        const readingAvg = Math.round(readingScores.reduce((a, b) => a + b, 0) / readingScores.length);
+        analysis += `   📖 **Reading:** Trung bình ${readingAvg}% - `;
+        if (readingAvg < averagePercentage - 10) {
+          analysis += `⚠️ Điểm yếu! Nên đăng ký khóa Reading Comprehension và luyện đọc hiểu hằng ngày\n`;
+        } else if (readingAvg > averagePercentage + 10) {
+          analysis += `💪 Điểm mạnh! Hãy duy trì và nâng cao với các bài đọc khó hơn\n`;
+        } else {
+          analysis += `✅ Cân bằng, tiếp tục luyện đều đặn\n`;
+        }
+      }
+      
+      if (listeningScores.length > 0) {
+        const listeningAvg = Math.round(listeningScores.reduce((a, b) => a + b, 0) / listeningScores.length);
+        analysis += `   🎧 **Listening:** Trung bình ${listeningAvg}% - `;
+        if (listeningAvg < averagePercentage - 10) {
+          analysis += `⚠️ Điểm yếu! Nên đăng ký khóa Listening Skills và nghe podcast tiếng Anh hằng ngày\n`;
+        } else if (listeningAvg > averagePercentage + 10) {
+          analysis += `💪 Điểm mạnh! Thử thách với native speaker content và news\n`;
+        } else {
+          analysis += `✅ Cân bằng, tiếp tục luyện đều đặn\n`;
+        }
+      }
+      analysis += `\n`;
+    }
+
     // Course enrollment recommendations
     if (!hasEnrollments && availableCourses.length > 0) {
       analysis += `\n📖 **KHÓA HỌC CÓ SẴN (${availableCourses.length} khóa):**\n`;
@@ -1281,5 +1386,210 @@ Dựa trên dữ liệu thực tế của bạn! 📈`;
     analysis += `\n✨ **Dữ liệu thực tế từ hệ thống - cập nhật theo thời gian thực!**`;
 
     return analysis;
+  },
+
+  // Build IELTS-based recommendations (không sử dụng Progress fake data)
+  async buildIELTSBasedRecommendations(
+    user: IUser, 
+    ieltsResults: any[], 
+    enrollments: any[],
+    availableCourses: any[] = []
+  ): Promise<string> {
+    const hasIELTSData = ieltsResults.length > 0;
+    const hasEnrollments = enrollments.length > 0;
+    const latestIELTS = hasIELTSData ? ieltsResults[0] : null;
+
+    let recommendations = `🎯 **LỘ TRÌNH HỌC TẬP CÁ NHÂN - ${user.fullName}**\n\n`;
+
+    if (hasIELTSData) {
+      // Tính điểm trung bình từ tất cả các bài test
+      const totalPercentage = ieltsResults.reduce((sum, result) => sum + (result.score.percentage || 0), 0);
+      const averagePercentage = Math.round(totalPercentage / ieltsResults.length);
+      
+      // Tính band score trung bình
+      const totalBandScore = ieltsResults.reduce((sum, result) => {
+        const band = parseFloat(result.score.bandScore) || 0;
+        return sum + band;
+      }, 0);
+      const averageBandScore = (totalBandScore / ieltsResults.length).toFixed(1);
+      
+      // Phân tích xu hướng
+      let trendAnalysis = '';
+      if (ieltsResults.length >= 2) {
+        const recent = ieltsResults.slice(0, 2);
+        const older = ieltsResults.slice(-2);
+        const recentAvg = recent.reduce((sum, r) => sum + r.score.percentage, 0) / recent.length;
+        const olderAvg = older.reduce((sum, r) => sum + r.score.percentage, 0) / older.length;
+        
+        if (recentAvg > olderAvg + 5) {
+          trendAnalysis = '📈 **Xu hướng cải thiện rõ rệt!**';
+        } else if (recentAvg < olderAvg - 5) {
+          trendAnalysis = '📉 **Cần tập trung học tập hơn!**';
+        } else {
+          trendAnalysis = '➡️ **Xu hướng ổn định.**';
+        }
+      }
+      
+      recommendations += `📊 **ĐÁNH GIÁ HIỆN TẠI (Dựa trên ${ieltsResults.length} bài test IELTS):**\n`;
+      recommendations += `   • **Điểm trung bình:** ${averagePercentage}% (Band ${averageBandScore})\n`;
+      recommendations += `   • **Điểm mới nhất:** ${latestIELTS.score.percentage}% (Band ${latestIELTS.score.bandScore || 'N/A'})\n`;
+      if (trendAnalysis) {
+        recommendations += `   • ${trendAnalysis}\n`;
+      }
+      recommendations += `\n`;
+      
+      // Lộ trình cụ thể dựa trên điểm trung bình
+      if (averagePercentage >= 80) {
+        recommendations += `🌟 **LỘ TRÌNH NÂNG CAO (${averagePercentage}%):**\n\n`;
+        recommendations += `🎯 **Mục tiêu 3 tháng tới:** Band 8.0-9.0\n`;
+        recommendations += `📚 **Khóa học ưu tiên:**\n`;
+        recommendations += `   1. Advanced English (C1-C2)\n`;
+        recommendations += `   2. IELTS Band 7.5+ Writing & Speaking\n`;
+        recommendations += `   3. Academic Vocabulary & Complex Grammar\n\n`;
+        recommendations += `📅 **Kế hoạch hàng tuần:**\n`;
+        recommendations += `   • **Thứ 2-4-6:** 2-3 đề Reading/Listening nâng cao (90p)\n`;
+        recommendations += `   • **Thứ 3-5-7:** Writing essays + Speaking practice (60p)\n`;
+        recommendations += `   • **Chủ nhật:** Review và mock test (120p)\n\n`;
+        recommendations += `📖 **Tài liệu học:**\n`;
+        recommendations += `   • Cambridge IELTS 15-17 (advanced level)\n`;
+        recommendations += `   • Academic journals và newspapers\n`;
+        recommendations += `   • TED Talks với transcript\n`;
+      } else if (averagePercentage >= 65) {
+        recommendations += `📚 **LỘ TRÌNH PHÁT TRIỂN (${averagePercentage}%):**\n\n`;
+        recommendations += `🎯 **Mục tiêu 3 tháng tới:** Band 7.0\n`;
+        recommendations += `📚 **Khóa học ưu tiên:**\n`;
+        recommendations += `   1. Intermediate-Upper (B2)\n`;
+        recommendations += `   2. IELTS Band 6.5 Preparation\n`;
+        recommendations += `   3. Grammar & Vocabulary Booster\n\n`;
+        recommendations += `📅 **Kế hoạch hàng tuần:**\n`;
+        recommendations += `   • **Hàng ngày:** 1-2 đề Reading/Listening (60p)\n`;
+        recommendations += `   • **3x/tuần:** Writing task practice (45p)\n`;
+        recommendations += `   • **2x/tuần:** Speaking với partner/app (30p)\n`;
+        recommendations += `   • **Cuối tuần:** Full mock test (3h)\n\n`;
+        recommendations += `📈 **Chỉ số theo dõi:**\n`;
+        recommendations += `   • Học 20-30 từ vựng IELTS mỗi ngày\n`;
+        recommendations += `   • Tăng tốc độ đọc lên 250 wpm\n`;
+        recommendations += `   • Hoàn thành 2 bài test mỗi tuần\n`;
+      } else if (averagePercentage >= 50) {
+        recommendations += `⚡ **LỘ TRÌNH CỤG CỐ (${averagePercentage}%):**\n\n`;
+        recommendations += `🎯 **Mục tiêu 3 tháng tới:** Band 6.0\n`;
+        recommendations += `📚 **Khóa học ưu tiên:**\n`;
+        recommendations += `   1. Pre-Intermediate (B1)\n`;
+        recommendations += `   2. Grammar Fundamentals\n`;
+        recommendations += `   3. Essential Vocabulary 3000 words\n\n`;
+        recommendations += `📅 **Kế hoạch hàng tuần:**\n`;
+        recommendations += `   • **Hàng ngày:** 1 đề Reading/Listening (45p)\n`;
+        recommendations += `   • **Hàng ngày:** Học 15-20 từ vựng mới (20p)\n`;
+        recommendations += `   • **3x/tuần:** Grammar exercises (30p)\n`;
+        recommendations += `   • **2x/tuần:** Writing paragraphs (30p)\n\n`;
+        recommendations += `🎯 **Kỹ thuật cải thiện:**\n`;
+        recommendations += `   • Đọc từ từ, hiểu từng câu trước khi next\n`;
+        recommendations += `   • Nghe với subtitle trước, sau đó tắt\n`;
+        recommendations += `   • Focus vào câu trả lời đúng, phân tích sai lầm\n`;
+      } else {
+        recommendations += `🔥 **LỘ TRÌNH XÂY DỰNG NỀN TẢNG (${averagePercentage}%):**\n\n`;
+        recommendations += `🎯 **Mục tiêu 3 tháng tới:** Band 5.5\n`;
+        recommendations += `📚 **Khóa học ưu tiên:**\n`;
+        recommendations += `   1. Elementary English (A2-B1)\n`;
+        recommendations += `   2. Basic Grammar & Sentence Structure\n`;
+        recommendations += `   3. High-frequency Vocabulary 1500 words\n\n`;
+        recommendations += `📅 **Kế hoạch hàng tuần:**\n`;
+        recommendations += `   • **Hàng ngày:** 30p Reading/Listening cơ bản\n`;
+        recommendations += `   • **Hàng ngày:** Học 10-15 từ vựng thiết yếu (15p)\n`;
+        recommendations += `   • **Hàng ngày:** Grammar drill (15p)\n`;
+        recommendations += `   • **3x/tuần:** Simple writing practice (20p)\n\n`;
+        recommendations += `📖 **Phương pháp học:**\n`;
+        recommendations += `   • Bắt đầu với short articles, children books\n`;
+        recommendations += `   • Nghe slow English, ESL podcasts\n`;
+        recommendations += `   • Học theo chủ đề: family, food, travel...\n`;
+      }
+
+      // Phân tích điểm yếu theo kỹ năng
+      recommendations += `\n🔍 **PHÂN TÍCH KỸ NĂNG & ĐỀ XUẤT:**\n`;
+      
+      const readingScores = ieltsResults.filter(r => r.examType === 'reading').map(r => r.score.percentage);
+      const listeningScores = ieltsResults.filter(r => r.examType === 'listening').map(r => r.score.percentage);
+      
+      if (readingScores.length > 0) {
+        const readingAvg = Math.round(readingScores.reduce((a, b) => a + b, 0) / readingScores.length);
+        recommendations += `   📖 **Reading (${readingAvg}%):**`;
+        if (readingAvg < averagePercentage - 10) {
+          recommendations += ` ⚠️ **Điểm yếu!**\n`;
+          recommendations += `      → Đăng ký khóa "Reading Comprehension"\n`;
+          recommendations += `      → Đọc 2 bài short articles mỗi ngày\n`;
+          recommendations += `      → Practice skimming & scanning techniques\n`;
+        } else if (readingAvg > averagePercentage + 10) {
+          recommendations += ` 💪 **Điểm mạnh!**\n`;
+          recommendations += `      → Thử thách với advanced texts\n`;
+          recommendations += `      → Focus vào academic vocabulary\n`;
+        } else {
+          recommendations += ` ✅ **Cân bằng**\n`;
+          recommendations += `      → Duy trì 1 đề Reading/ngày\n`;
+        }
+      }
+      
+      if (listeningScores.length > 0) {
+        const listeningAvg = Math.round(listeningScores.reduce((a, b) => a + b, 0) / listeningScores.length);
+        recommendations += `   🎧 **Listening (${listeningAvg}%):**`;
+        if (listeningAvg < averagePercentage - 10) {
+          recommendations += ` ⚠️ **Điểm yếu!**\n`;
+          recommendations += `      → Đăng ký khóa "Listening Skills"\n`;
+          recommendations += `      → Nghe English podcasts 30p/ngày\n`;
+          recommendations += `      → Practice dictation exercises\n`;
+        } else if (listeningAvg > averagePercentage + 10) {
+          recommendations += ` 💪 **Điểm mạnh!**\n`;
+          recommendations += `      → Nghe native content: news, movies\n`;
+          recommendations += `      → Focus vào accents: British, American\n`;
+        } else {
+          recommendations += ` ✅ **Cân bằng**\n`;
+          recommendations += `      → Duy trì 1 đề Listening/ngày\n`;
+        }
+      }
+      recommendations += `\n`;
+    }
+
+    // Thông tin khóa học
+    if (hasEnrollments) {
+      recommendations += `📚 **KHÓA HỌC ĐÃ ĐĂNG KÝ (${enrollments.length} khóa):**\n`;
+      enrollments.slice(0, 3).forEach((enrollment, index) => {
+        const course = enrollment.courseId;
+        const completion = enrollment.progress?.completionPercentage || 0;
+        
+        recommendations += `   ${index + 1}. **${course.title}** - ${completion}% hoàn thành\n`;
+        if (completion < 50) {
+          recommendations += `      ⚠️ **Ưu tiên:** Hoàn thành khóa này trước khi đăng ký mới\n`;
+        } else if (completion >= 80) {
+          recommendations += `      ✅ **Gần hoàn thành:** Sẵn sàng cho level cao hơn\n`;
+        }
+      });
+      recommendations += `\n`;
+    } else {
+      recommendations += `📖 **KHÓA HỌC ĐỀ XUẤT (Chưa đăng ký khóa nào):**\n`;
+      if (availableCourses.length > 0) {
+        availableCourses.slice(0, 3).forEach((course, index) => {
+          recommendations += `   ${index + 1}. **${course.title}**\n`;
+          recommendations += `      🎓 Level: ${course.level || 'B1'}\n`;
+          recommendations += `      💰 Giá: ${course.price ? course.price.toLocaleString('vi-VN') + 'đ' : 'Miễn phí'}\n`;
+        });
+      } else {
+        recommendations += `   • Khóa Grammar & Vocabulary Fundamentals\n`;
+        recommendations += `   • Khóa IELTS Preparation\n`;
+        recommendations += `   • Khóa English Communication\n`;
+      }
+      recommendations += `\n`;
+    }
+
+    // Lời khuyên cuối
+    recommendations += `💪 **LỜI KHUYÊN CUỐI:**\n`;
+    recommendations += `   • **Consistency is key:** Học đều đặn tốt hơn học dồn\n`;
+    recommendations += `   • **Track progress:** Làm test định kỳ để theo dõi tiến bộ\n`;
+    recommendations += `   • **Practice all skills:** Đừng chỉ focus 1 kỹ năng\n`;
+    recommendations += `   • **Stay motivated:** Đặt mục tiêu nhỏ và celebrate thành công!\n\n`;
+    
+    recommendations += `✨ **Lộ trình được xây dựng dựa trên dữ liệu IELTS thực tế của bạn!**`;
+
+    return recommendations;
   }
 };
+
+export default realDataChatbotController;

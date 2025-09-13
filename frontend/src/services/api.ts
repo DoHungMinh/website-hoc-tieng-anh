@@ -1,8 +1,8 @@
-import { API_BASE_URL, API_ENDPOINTS } from '../utils/constants';
+import { API_BASE_URL, API_ENDPOINTS, STORAGE_KEYS } from '../utils/constants';
 import { Toast } from '../utils/toast';
 
 // Types for API responses
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;
   data: T;
@@ -14,7 +14,8 @@ class ApiService {
 
   constructor() {
     this.baseURL = API_BASE_URL;
-    this.token = localStorage.getItem('english_learning_token');
+    // Always get the latest token from localStorage
+  this.token = localStorage.getItem(STORAGE_KEYS.TOKEN);
   }
 
   private async request<T>(
@@ -22,6 +23,9 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
+    
+    // ALWAYS get fresh token from localStorage before making request
+  this.token = localStorage.getItem(STORAGE_KEYS.TOKEN);
     
     const config: RequestInit = {
       headers: {
@@ -31,6 +35,13 @@ class ApiService {
       },
       ...options,
     };
+
+    console.log('🚀 ApiService.request:', { 
+      endpoint, 
+      hasToken: !!this.token, 
+      tokenPreview: this.token ? this.token.substring(0, 20) + '...' : 'null',
+      headers: config.headers 
+    });
 
     try {
       const response = await fetch(url, config);
@@ -99,14 +110,25 @@ class ApiService {
 
   // Authentication methods
   async login(email: string, password: string) {
-    const response = await this.request<{token: string, user: any}>(API_ENDPOINTS.AUTH.LOGIN, {
+    const response = await this.request(API_ENDPOINTS.AUTH.LOGIN, {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
 
-    if (response.success && response.data.token) {
-      this.setToken(response.data.token);
-      localStorage.setItem('english_learning_user', JSON.stringify(response.data.user));
+    type LoginLike = {
+      success: boolean;
+      token?: string;
+      user?: unknown;
+      data?: { token?: string; user?: unknown };
+    };
+    const resp = response as unknown as LoginLike;
+    const token = resp.data?.token ?? resp.token;
+    const user = resp.data?.user ?? resp.user;
+    if (resp.success && token) {
+      this.setToken(token);
+      if (user) {
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+      }
     }
 
     return response;
@@ -130,8 +152,8 @@ class ApiService {
     });
 
     this.removeToken();
-    localStorage.removeItem('english_learning_user');
-    localStorage.removeItem('english_learning_refresh_token');
+  localStorage.removeItem(STORAGE_KEYS.USER);
+  localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
 
     return response;
   }
@@ -141,7 +163,7 @@ class ApiService {
     return this.request(API_ENDPOINTS.USER.PROFILE);
   }
 
-  async updateProfile(profileData: any) {
+  async updateProfile(profileData: Record<string, unknown>) {
     return this.request(API_ENDPOINTS.USER.UPDATE_PROFILE, {
       method: 'PUT',
       body: JSON.stringify(profileData),
@@ -191,7 +213,7 @@ class ApiService {
     return this.request(API_ENDPOINTS.PROGRESS.GET);
   }
 
-  async updateProgress(progressData: any) {
+  async updateProgress(progressData: Record<string, unknown>) {
     return this.request(API_ENDPOINTS.PROGRESS.UPDATE, {
       method: 'PUT',
       body: JSON.stringify(progressData),
@@ -230,15 +252,23 @@ class ApiService {
   }
 
   // Chatbot methods - Smart routing based on authentication
-  async sendMessage(message: string, type: string = 'general') {
-    // Check if user is authenticated
-    const isAuthenticated = this.isAuthenticated();
+  async sendMessage(message: string, type: string = 'general', sessionId?: string) {
+    // Check if user is authenticated by checking localStorage token directly
+    const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+    const isAuthenticated = !!token;
+    
+    console.log('🤖 ApiService.sendMessage:', { 
+      isAuthenticated, 
+      token: token ? 'exists' : 'null',
+      sessionId: sessionId || 'none',
+      endpoint: isAuthenticated ? '/chatbot/message' : '/chatbot/simple/message' 
+    });
     
     if (isAuthenticated) {
       // Use real data endpoint for authenticated users
       return this.request('/chatbot/message', {
         method: 'POST',
-        body: JSON.stringify({ message, type }),
+        body: JSON.stringify({ message, type, sessionId }),
       });
     } else {
       // Use simple endpoint for guests
@@ -250,13 +280,27 @@ class ApiService {
   }
 
   async generateProgressAnalysis() {
-    const isAuthenticated = this.isAuthenticated();
+    // Check if user is authenticated by checking localStorage token directly
+    const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+    const user = localStorage.getItem(STORAGE_KEYS.USER);
+    const isAuthenticated = !!token;
+    
+    console.log('📊 ApiService.generateProgressAnalysis DEBUG:', { 
+      isAuthenticated, 
+      token: token ? `${token.substring(0, 20)}...` : 'null',
+      user: user ? 'exists' : 'null',
+      endpoint: isAuthenticated ? '/chatbot/analysis' : '/chatbot/simple/analysis',
+      STORAGE_KEYS,
+      localStorage_keys: Object.keys(localStorage)
+    });
     
     if (isAuthenticated) {
+      console.log('🔄 Using REAL DATA endpoint: /chatbot/analysis');
       return this.request('/chatbot/analysis', {
         method: 'POST',
       });
     } else {
+      console.log('🔄 Using FAKE DATA endpoint: /chatbot/simple/analysis');
       return this.publicRequest('/chatbot/simple/analysis', {
         method: 'POST',
       });
@@ -264,7 +308,15 @@ class ApiService {
   }
 
   async generateLearningRecommendations() {
-    const isAuthenticated = this.isAuthenticated();
+    // Check if user is authenticated by checking localStorage token directly
+  const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+    const isAuthenticated = !!token;
+    
+    console.log('💡 ApiService.generateLearningRecommendations:', { 
+      isAuthenticated, 
+      token: token ? 'exists' : 'null',
+      endpoint: isAuthenticated ? '/chatbot/recommendations' : '/chatbot/simple/recommendations' 
+    });
     
     if (isAuthenticated) {
       return this.request('/chatbot/recommendations', {
@@ -308,15 +360,17 @@ class ApiService {
   // Utility methods
   setToken(token: string) {
     this.token = token;
-    localStorage.setItem('english_learning_token', token);
+  localStorage.setItem(STORAGE_KEYS.TOKEN, token);
   }
 
   removeToken() {
     this.token = null;
-    localStorage.removeItem('english_learning_token');
+  localStorage.removeItem(STORAGE_KEYS.TOKEN);
   }
 
   isAuthenticated(): boolean {
+    // Always check localStorage for the most current token
+  this.token = localStorage.getItem(STORAGE_KEYS.TOKEN);
     return !!this.token;
   }
 }
