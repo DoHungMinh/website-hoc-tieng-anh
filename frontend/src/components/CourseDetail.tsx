@@ -16,6 +16,7 @@ import {
   Globe
 } from 'lucide-react';
 import { useEnrollment } from '../hooks/useEnrollment';
+import { STORAGE_KEYS } from '../utils/constants';
 
 interface DetailCourse {
   id: string;
@@ -77,7 +78,7 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
   const [showQR, setShowQR] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<string>('');
   
-  const { enrollInCourse, enrollments, loading: enrollmentLoading } = useEnrollment();
+  const { enrollInCourse, enrollments } = useEnrollment();
 
   // Check if user is already enrolled
   const isEnrolled = enrollments?.some(enrollment => enrollment.courseId._id === course.id) || false;
@@ -115,13 +116,14 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
     try {
       setEnrolling(true);
       
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
       if (!token) {
         alert('Vui lòng đăng nhập để thanh toán');
         return;
       }
 
       console.log('Creating PayOS payment for course:', course.id);
+      console.log('Token found:', !!token);
       console.log('API URL:', `${import.meta.env.VITE_API_URL}/payos/create-payment`);
 
       const response = await fetch(`${import.meta.env.VITE_API_URL}/payos/create-payment`, {
@@ -168,7 +170,7 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
   const startPaymentStatusCheck = (orderCode: number) => {
     const checkStatus = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
         const response = await fetch(`${import.meta.env.VITE_API_URL}/payos/payment-status/${orderCode}`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -200,7 +202,9 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
   // Handle payment success - complete enrollment
   const handlePaymentSuccess = async (orderCode: number) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+      console.log('Handling payment success, token found:', !!token);
+      
       const response = await fetch(`${import.meta.env.VITE_API_URL}/courses/payos-payment-success`, {
         method: 'POST',
         headers: {
@@ -210,7 +214,9 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
         body: JSON.stringify({ orderCode })
       });
 
+      console.log('Payment success response status:', response.status);
       const result = await response.json();
+      console.log('Payment success response data:', result);
       
       if (result.success) {
         alert('✅ Thanh toán thành công! Bạn đã được đăng ký khóa học.');
@@ -230,11 +236,6 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
       console.error('Error handling payment success:', error);
       alert(`❌ Lỗi xử lý thanh toán: ${error.message}`);
     }
-  };
-
-  // Handle payment method selection (redirect to PayOS)
-  const handlePaymentMethodSelect = () => {
-    createPayOSPayment();
   };
 
   const getLevelColor = (level: string) => {

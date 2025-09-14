@@ -71,6 +71,8 @@ const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess, onBac
         setUser(response.user, response.token);
         // Also persist token under unified key for ApiService immediate usage
         localStorage.setItem(STORAGE_KEYS.TOKEN, response.token);
+        // Also set token for admin components
+        localStorage.setItem('token', response.token);
         
         // Show success message (optional)
         console.log('Login successful:', response.message);

@@ -46,15 +46,32 @@ const createPayment = async (req, res) => {
 
     // Kiểm tra xem user đã đăng ký khóa học chưa
     const Enrollment = require('../src/models/Enrollment').default || require('../src/models/Enrollment');
+    
+    console.log('🔍 Kiểm tra enrollment cho:', { userId, courseId });
+    
     const existingEnrollment = await Enrollment.findOne({
       userId: userId,
       courseId: courseId
     });
 
+    console.log('📊 Kết quả kiểm tra enrollment:', { 
+      existingEnrollment: !!existingEnrollment,
+      enrollmentId: existingEnrollment?._id,
+      enrollmentUserId: existingEnrollment?.userId,
+      enrollmentCourseId: existingEnrollment?.courseId
+    });
+
     if (existingEnrollment) {
+      console.log('❌ User đã có enrollment:', existingEnrollment);
       return res.status(400).json({
         success: false,
-        message: 'Bạn đã đăng ký khóa học này rồi'
+        message: 'Bạn đã đăng ký khóa học này rồi',
+        debug: {
+          userId: userId,
+          courseId: courseId,
+          existingEnrollmentId: existingEnrollment._id,
+          existingEnrollmentUserId: existingEnrollment.userId
+        }
       });
     }
 

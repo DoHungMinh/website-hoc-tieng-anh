@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
 import Course, { ICourse } from '../models/Course';
 import Enrollment from '../models/Enrollment';
+import { User } from '../models/User';
 
 // Import PayOS service
 const payOSService = require('../../payos/payos-service');
+const emailService = require('../../payos/email-service');
 
 // Get all courses with filters
 export const getCourses = async (req: Request, res: Response) => {
@@ -306,21 +308,36 @@ export const handlePayOSPaymentSuccess = async (req: Request, res: Response) => 
     // Lấy thông tin payment để biết courseId
     const paymentData = paymentStatus.data;
     
-    // Tìm course từ payment description hoặc từ stored data
-    // Vì PayOS không lưu metadata, ta cần parse từ description
-    const courseIdMatch = paymentData.description?.match(/course[_\s]*([a-fA-F0-9]{24})/i);
+    // Tìm course từ payment description
+    // PayOS v2 không trả về description trực tiếp, mà trong transactions[0].description
     let courseId = null;
-
-    if (courseIdMatch) {
-      courseId = courseIdMatch[1];
-    } else {
-      // Fallback: tìm course theo tên từ description
-      const courseName = paymentData.description?.replace('Thanh toan khoa hoc: ', '');
-      if (courseName) {
-        const course = await Course.findOne({ title: { $regex: courseName, $options: 'i' } });
-        courseId = course?._id;
+    
+    // Thử tìm courseId từ transaction description
+    if (paymentData.transactions && paymentData.transactions.length > 0) {
+      const transactionDesc = paymentData.transactions[0].description;
+      // Tìm pattern courseId (24 ký tự hex) trong description, bỏ qua line breaks
+      const cleanDesc = transactionDesc?.replace(/\s+/g, ' '); // Thay nhiều spaces/newlines thành 1 space
+      const courseIdMatch = cleanDesc?.match(/([a-fA-F0-9]{24})/);
+      if (courseIdMatch) {
+        courseId = courseIdMatch[1];
       }
     }
+    
+    // Fallback: PayOS có thể lưu ở field description (phiên bản cũ)
+    if (!courseId && paymentData.description) {
+      if (paymentData.description.length === 24) {
+        courseId = paymentData.description;
+      } else {
+        const courseIdMatch = paymentData.description.match(/([a-fA-F0-9]{24})/);
+        if (courseIdMatch) {
+          courseId = courseIdMatch[1];
+        }
+      }
+    }
+
+    console.log('🔍 Payment data:', paymentData);
+    console.log('🔍 Transaction description:', paymentData.transactions?.[0]?.description);
+    console.log('🎯 Found courseId:', courseId);
 
     if (!courseId) {
       return res.status(400).json({
@@ -379,6 +396,33 @@ export const handlePayOSPaymentSuccess = async (req: Request, res: Response) => 
     await newEnrollment.save();
 
     console.log(`✅ Đã tạo enrollment thành công cho user ${userId} - course ${courseId}`);
+
+    // Lấy thông tin user để gửi email
+    const user = await User.findById(userId);
+    if (user && user.email) {
+      // Chuẩn bị thông tin để gửi email
+      const paymentInfo = {
+        userEmail: user.email,
+        courseName: course.title,
+        courseId: courseId,
+        amount: paymentData.amount || course.price,
+        paymentDate: new Date(),
+        orderCode: orderCode
+      };
+
+      // Gửi email thông báo thanh toán thành công (không chờ để không block response)
+      emailService.sendPaymentSuccessEmail(paymentInfo)
+        .then((emailResult: any) => {
+          if (emailResult.success) {
+            console.log(`📧 Đã gửi email thông báo thanh toán thành công tới ${user.email}`);
+          } else {
+            console.warn(`⚠️ Không thể gửi email tới ${user.email}:`, emailResult.message);
+          }
+        })
+        .catch((emailError: any) => {
+          console.error(`❌ Lỗi gửi email tới ${user.email}:`, emailError);
+        });
+    }
 
     return res.json({
       success: true,

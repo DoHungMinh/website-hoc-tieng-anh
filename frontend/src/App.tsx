@@ -16,7 +16,9 @@ import NewCourseNotification from './components/NewCourseNotification';
 import UserProfile from './components/UserProfile';
 import IELTSExamList from './components/ielts/IELTSExamList';
 import AccountDisabledNotification from './components/AccountDisabledNotification';
+import { AuthDebugger } from './components/AuthDebugger';
 import { useAuthStore } from './stores/authStore';
+import { syncTokens } from './utils/tokenSync';
 import { useHeartbeat } from './hooks/useHeartbeat';
 import { useActivityHeartbeat } from './hooks/useActivityHeartbeat';
 import { setupGlobalErrorInterceptor } from './utils/errorInterceptor';
@@ -36,6 +38,9 @@ function App() {
   // Setup global error interceptor on app start
   useEffect(() => {
     setupGlobalErrorInterceptor();
+    
+    // Sync tokens để đảm bảo admin và user components đều có token
+    syncTokens();
   }, []);
 
   const handleNavigation = (page: string) => {
@@ -137,6 +142,9 @@ function App() {
           onClose={clearAccountDisabledMessage}
         />
       )}
+      
+      {/* Auth Debugger - only in development */}
+      {import.meta.env.DEV && <AuthDebugger />}
     </div>
   );
 }

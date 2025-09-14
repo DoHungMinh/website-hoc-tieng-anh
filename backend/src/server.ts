@@ -47,8 +47,17 @@ app.use(compression());
 // Rate limiting
 const limiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || "900000"), // 15 minutes
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || "1000"), // limit each IP to 1000 requests per windowMs
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || "5000"), // Tăng từ 1000 lên 5000
     message: "Too many requests from this IP, please try again later.",
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// PayOS rate limiter - riêng cho thanh toán
+const payosLimiter = rateLimit({
+    windowMs: 60000, // 1 phút
+    max: 20, // 20 request thanh toán mỗi phút
+    message: "Too many payment requests, please try again later.",
     standardHeaders: true,
     legacyHeaders: false,
 });
@@ -93,13 +102,17 @@ app.use("/api/user/heartbeat", heartbeatLimiter);
 // Apply admin statistics rate limiter
 app.use("/api/admin/statistics", adminStatsLimiter);
 
+// Apply PayOS specific rate limiter
+app.use("/api/payos", payosLimiter);
+
 // Apply general rate limiting to all other routes
 app.use((req, res, next) => {
     if (
         req.path.includes("/heartbeat") ||
-        req.path.includes("/admin/statistics")
+        req.path.includes("/admin/statistics") ||
+        req.path.includes("/payos")
     ) {
-        // Skip general rate limiting for heartbeat and admin statistics
+        // Skip general rate limiting for special endpoints
         return next();
     }
     return limiter(req, res, next);
@@ -277,6 +290,23 @@ const PORT = process.env.PORT || 5003;
 // Connect to database and start server
 connectDB()
     .then(() => {
+        // Initialize email service
+        try {
+            const emailService = require('../payos/email-service');
+            if (emailService.validateEmailConfig()) {
+                const initialized = emailService.initializeEmailTransporter();
+                if (initialized) {
+                    console.log('📧 Email service initialized successfully');
+                } else {
+                    console.warn('⚠️  Email service failed to initialize');
+                }
+            } else {
+                console.warn('⚠️  Email service config invalid, emails will not be sent');
+            }
+        } catch (error) {
+            console.error('❌ Error initializing email service:', error);
+        }
+
         server.listen(PORT, () => {
             console.log(`🚀 Server running on port ${PORT}`);
             console.log(`🌐 Environment: ${process.env.NODE_ENV}`);

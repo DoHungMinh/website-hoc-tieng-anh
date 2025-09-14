@@ -61,6 +61,7 @@ export const useAuthStore = create<AuthState>()(
         } finally {
           // Clear local storage and state regardless of API call result
           localStorage.removeItem(STORAGE_KEYS.TOKEN);
+          localStorage.removeItem('token'); // Also clear admin token
           set({ 
             user: null, 
             token: null, 
@@ -95,6 +96,7 @@ export const useAuthStore = create<AuthState>()(
         
         // Force clear all auth data
   localStorage.removeItem(STORAGE_KEYS.TOKEN);
+  localStorage.removeItem('token'); // Also clear admin token
   localStorage.removeItem('auth-storage');
         set({ 
           user: null, 

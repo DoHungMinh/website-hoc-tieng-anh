@@ -53,7 +53,7 @@ class PayOSService {
       const paymentData = {
         orderCode: orderCode,
         amount: Math.round(price), // PayOS yêu cầu số nguyên
-        description: `Khoa hoc ${courseId.slice(-6)}`, // Giới hạn 25 ký tự và thêm courseId để track
+        description: `${courseId}`, // Chỉ lưu courseId để dễ parse, đúng 24 ký tự
         items: [
           {
             name: courseName.length > 20 ? courseName.substring(0, 17) + '...' : courseName, // Giới hạn tên
