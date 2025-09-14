@@ -12,6 +12,7 @@ interface User {
   bio?: string;
   learningGoal?: string;
   level?: string;
+  avatar?: string;
 }
 
 interface AuthState {
