@@ -54,6 +54,7 @@ import {
 } from "../controllers/simpleEnrollmentController";
 import { simpleChatbotController } from "../controllers/simpleChatbotController";
 import { realDataChatbotController } from "../controllers/realDataChatbotController";
+import { generateCourse, getTopicSuggestions } from "../controllers/aiCourseController";
 import {
     initializeProgress,
     getUserProgress,
@@ -576,6 +577,16 @@ router.delete("/courses/:id", authenticateToken, requireAdmin, deleteCourse);
 
 // PayOS payment success route
 router.post("/courses/payos-payment-success", authenticateToken, handlePayOSPaymentSuccess);
+
+// =================================================================
+// AI COURSE GENERATION ROUTES (/api/ai)
+// =================================================================
+
+// Generate course using AI
+router.post("/ai/generate-course", authenticateToken, requireAdmin, generateCourse);
+
+// Get topic suggestions for course generation
+router.get("/ai/topic-suggestions", authenticateToken, requireAdmin, getTopicSuggestions);
 
 // =================================================================
 // IELTS ROUTES (/api/ielts)

@@ -23,6 +23,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { courseAPI, Course, CourseFilters } from '../../../services/courseAPI';
+import AICourseCreator from './AICourseCreator';
 
 const CourseManagement: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -188,6 +189,19 @@ const CourseManagement: React.FC = () => {
     setIsCreating(false);
     setSelectedCourse(null);
     setShowDetails(false);
+  };
+
+  // Handle AI course generation
+  const handleAICourseGenerated = async (courseData: Omit<Course, '_id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      await courseAPI.createCourse(courseData);
+      alert('AI đã tạo khóa học thành công!');
+      fetchCourses();
+      fetchStats();
+    } catch (error) {
+      console.error('Error creating AI course:', error);
+      alert('Lỗi khi tạo khóa học bằng AI');
+    }
   };
 
   // Utility functions
@@ -846,13 +860,16 @@ const CourseManagement: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-900">Quản lý khóa học</h2>
           <p className="text-gray-600">Quản lý nội dung và cấu trúc khóa học</p>
         </div>
-        <button
-          onClick={handleCreate}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200"
-        >
-          <Plus className="h-4 w-4" />
-          Tạo khóa học mới
-        </button>
+        <div className="flex gap-3">
+          <AICourseCreator onCourseGenerated={handleAICourseGenerated} />
+          <button
+            onClick={handleCreate}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200"
+          >
+            <Plus className="h-4 w-4" />
+            Tạo khóa học mới
+          </button>
+        </div>
       </div>
 
       {/* Search and Filters */}
