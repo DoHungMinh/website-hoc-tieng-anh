@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { User } from '../models/User';
+import { uploadToCloudinary, deleteFromCloudinary, extractPublicId } from '../services/imageUploadService';
 
 // Get all users with pagination and filters
 export const getAllUsers = async (req: Request, res: Response): Promise<void> => {
@@ -377,6 +378,120 @@ export const getUserStats = async (req: Request, res: Response): Promise<void> =
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi lấy thống kê người dùng'
+    });
+  }
+};
+
+// Upload avatar
+export const uploadAvatar = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const file = req.file;
+    const currentUser = req.user;
+
+    if (!file) {
+      res.status(400).json({
+        success: false,
+        message: 'Vui lòng chọn ảnh để upload'
+      });
+      return;
+    }
+
+    // Check authorization - user can only upload their own avatar, or admin can upload for anyone
+    if (currentUser?.role !== 'admin' && currentUser?._id.toString() !== userId) {
+      res.status(403).json({
+        success: false,
+        message: 'Bạn chỉ có thể upload ảnh đại diện cho chính mình'
+      });
+      return;
+    }
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy người dùng'
+      });
+      return;
+    }
+
+    // Delete old avatar if exists
+    if (user.avatar) {
+      const publicId = extractPublicId(user.avatar);
+      if (publicId) {
+        await deleteFromCloudinary(`avatars/${publicId}`);
+      }
+    }
+
+    // Upload new avatar to Cloudinary
+    const avatarUrl = await uploadToCloudinary(file.buffer, 'avatars', `user_${userId}`);
+
+    // Update user's avatar
+    user.avatar = avatarUrl;
+    await user.save({ validateModifiedOnly: true });
+
+    res.json({
+      success: true,
+      message: 'Upload ảnh đại diện thành công',
+      data: {
+        avatar: avatarUrl
+      }
+    });
+  } catch (error) {
+    console.error('Upload avatar error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi upload ảnh đại diện'
+    });
+  }
+};
+
+// Delete avatar
+export const deleteAvatar = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const currentUser = req.user;
+
+    // Check authorization - user can only delete their own avatar, or admin can delete for anyone
+    if (currentUser?.role !== 'admin' && currentUser?._id.toString() !== userId) {
+      res.status(403).json({
+        success: false,
+        message: 'Bạn chỉ có thể xóa ảnh đại diện của chính mình'
+      });
+      return;
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy người dùng'
+      });
+      return;
+    }
+
+    // Delete avatar from Cloudinary if exists
+    if (user.avatar) {
+      const publicId = extractPublicId(user.avatar);
+      if (publicId) {
+        await deleteFromCloudinary(`avatars/${publicId}`);
+      }
+    }
+
+    // Remove avatar from user
+    user.avatar = undefined;
+    await user.save({ validateModifiedOnly: true });
+
+    res.json({
+      success: true,
+      message: 'Xóa ảnh đại diện thành công'
+    });
+  } catch (error) {
+    console.error('Delete avatar error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi xóa ảnh đại diện'
     });
   }
 };

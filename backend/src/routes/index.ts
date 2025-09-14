@@ -18,7 +18,10 @@ import {
     createUser,
     updateUser,
     getUserStats,
+    uploadAvatar,
+    deleteAvatar,
 } from "../controllers/userController";
+import { upload as avatarUpload } from "../services/imageUploadService";
 import {
     getCourses,
     getPublicCourses,
@@ -304,6 +307,12 @@ router.patch(
 
 // Delete user (admin only)
 router.delete("/user/:id", authenticateToken, requireAdmin, deleteUser);
+
+// Upload avatar (authenticated user can upload their own avatar)
+router.post("/user/:userId/avatar", authenticateToken, avatarUpload.single('avatar'), uploadAvatar);
+
+// Delete avatar (authenticated user can delete their own avatar)
+router.delete("/user/:userId/avatar", authenticateToken, deleteAvatar);
 
 // Heartbeat endpoint to update user online status (any authenticated user)
 router.post(

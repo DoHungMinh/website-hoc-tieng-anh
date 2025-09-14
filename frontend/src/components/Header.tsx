@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BookOpen, Menu, X, Bell } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
+import AvatarDisplay from './AvatarDisplay';
 
 interface HeaderProps {
   onAuthClick?: () => void;
@@ -61,9 +62,18 @@ const Header: React.FC<HeaderProps> = ({ onAuthClick, onNavigate }) => {
           {/* User Actions */}
           <div className="hidden md:flex items-center space-x-4">
             {isAuthenticated ? (
-              <span className="text-white text-base font-medium cursor-pointer hover:text-lime-200 transition-colors duration-200" onClick={handleAuthAction}>
-                {user?.fullName}
-              </span>
+              <button 
+                className="flex items-center space-x-2 text-white hover:text-lime-200 transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-white/10"
+                onClick={handleAuthAction}
+              >
+                <AvatarDisplay 
+                  src={user?.avatar} 
+                  name={user?.fullName || ''} 
+                  size="sm" 
+                  showOnlineStatus={false}
+                />
+                <span className="font-medium">{user?.fullName}</span>
+              </button>
             ) : (
               <button 
                 onClick={handleAuthAction}
@@ -125,15 +135,21 @@ const Header: React.FC<HeaderProps> = ({ onAuthClick, onNavigate }) => {
               </a>
               
               {isAuthenticated ? (
-                <div 
+                <button 
                   onClick={() => {
                     handleAuthAction();
                     setIsMenuOpen(false);
                   }}
-                  className="text-white text-base font-medium py-2 border-t border-green-600 mt-2 pt-4 cursor-pointer hover:text-lime-200 transition-colors duration-200"
+                  className="flex items-center space-x-2 text-white text-base font-medium py-2 border-t border-green-600 mt-2 pt-4 hover:text-lime-200 transition-colors duration-200 w-full text-left"
                 >
-                  {user?.fullName}
-                </div>
+                  <AvatarDisplay 
+                    src={user?.avatar} 
+                    name={user?.fullName || ''} 
+                    size="sm" 
+                    showOnlineStatus={false}
+                  />
+                  <span>{user?.fullName}</span>
+                </button>
               ) : (
                 <button 
                   onClick={() => {

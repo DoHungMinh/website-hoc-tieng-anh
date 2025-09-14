@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
-import { User, Mail, Calendar, Edit3, Save, X, Phone, MapPin, GraduationCap, Heart, Lock, Eye, EyeOff, Target, ArrowLeft, Shield, LogOut } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { User, Mail, Calendar, Edit3, Save, X, Phone, MapPin, GraduationCap, Heart, Lock, Eye, EyeOff, Target, ArrowLeft, Shield, LogOut, Camera, Trash2 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
+import { useToast } from '../hooks/useToast';
+import { ToastContainer } from './Toast';
+import ConfirmModal from './ConfirmModal';
 
 interface UserProfileProps {
   onBack: () => void;
@@ -10,6 +13,7 @@ type ProfileTab = 'profile' | 'password';
 
 const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
   const { user, logout, setUser, token } = useAuthStore();
+  const { toasts, removeToast, success, error } = useToast();
   const [activeTab, setActiveTab] = useState<ProfileTab>('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -29,6 +33,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
     newPassword: '',
     confirmPassword: ''
   });
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const tabs = [
     { id: 'profile' as ProfileTab, label: 'Thông tin cá nhân', icon: User },
@@ -87,18 +95,102 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
     }));
   };
 
+  const handleAvatarUpload = async (file: File) => {
+    if (!user || !token) return;
+    
+    setIsUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      
+      const response = await fetch(`http://localhost:5002/api/user/${user.id}/avatar`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setUser({ ...user, avatar: data.data.avatar }, token);
+        setShowAvatarModal(false);
+        success('Thành công!', 'Cập nhật ảnh đại diện thành công!');
+      } else {
+        error('Lỗi!', data.message || 'Lỗi khi upload ảnh');
+      }
+    } catch (uploadError) {
+      console.error('Avatar upload error:', uploadError);
+      error('Lỗi!', 'Không thể upload ảnh đại diện');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleAvatarDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleAvatarDelete = async () => {
+    if (!user || !token || !user.avatar) return;
+    
+    setShowDeleteConfirm(false);
+    
+    try {
+      const response = await fetch(`http://localhost:5002/api/user/${user.id}/avatar`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setUser({ ...user, avatar: undefined }, token);
+        setShowAvatarModal(false);
+        success('Thành công!', 'Xóa ảnh đại diện thành công!');
+      } else {
+        error('Lỗi!', data.message || 'Lỗi khi xóa ảnh');
+      }
+    } catch (deleteError) {
+      console.error('Avatar delete error:', deleteError);
+      error('Lỗi!', 'Không thể xóa ảnh đại diện');
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        error('Lỗi!', 'Vui lòng chọn file ảnh!');
+        return;
+      }
+      
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        error('Lỗi!', 'Kích thước file không được vượt quá 5MB!');
+        return;
+      }
+      
+      handleAvatarUpload(file);
+    }
+  };
+
   const handlePasswordSave = async () => {
     // Validate password
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert('Mật khẩu mới và xác nhận mật khẩu không khớp!');
+      error('Lỗi!', 'Mật khẩu mới và xác nhận mật khẩu không khớp!');
       return;
     }
     if (passwordForm.newPassword.length < 6) {
-      alert('Mật khẩu mới phải có ít nhất 6 ký tự!');
+      error('Lỗi!', 'Mật khẩu mới phải có ít nhất 6 ký tự!');
       return;
     }
     if (!passwordForm.currentPassword) {
-      alert('Vui lòng nhập mật khẩu hiện tại!');
+      error('Lỗi!', 'Vui lòng nhập mật khẩu hiện tại!');
       return;
     }
 
@@ -119,18 +211,18 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
       const data = await response.json();
 
       if (data.success) {
-        alert('Đổi mật khẩu thành công!');
+        success('Thành công!', 'Đổi mật khẩu thành công!');
         setPasswordForm({
           currentPassword: '',
           newPassword: '',
           confirmPassword: ''
         });
       } else {
-        alert(data.message || 'Có lỗi xảy ra khi đổi mật khẩu!');
+        error('Lỗi!', data.message || 'Có lỗi xảy ra khi đổi mật khẩu!');
       }
-    } catch (error) {
-      console.error('Error changing password:', error);
-      alert('Có lỗi xảy ra khi đổi mật khẩu!');
+    } catch (passwordError) {
+      console.error('Error changing password:', passwordError);
+      error('Lỗi!', 'Có lỗi xảy ra khi đổi mật khẩu!');
     }
   };
 
@@ -495,9 +587,35 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
             <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border border-gray-100">
               <div className="text-center">
                 <div className="relative">
-                  <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-lime-500 rounded-full mx-auto flex items-center justify-center mb-4 shadow-lg">
-                    <User className="h-12 w-12 text-white" />
+                  <div 
+                    onClick={() => setShowAvatarModal(true)}
+                    className="w-24 h-24 rounded-full mx-auto mb-4 shadow-lg cursor-pointer transition-all duration-200 hover:shadow-xl hover:scale-105 group relative overflow-hidden"
+                  >
+                    {user?.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt="Avatar"
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-green-400 to-lime-500 rounded-full flex items-center justify-center">
+                        <User className="h-12 w-12 text-white" />
+                      </div>
+                    )}
+                    
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-full flex items-center justify-center">
+                      <Camera className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-all duration-200" />
+                    </div>
+                    
+                    {/* Loading overlay */}
+                    {isUploadingAvatar && (
+                      <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
+                      </div>
+                    )}
                   </div>
+                  
                   <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center border-3 border-white">
                     <Shield className="h-4 w-4 text-white" />
                   </div>
@@ -548,6 +666,99 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
           </div>
         </div>
       </div>
+
+      {/* Avatar Upload Modal */}
+      {showAvatarModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Ảnh đại diện</h3>
+              <button
+                onClick={() => setShowAvatarModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Current Avatar Preview */}
+            <div className="text-center mb-6">
+              <div className="w-32 h-32 mx-auto rounded-full overflow-hidden bg-gray-100 shadow-lg">
+                {user?.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt="Avatar"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-green-400 to-lime-500 flex items-center justify-center">
+                    <User className="h-16 w-16 text-white" />
+                  </div>
+                )}
+              </div>
+              <p className="text-sm text-gray-500 mt-3">
+                Chấp nhận JPG, PNG. Tối đa 5MB
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  fileInputRef.current?.click();
+                }}
+                disabled={isUploadingAvatar}
+                className="w-full bg-gradient-to-r from-green-500 to-lime-500 hover:from-green-600 hover:to-lime-600 text-white py-3 rounded-xl font-medium transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50"
+              >
+                <Camera className="h-5 w-5" />
+                <span>{user?.avatar ? 'Đổi ảnh đại diện' : 'Thêm ảnh đại diện'}</span>
+              </button>
+
+              {user?.avatar && (
+                <button
+                  onClick={handleAvatarDeleteClick}
+                  disabled={isUploadingAvatar}
+                  className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-medium transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50"
+                >
+                  <Trash2 className="h-5 w-5" />
+                  <span>Xóa ảnh đại diện</span>
+                </button>
+              )}
+
+              <button
+                onClick={() => setShowAvatarModal(false)}
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-medium transition-all duration-200"
+              >
+                Hủy
+              </button>
+            </div>
+
+            {/* Hidden File Input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title="Xóa ảnh đại diện"
+        message="Bạn có chắc chắn muốn xóa ảnh đại diện không? Hành động này không thể hoàn tác."
+        confirmText="Xóa"
+        cancelText="Hủy"
+        type="danger"
+        onConfirm={handleAvatarDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );
 };

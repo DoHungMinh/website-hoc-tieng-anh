@@ -12,12 +12,14 @@ import {
   Globe,
   RefreshCw
 } from 'lucide-react';
+import AvatarDisplay from '../../AvatarDisplay';
 
 interface User {
   _id: string;
   email: string;
   fullName: string;
   phone?: string;
+  avatar?: string;
   role: 'user' | 'admin';
   level: string;
   accountStatus: 'active' | 'disabled';
@@ -468,11 +470,12 @@ const UserManagement: React.FC = () => {
                     <tr key={user._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                            <span className="text-purple-600 font-semibold">
-                              {user.fullName.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
+                          <AvatarDisplay 
+                            src={user.avatar} 
+                            name={user.fullName}
+                            size="md" 
+                            showOnlineStatus={false} 
+                          />
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
                             <div className="text-sm text-gray-500">{user.email}</div>
