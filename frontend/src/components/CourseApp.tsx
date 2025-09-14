@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import CoursesPage from './CoursesPage';
 import CourseDetail from './CourseDetail';
+import PurchasedCourses from './PurchasedCourses';
 import { courseAPI, Course } from '../services/courseAPI';
 import { useAuthStore } from '../stores/authStore';
 
@@ -46,7 +47,7 @@ type DetailCourse = {
   }>;
 };
 
-type ViewType = 'main' | 'vocabulary' | 'grammar' | 'detail';
+type ViewType = 'main' | 'vocabulary' | 'grammar' | 'purchased' | 'detail';
 
 interface CourseAppProps {
   onBack?: () => void;
@@ -59,7 +60,7 @@ const CourseApp: React.FC<CourseAppProps> = ({ onBack, onAuthRequired }) => {
   const [purchasedCourses, setPurchasedCourses] = useState<Set<string>>(new Set()); // Track purchased courses
   const { isAuthenticated } = useAuthStore();
 
-  const handleCourseTypeSelect = (type: 'vocabulary' | 'grammar') => {
+  const handleCourseTypeSelect = (type: 'vocabulary' | 'grammar' | 'purchased') => {
     setCurrentView(type);
   };
 
@@ -360,6 +361,15 @@ const CourseApp: React.FC<CourseAppProps> = ({ onBack, onAuthRequired }) => {
         selectedType={currentView}
         onCourseTypeSelect={handleCourseTypeSelect}
         onCourseSelect={handleCourseSelect}
+        onBack={handleBack}
+      />
+    );
+  }
+
+  // Purchased courses page
+  if (currentView === 'purchased') {
+    return (
+      <PurchasedCourses 
         onBack={handleBack}
       />
     );

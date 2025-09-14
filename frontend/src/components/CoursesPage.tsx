@@ -18,9 +18,11 @@ import {
   FileText,
   Briefcase,
   GraduationCap,
-  Zap
+  Zap,
+  Home
 } from 'lucide-react';
 import { courseAPI, Course as APICourse } from '../services/courseAPI';
+import PurchasedCourses from './PurchasedCourses';
 
 interface Course {
   id: string;
@@ -229,7 +231,7 @@ const grammarCourses: Course[] = [
   }
 ];
 
-type CourseType = 'vocabulary' | 'grammar';
+type CourseType = 'vocabulary' | 'grammar' | 'purchased';
 
 interface CoursesPageProps {
   selectedType?: CourseType;
@@ -627,6 +629,11 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
     );
   };
 
+  // Special case for purchased courses
+  if (activeType === 'purchased') {
+    return <PurchasedCourses onBack={() => setActiveType(null)} />;
+  }
+
   if (activeType) {
     const title = activeType === 'vocabulary' ? 'Từ vựng thông minh' : 'Ngữ pháp tương tác';
     const icon = activeType === 'vocabulary' ? Brain : MessageSquare;
@@ -638,7 +645,10 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => onBack?.()}
+                onClick={() => {
+                  setActiveType(null);
+                  onBack?.();
+                }}
                 className="text-gray-500 hover:text-gray-700 transition-colors"
               >
                 <ChevronRight className="w-6 h-6 rotate-180" />
@@ -711,6 +721,19 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-700">
+        {/* Back to Home Button */}
+        <div className="absolute top-4 left-4 z-10">
+          <button
+            onClick={() => onBack?.()}
+            className="bg-white/20 hover:bg-white/30 text-white rounded-full p-3 transition-all duration-200 backdrop-blur-sm border border-white/20 hover:border-white/40 flex items-center gap-2 group"
+          >
+            <Home className="w-5 h-5" />
+            <span className="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200 pr-1">
+              Trang chủ
+            </span>
+          </button>
+        </div>
+        
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
@@ -743,7 +766,7 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
           <p className="text-gray-600 text-lg">Phát triển từng kỹ năng một cách có hệ thống</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           <div 
             onClick={() => {
               setActiveType('vocabulary');
@@ -845,6 +868,59 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
                 </div>
                 <div className="text-sm font-semibold text-blue-600">
                   Từ 249.000đ
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div 
+            onClick={() => {
+              setActiveType('purchased');
+              onCourseTypeSelect?.('purchased');
+            }}
+            className="group cursor-pointer bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-purple-200"
+          >
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="p-4 bg-purple-100 rounded-2xl group-hover:bg-purple-200 transition-colors">
+                  <GraduationCap className="w-12 h-12 text-purple-600" />
+                </div>
+                <ChevronRight className="w-6 h-6 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all" />
+              </div>
+              
+              <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-purple-600 transition-colors">
+                Khóa học đã mua
+              </h3>
+              
+              <p className="text-gray-600 mb-6 leading-relaxed">
+                Tiếp tục học với các khóa học bạn đã đăng ký, theo dõi tiến độ và nhận chứng chỉ
+              </p>
+
+              <div className="space-y-3 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-gray-600">Theo dõi tiến độ học tập</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-gray-600">Tiếp tục từ bài đã dừng</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-gray-600">Xem lại bài đã học</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-gray-600">Nhận chứng chỉ hoàn thành</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-500">
+                  <span className="font-semibold text-gray-900">Khóa học cá nhân</span>
+                </div>
+                <div className="text-sm font-semibold text-purple-600">
+                  Đã thanh toán
                 </div>
               </div>
             </div>

@@ -16,6 +16,7 @@ import NewCourseNotification from './components/NewCourseNotification';
 import UserProfile from './components/UserProfile';
 import IELTSExamList from './components/ielts/IELTSExamList';
 import AccountDisabledNotification from './components/AccountDisabledNotification';
+import PaymentSuccessHandler from './components/PaymentSuccessHandler';
 import { AuthDebugger } from './components/AuthDebugger';
 import { useAuthStore } from './stores/authStore';
 import { syncTokens } from './utils/tokenSync';
@@ -28,6 +29,9 @@ type Page = 'home' | 'login' | 'register' | 'auth' | 'placement-test' | 'dashboa
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const { user, isAuthenticated } = useAuthStore();
+  
+  // Check if we're on payment success page
+  const isPaymentSuccessPage = window.location.pathname.includes('/payment/success');
   
   // Initialize heartbeat for authenticated users and get account disabled state
   const { accountDisabledMessage, clearAccountDisabledMessage } = useHeartbeat();
@@ -66,6 +70,11 @@ function App() {
   const handleAdminLogout = () => {
     setCurrentPage('home');
   };
+
+  // Handle payment success page
+  if (isPaymentSuccessPage) {
+    return <PaymentSuccessHandler />;
+  }
 
   // If user is admin and authenticated, show admin dashboard
   if (isAuthenticated && user?.role === 'admin') {
