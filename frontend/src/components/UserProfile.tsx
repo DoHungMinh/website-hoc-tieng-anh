@@ -1,21 +1,25 @@
-import React, { useState, useRef } from 'react';
-import { User, Mail, Calendar, Edit3, Save, X, Phone, MapPin, GraduationCap, Heart, Lock, Eye, EyeOff, Target, ArrowLeft, Shield, LogOut, Camera, Trash2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+
+import { User, Mail, Calendar, Edit3, Save, X, Phone, MapPin, GraduationCap, Heart, Lock, Eye, EyeOff, Award, ArrowLeft, Shield, LogOut, Camera, Trash2 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from './Toast';
 import ConfirmModal from './ConfirmModal';
+import { getLevelDisplayName, getLevelDescription, getLevelColor, UserLevel } from '../utils/levelDisplay';
 
 interface UserProfileProps {
   onBack: () => void;
+  onNavigate?: (page: string) => void;
 }
 
 type ProfileTab = 'profile' | 'password';
 
-const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
+const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
   const { user, logout, setUser, token } = useAuthStore();
   const { toasts, removeToast, success, error } = useToast();
   const [activeTab, setActiveTab] = useState<ProfileTab>('profile');
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -96,10 +100,51 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
     setIsEditing(false);
   };
 
+  // Fetch latest profile data including calculated level
+  const fetchProfile = async () => {
+    if (!token) return;
+    
+    setIsLoadingProfile(true);
+    try {
+      const response = await fetch('http://localhost:5002/api/user/profile', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setUser(data.data, token);
+        // Update edit form with fresh data
+        setEditForm({
+          fullName: data.data.fullName || '',
+          email: data.data.email || '',
+          phone: data.data.phone || '',
+          birthDate: data.data.birthDate || '',
+          bio: data.data.bio || '',
+          learningGoal: data.data.learningGoal || '',
+          level: data.data.level || 'Beginner'
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
   const handleLogout = () => {
     logout();
     onBack();
   };
+
+  // Fetch profile on component mount
+  useEffect(() => {
+    fetchProfile();
+  }, [token]);
 
   const handleInputChange = (field: string, value: string) => {
     setEditForm(prev => ({
@@ -485,29 +530,59 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
         <div className="space-y-6">
           {/* Learning Level */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Trình độ hiện tại</label>
-            {isEditing ? (
-              <select
-                value={editForm.level}
-                onChange={(e) => handleInputChange('level', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-              >
-                <option value="Beginner">Beginner (A1-A2)</option>
-                <option value="Intermediate">Intermediate (B1-B2)</option>
-                <option value="Advanced">Advanced (C1-C2)</option>
-              </select>
-            ) : (
-              <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border">
-                <Target className="h-5 w-5 text-green-500" />
-                <span className="text-gray-900 font-medium">{editForm.level}</span>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  editForm.level === 'Beginner' ? 'bg-green-100 text-green-700' :
-                  editForm.level === 'Intermediate' ? 'bg-yellow-100 text-yellow-700' :
-                  'bg-red-100 text-red-700'
-                }`}>
-                  {editForm.level === 'Beginner' ? 'Cơ bản' :
-                   editForm.level === 'Intermediate' ? 'Trung cấp' : 'Nâng cao'}
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">Trình độ hiện tại</label>
+              {user?.level && (
+                <span className="text-xs text-green-600 flex items-center gap-1">
+                  <Award className="h-3 w-3" />
+                  Dựa trên kết quả test
                 </span>
+              )}
+            </div>
+            
+            {/* Show level only if user has test results */}
+            {user?.level && user?.levelSource === 'test_results' ? (
+              <div className={`px-4 py-3 rounded-lg border-2 ${getLevelColor(user.level as UserLevel)}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="text-lg">🎯</div>
+                    <div>
+                      <div className="font-medium text-gray-900">
+                        {getLevelDisplayName(user.level as UserLevel)}
+                      </div>
+                      <div className="text-sm text-gray-600 mt-1">
+                        {getLevelDescription(user.level as UserLevel)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-xs font-semibold px-2 py-1 bg-gray-100 rounded text-gray-700">
+                    [{user.level}]
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="px-4 py-3 rounded-lg border-2 border-yellow-200 bg-yellow-50">
+                <div className="flex items-center space-x-3">
+                  <div className="text-lg">📝</div>
+                  <div>
+                    <div className="font-medium text-gray-900">
+                      Chưa có đánh giá trình độ
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Hãy làm bài kiểm tra IELTS để hệ thống đánh giá trình độ của bạn
+                    </div>
+                    <button 
+                      onClick={() => {
+                        if (onNavigate) {
+                          onNavigate('practice');
+                        }
+                      }}
+                      className="inline-block mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      Làm bài test ngay →
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>

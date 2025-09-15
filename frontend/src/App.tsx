@@ -90,7 +90,7 @@ function App() {
       return <ProgressDashboard onNavigate={handleNavigation} />;
     }
     if (currentPage === 'profile') {
-      return <UserProfile onBack={() => setCurrentPage('home')} />;
+      return <UserProfile onBack={() => setCurrentPage('home')} onNavigate={handleNavigation} />;
     }
   }
 

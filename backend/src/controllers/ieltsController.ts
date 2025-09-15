@@ -1,9 +1,29 @@
 import { Request, Response } from 'express';
 import { IELTSExam } from '../models/IELTSExam';
 import IELTSTestResult from '../models/IELTSTestResult';
+import { User } from '../models/User';
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 import { Readable } from 'stream';
+import { calculateUserLevel } from '../utils/levelCalculator';
+
+// Function to update user level based on test results
+const updateUserLevelFromTestResults = async (userId: string) => {
+  try {
+    // Get all test results for this user
+    const testResults = await IELTSTestResult.find({ userId }).lean();
+    
+    // Calculate the appropriate level based on test results
+    const newLevel = calculateUserLevel(testResults.map(result => ({ bandScore: result.score.bandScore })));
+    
+    // Update user's level in database
+    await User.findByIdAndUpdate(userId, { level: newLevel }, { validateModifiedOnly: true });
+    
+    console.log(`📈 Updated user ${userId} level to: ${newLevel}`);
+  } catch (error) {
+    console.error('Error updating user level from test results:', error);
+  }
+};
 
 // Configure Cloudinary
 cloudinary.config({
@@ -553,12 +573,18 @@ export const submitTestResult = async (req: Request, res: Response): Promise<voi
 
     await testResult.save();
 
+    // Update user level based on test results if bandScore is available
+    if (bandScore && bandScore > 0) {
+      await updateUserLevelFromTestResults(userId);
+    }
+
     res.json({
       success: true,
       message: 'Kết quả đã được lưu thành công',
       data: {
         resultId: testResult._id,
-        score: testResult.score
+        score: testResult.score,
+        levelUpdated: bandScore && bandScore > 0
       }
     });
 

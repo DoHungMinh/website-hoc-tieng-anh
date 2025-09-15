@@ -13,6 +13,7 @@ interface User {
   learningGoal?: string;
   level?: string;
   avatar?: string;
+  levelSource?: 'test_results' | 'default';
 }
 
 interface AuthState {
