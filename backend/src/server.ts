@@ -17,7 +17,6 @@ const connectDB = require("../config/database");
 // Import routes
 import allRoutes from "./routes/index";
 
-
 // Import middleware
 import { errorHandler } from "./middleware/errorHandler";
 import { requestLogger } from "./middleware/logger";
@@ -26,6 +25,7 @@ import {
     startUserActivityCleanup,
 } from "./middleware/userActivity";
 import { optionalAuth } from "./middleware/auth";
+import { realtimeService } from "./services/realtimeService";
 
 // Initialize Express app
 const app = express();
@@ -147,7 +147,6 @@ app.use("/api/payos", payOSRoutes);
 
 // Trigger restart for PayOS fix
 
-
 // Test database endpoint
 app.get("/api/test-db", async (req: Request, res: Response) => {
     try {
@@ -244,9 +243,18 @@ app.get("/api/create-test-user", async (req: Request, res: Response) => {
 io.on("connection", (socket: any) => {
     console.log("🔗 User connected:", socket.id);
 
+    // Initialize realtime service with socket.io instance
+    realtimeService.setSocketIO(io);
+
     socket.on("join_room", (userId: string) => {
         socket.join(`user_${userId}`);
         console.log(`👤 User ${userId} joined room`);
+    });
+
+    // Admin joins admin room for statistics updates
+    socket.on("join_admin", () => {
+        socket.join("admin_room");
+        console.log("👑 Admin joined admin room for real-time updates");
     });
 
     socket.on("chat_message", async (data: any) => {
@@ -292,25 +300,31 @@ connectDB()
     .then(() => {
         // Initialize email service
         try {
-            const emailService = require('../payos/email-service');
+            const emailService = require("../payos/email-service");
             if (emailService.validateEmailConfig()) {
                 const initialized = emailService.initializeEmailTransporter();
                 if (initialized) {
-                    console.log('📧 Email service initialized successfully');
+                    console.log("📧 Email service initialized successfully");
                 } else {
-                    console.warn('⚠️  Email service failed to initialize');
+                    console.warn("⚠️  Email service failed to initialize");
                 }
             } else {
-                console.warn('⚠️  Email service config invalid, emails will not be sent');
+                console.warn(
+                    "⚠️  Email service config invalid, emails will not be sent"
+                );
             }
         } catch (error) {
-            console.error('❌ Error initializing email service:', error);
+            console.error("❌ Error initializing email service:", error);
         }
 
         server.listen(PORT, () => {
             console.log(`🚀 Server running on port ${PORT}`);
             console.log(`🌐 Environment: ${process.env.NODE_ENV}`);
             console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL}`);
+
+            // Initialize realtime service with socket.io
+            realtimeService.setSocketIO(io);
+            console.log("📡 Real-time service initialized");
 
             // Start user activity cleanup
             startUserActivityCleanup();

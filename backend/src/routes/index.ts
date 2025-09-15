@@ -57,7 +57,10 @@ import {
 } from "../controllers/simpleEnrollmentController";
 import { simpleChatbotController } from "../controllers/simpleChatbotController";
 import { realDataChatbotController } from "../controllers/realDataChatbotController";
-import { generateCourse, getTopicSuggestions } from "../controllers/aiCourseController";
+import {
+    generateCourse,
+    getTopicSuggestions,
+} from "../controllers/aiCourseController";
 import {
     initializeProgress,
     getUserProgress,
@@ -74,6 +77,7 @@ import {
     optionalAuth,
 } from "../middleware/auth";
 import { setUserOffline } from "../middleware/userActivity";
+import { realtimeService } from "../services/realtimeService";
 
 const router = Router();
 
@@ -216,6 +220,26 @@ router.post("/auth/login", async (req: Request, res: Response) => {
         // Generate token
         const token = generateToken(user._id);
 
+        // Broadcast updated statistics when user logs in (for user count updates)
+        await realtimeService.broadcastUpdatedStats();
+
+        // Emit real-time login event (disabled to reduce noise)
+        // await realtimeService.emitUserActivity({
+        //     type: "login",
+        //     userId: user._id.toString(),
+        //     userEmail: user.email,
+        //     userName: user.fullName,
+        //     timestamp: new Date(),
+        // });
+
+        // Emit recent activity (disabled to reduce noise)
+        // await realtimeService.emitRecentActivity({
+        //     type: "login",
+        //     action: `${user.fullName} đã đăng nhập`,
+        //     userEmail: user.email,
+        //     userName: user.fullName,
+        // });
+
         res.json({
             success: true,
             message:
@@ -254,6 +278,26 @@ router.post(
             if (req.user && req.user._id) {
                 // Set user offline
                 await setUserOffline(req.user._id);
+
+                // Broadcast updated statistics when user logs out (for user count updates)
+                await realtimeService.broadcastUpdatedStats();
+
+                // Emit real-time logout event (disabled to reduce noise)
+                // await realtimeService.emitUserActivity({
+                //     type: "logout",
+                //     userId: req.user._id.toString(),
+                //     userEmail: req.user.email,
+                //     userName: req.user.fullName,
+                //     timestamp: new Date(),
+                // });
+
+                // Emit recent activity (disabled to reduce noise)
+                // await realtimeService.emitRecentActivity({
+                //     type: "logout",
+                //     action: `${req.user.fullName} đã đăng xuất`,
+                //     userEmail: req.user.email,
+                //     userName: req.user.fullName,
+                // });
             }
 
             res.json({
@@ -381,7 +425,12 @@ router.patch(
 router.delete("/user/:id", authenticateToken, requireAdmin, deleteUser);
 
 // Upload avatar (authenticated user can upload their own avatar)
-router.post("/user/:userId/avatar", authenticateToken, avatarUpload.single('avatar'), uploadAvatar);
+router.post(
+    "/user/:userId/avatar",
+    authenticateToken,
+    avatarUpload.single("avatar"),
+    uploadAvatar
+);
 
 // Delete avatar (authenticated user can delete their own avatar)
 router.delete("/user/:userId/avatar", authenticateToken, deleteAvatar);
@@ -490,9 +539,10 @@ router.post("/user/offline", async (req: Request, res: Response) => {
         }
 
         const userId = decoded.userId;
-        const userEmail = decoded.email;
-
-        console.log(`👋 OFFLINE: User ${userEmail} (${userId}) closing tab`);
+        const userEmail = decoded.email || "unknown";
+        const userName =
+            decoded.fullName ||
+            (userEmail ? userEmail.split("@")[0] : "Unknown User"); // fallback
 
         // Set user offline immediately
         await User.findByIdAndUpdate(
@@ -506,6 +556,9 @@ router.post("/user/offline", async (req: Request, res: Response) => {
                 new: false,
             }
         );
+
+        // Broadcast updated statistics when user goes offline (for user count updates)
+        await realtimeService.broadcastUpdatedStats();
 
         // Remove from heartbeat cache
         heartbeatCache.delete(userId.toString());
@@ -657,17 +710,31 @@ router.patch(
 router.delete("/courses/:id", authenticateToken, requireAdmin, deleteCourse);
 
 // PayOS payment success route
-router.post("/courses/payos-payment-success", authenticateToken, handlePayOSPaymentSuccess);
+router.post(
+    "/courses/payos-payment-success",
+    authenticateToken,
+    handlePayOSPaymentSuccess
+);
 
 // =================================================================
 // AI COURSE GENERATION ROUTES (/api/ai)
 // =================================================================
 
 // Generate course using AI
-router.post("/ai/generate-course", authenticateToken, requireAdmin, generateCourse);
+router.post(
+    "/ai/generate-course",
+    authenticateToken,
+    requireAdmin,
+    generateCourse
+);
 
 // Get topic suggestions for course generation
-router.get("/ai/topic-suggestions", authenticateToken, requireAdmin, getTopicSuggestions);
+router.get(
+    "/ai/topic-suggestions",
+    authenticateToken,
+    requireAdmin,
+    getTopicSuggestions
+);
 
 // =================================================================
 // IELTS ROUTES (/api/ielts)
