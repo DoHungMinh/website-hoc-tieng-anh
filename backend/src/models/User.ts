@@ -8,8 +8,11 @@ export interface IUser extends Document {
   fullName: string;
   phone?: string;
   avatar?: string;
+  bio?: string;
+  birthDate?: string;
+  learningGoal?: string;
   role: 'user' | 'admin';
-  level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+  level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'Beginner';
   isEmailVerified: boolean;
   accountStatus: 'active' | 'disabled';
   isOnline: boolean;
@@ -65,6 +68,18 @@ const userSchema = new Schema<IUser>({
     type: String,
     default: null
   },
+  bio: {
+    type: String,
+    trim: true
+  },
+  birthDate: {
+    type: String,
+    trim: true
+  },
+  learningGoal: {
+    type: String,
+    trim: true
+  },
   role: {
     type: String,
     enum: ['user', 'admin'],
@@ -72,8 +87,8 @@ const userSchema = new Schema<IUser>({
   },
   level: {
     type: String,
-    enum: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'],
-    default: 'A1'
+    enum: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'Beginner'],
+    default: 'Beginner'
   },
   isEmailVerified: {
     type: Boolean,

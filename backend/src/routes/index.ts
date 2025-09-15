@@ -147,6 +147,11 @@ router.post("/auth/register", async (req: Request, res: Response) => {
                 fullName: user.fullName,
                 email: user.email,
                 phone: user.phone,
+                bio: user.bio,
+                birthDate: user.birthDate,
+                learningGoal: user.learningGoal,
+                level: user.level,
+                avatar: user.avatar,
                 role: user.role,
             },
             token,
@@ -222,7 +227,11 @@ router.post("/auth/login", async (req: Request, res: Response) => {
                 fullName: user.fullName,
                 email: user.email,
                 phone: user.phone,
+                bio: user.bio,
+                birthDate: user.birthDate,
+                learningGoal: user.learningGoal,
                 level: user.level,
+                avatar: user.avatar,
                 role: user.role,
             },
             token,
@@ -273,6 +282,69 @@ router.get("/auth/test", (req, res) => {
 // Cache for heartbeat to reduce database load
 const heartbeatCache = new Map<string, number>();
 const HEARTBEAT_CACHE_DURATION = 60000; // 60 seconds
+
+// Update profile endpoint (any authenticated user can update their own profile)
+router.put(
+    "/user/profile",
+    authenticateToken,
+    async (req: Request, res: Response): Promise<void> => {
+        try {
+            const userId = req.user?._id;
+            const { fullName, phone, bio, birthDate, learningGoal, level } = req.body;
+
+            if (!userId) {
+                res.status(401).json({
+                    success: false,
+                    message: "Không tìm thấy thông tin người dùng",
+                });
+                return;
+            }
+
+            // Find user
+            const user = await User.findById(userId);
+            if (!user) {
+                res.status(404).json({
+                    success: false,
+                    message: "Không tìm thấy người dùng",
+                });
+                return;
+            }
+
+            // Update user info
+            if (fullName !== undefined) user.fullName = fullName;
+            if (phone !== undefined) user.phone = phone;
+            if (bio !== undefined) user.bio = bio;
+            if (birthDate !== undefined) user.birthDate = birthDate;
+            if (learningGoal !== undefined) user.learningGoal = learningGoal;
+            if (level !== undefined) user.level = level;
+
+            await user.save({ validateModifiedOnly: true });
+
+            res.json({
+                success: true,
+                message: "Cập nhật thông tin thành công",
+                data: {
+                    id: user._id,
+                    fullName: user.fullName,
+                    email: user.email,
+                    phone: user.phone,
+                    bio: user.bio,
+                    birthDate: user.birthDate,
+                    learningGoal: user.learningGoal,
+                    level: user.level,
+                    avatar: user.avatar,
+                    role: user.role
+                }
+            });
+        } catch (error) {
+            console.error("Update profile error:", error);
+            res.status(500).json({
+                success: false,
+                message: "Lỗi server khi cập nhật thông tin",
+            });
+        }
+    }
+);
 
 // Get user statistics (admin only)
 router.get("/user/stats", authenticateToken, requireAdmin, getUserStats);

@@ -47,20 +47,40 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
     setIsEditing(true);
   };
 
-  const handleSave = () => {
-    if (user && token) {
-      setUser({
-        ...user,
-        fullName: editForm.fullName,
-        email: editForm.email,
-        phone: editForm.phone,
-        birthDate: editForm.birthDate,
-        bio: editForm.bio,
-        learningGoal: editForm.learningGoal,
-        level: editForm.level
-      }, token);
+  const handleSave = async () => {
+    if (!user || !token) return;
+    
+    try {
+      const response = await fetch('http://localhost:5002/api/user/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          fullName: editForm.fullName,
+          phone: editForm.phone,
+          birthDate: editForm.birthDate,
+          bio: editForm.bio,
+          learningGoal: editForm.learningGoal,
+          level: editForm.level
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Update local state with the response from server
+        setUser(data.data, token);
+        success('Thành công!', 'Cập nhật thông tin thành công!');
+        setIsEditing(false);
+      } else {
+        error('Lỗi!', data.message || 'Lỗi khi cập nhật thông tin');
+      }
+    } catch (profileError) {
+      console.error('Profile update error:', profileError);
+      error('Lỗi!', 'Không thể cập nhật thông tin');
     }
-    setIsEditing(false);
   };
 
   const handleCancel = () => {
@@ -114,7 +134,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
       const data = await response.json();
       
       if (data.success) {
-        setUser({ ...user, avatar: data.data.avatar }, token);
+        // Update user object with new avatar
+        const updatedUser = { ...user, avatar: data.data.avatar };
+        setUser(updatedUser, token);
         setShowAvatarModal(false);
         success('Thành công!', 'Cập nhật ảnh đại diện thành công!');
       } else {
@@ -148,7 +170,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
       const data = await response.json();
       
       if (data.success) {
-        setUser({ ...user, avatar: undefined }, token);
+        // Update user object without avatar
+        const updatedUser = { ...user, avatar: undefined };
+        setUser(updatedUser, token);
         setShowAvatarModal(false);
         success('Thành công!', 'Xóa ảnh đại diện thành công!');
       } else {
