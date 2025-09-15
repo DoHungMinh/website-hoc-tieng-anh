@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     Users,
     BookOpen,
@@ -18,6 +18,7 @@ import {
     Legend,
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
+import { io, Socket } from "socket.io-client";
 
 ChartJS.register(
     CategoryScale,
@@ -85,6 +86,9 @@ const DashboardStats: React.FC = () => {
     const [lastOverviewFetch, setLastOverviewFetch] = useState<number>(0);
     const [lastRealtimeFetch, setLastRealtimeFetch] = useState<number>(0);
 
+    // Socket.IO for real-time updates
+    const socketRef = useRef<Socket | null>(null);
+
     // Cache duration: 2 minutes for overview, 10 seconds for realtime
     const OVERVIEW_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
     const REALTIME_CACHE_DURATION = 10 * 1000; // 10 seconds
@@ -95,19 +99,77 @@ const DashboardStats: React.FC = () => {
         fetchUserGrowthData();
         fetchRecentActivities();
 
-        // Cập nhật real-time data mỗi 10 giây
+        // Setup Socket.IO connection for real-time updates
+        const setupSocket = () => {
+            try {
+                const socket = io("http://localhost:5002", {
+                    transports: ["websocket", "polling"],
+                });
+
+                socketRef.current = socket;
+
+                socket.on("connect", () => {
+                    console.log("🔗 Connected to real-time server");
+                    socket.emit("join_admin"); // Join admin room for statistics
+                });
+
+                // Listen for user activity events
+                socket.on("user_activity", (data) => {
+                    console.log("👤 User activity:", data);
+                    // Just log the activity, no notifications UI
+                });
+
+                // Listen for statistics updates
+                socket.on("statistics_update", (data) => {
+                    console.log("📊 Statistics update:", data);
+                    if (data.type === "realtime") {
+                        setRealtimeData(data.data);
+                        setLastRealtimeFetch(Date.now());
+                    }
+                });
+
+                // Listen for recent activity updates
+                socket.on("recent_activity", (activity) => {
+                    console.log("🔔 Recent activity:", activity);
+                    setRecentActivities((prev) => [
+                        activity,
+                        ...prev.slice(0, 5),
+                    ]);
+                });
+
+                socket.on("disconnect", () => {
+                    console.log("🔌 Disconnected from real-time server");
+                });
+
+                socket.on("error", (error) => {
+                    console.error("❌ Socket error:", error);
+                });
+            } catch (error) {
+                console.error("Failed to setup socket:", error);
+            }
+        };
+
+        setupSocket();
+
+        // Cập nhật real-time data mỗi 10 giây (fallback)
         const realtimeInterval = setInterval(fetchRealtimeData, 10000);
 
         // Cập nhật overview stats mỗi 2 phút để tránh rate limit
         const overviewInterval = setInterval(fetchOverviewStats, 2 * 60 * 1000);
 
-        // Cập nhật recent activities mỗi 30 giây
+        // Cập nhật recent activities mỗi 30 giây (fallback)
         const activitiesInterval = setInterval(fetchRecentActivities, 30000);
 
         return () => {
             clearInterval(realtimeInterval);
             clearInterval(overviewInterval);
             clearInterval(activitiesInterval);
+
+            // Cleanup socket connection
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+                socketRef.current = null;
+            }
         };
     }, []);
 

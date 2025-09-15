@@ -1,161 +1,177 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { User, IUser } from '../models/User';
+import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+import { User, IUser } from "../models/User";
 
 // Extend Request interface to include user
 declare global {
-  namespace Express {
-    interface Request {
-      user?: IUser;
+    namespace Express {
+        interface Request {
+            user?: IUser;
+        }
     }
-  }
 }
 
 interface JwtPayload {
-  userId: string;
-  email: string;
-  role: string;
+    userId: string;
+    email: string;
+    role: string;
 }
 
 // Middleware to authenticate JWT token
-export const authenticateToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+export const authenticateToken = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        const authHeader = req.headers.authorization;
+        const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
 
-    console.log('🔐 authenticateToken middleware:', { 
-      endpoint: req.originalUrl,
-      method: req.method,
-      hasAuthHeader: !!authHeader,
-      hasToken: !!token,
-      tokenPreview: token ? token.substring(0, 20) + '...' : 'null'
-    });
+        if (!token) {
+            console.log("❌ No token provided for:", req.originalUrl);
+            res.status(401).json({
+                success: false,
+                message: "Không có token xác thực",
+            });
+            return;
+        }
 
-    if (!token) {
-      console.log('❌ No token provided');
-      res.status(401).json({
-        success: false,
-        message: 'Không có token xác thực'
-      });
-      return;
+        const jwtSecret = process.env.JWT_SECRET;
+        if (!jwtSecret) {
+            throw new Error("JWT_SECRET is not defined");
+        }
+
+        const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
+
+        // Get user from database
+        const user = await User.findById(decoded.userId).select("-password");
+        if (!user) {
+            console.log("❌ User not found in database:", decoded.userId);
+            res.status(401).json({
+                success: false,
+                message: "Người dùng không tồn tại",
+            });
+            return;
+        }
+
+        // Check if account is disabled
+        if (user.accountStatus === "disabled") {
+            console.log(
+                `🔒 ACCOUNT DISABLED: User ${user.email} tried to access but account is disabled`
+            );
+            res.status(403).json({
+                success: false,
+                message: "Tài khoản đã bị vô hiệu hóa. Vui lòng đăng nhập lại.",
+            });
+            return;
+        }
+
+        // Only log successful auth when explicitly enabled
+        if (process.env.ENABLE_AUTH_LOGGING === "true") {
+            console.log("✅ Auth success:", {
+                userId: user._id,
+                email: user.email,
+                role: user.role,
+            });
+        }
+
+        req.user = user;
+        next();
+    } catch (error) {
+        console.error("❌ Auth middleware error:", error);
+
+        if (error instanceof jwt.JsonWebTokenError) {
+            res.status(401).json({
+                success: false,
+                message: "Token không hợp lệ",
+            });
+            return;
+        }
+
+        if (error instanceof jwt.TokenExpiredError) {
+            res.status(401).json({
+                success: false,
+                message: "Token đã hết hạn",
+            });
+            return;
+        }
+
+        res.status(500).json({
+            success: false,
+            message: "Lỗi xác thực",
+        });
     }
-
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      throw new Error('JWT_SECRET is not defined');
-    }
-
-    const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
-    
-    // Get user from database
-    const user = await User.findById(decoded.userId).select('-password');
-    if (!user) {
-      console.log('❌ User not found in database:', decoded.userId);
-      res.status(401).json({
-        success: false,
-        message: 'Người dùng không tồn tại'
-      });
-      return;
-    }
-
-    // Check if account is disabled
-    if (user.accountStatus === 'disabled') {
-      console.log(`🔒 ACCOUNT DISABLED: User ${user.email} (${user._id}) tried to access API but account is disabled`);
-      res.status(403).json({
-        success: false,
-        message: 'Tài khoản đã bị vô hiệu hóa. Vui lòng đăng nhập lại.'
-      });
-      return;
-    }
-
-    console.log('✅ Authentication successful:', { 
-      userId: user._id, 
-      email: user.email, 
-      role: user.role 
-    });
-
-    req.user = user;
-    next();
-  } catch (error) {
-    console.error('❌ Auth middleware error:', error);
-    
-    if (error instanceof jwt.JsonWebTokenError) {
-      res.status(401).json({
-        success: false,
-        message: 'Token không hợp lệ'
-      });
-      return;
-    }
-    
-    if (error instanceof jwt.TokenExpiredError) {
-      res.status(401).json({
-        success: false,
-        message: 'Token đã hết hạn'
-      });
-      return;
-    }
-
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi xác thực'
-    });
-  }
 };
 
 // Middleware to require admin role
-export const requireAdmin = (req: Request, res: Response, next: NextFunction): void => {
-  if (!req.user) {
-    res.status(401).json({
-      success: false,
-      message: 'Chưa xác thực'
-    });
-    return;
-  }
+export const requireAdmin = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): void => {
+    if (!req.user) {
+        res.status(401).json({
+            success: false,
+            message: "Chưa xác thực",
+        });
+        return;
+    }
 
-  if (req.user.role !== 'admin') {
-    res.status(403).json({
-      success: false,
-      message: 'Không có quyền truy cập. Chỉ admin mới có thể thực hiện thao tác này.'
-    });
-    return;
-  }
-
-  next();
-};
-
-// Middleware to require user or admin role (for protected routes)
-export const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
-  if (!req.user) {
-    res.status(401).json({
-      success: false,
-      message: 'Chưa xác thực'
-    });
-    return;
-  }
-
-  next();
-};
-
-// Optional auth middleware (doesn't require authentication but adds user if available)
-export const optionalAuth = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (token) {
-      const jwtSecret = process.env.JWT_SECRET;
-      if (jwtSecret) {
-        const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
-        const user = await User.findById(decoded.userId).select('-password');
-        if (user && user.accountStatus !== 'disabled') {
-          req.user = user;
-        }
-      }
+    if (req.user.role !== "admin") {
+        res.status(403).json({
+            success: false,
+            message:
+                "Không có quyền truy cập. Chỉ admin mới có thể thực hiện thao tác này.",
+        });
+        return;
     }
 
     next();
-  } catch (error) {
-    // If auth fails, continue without user (optional auth)
+};
+
+// Middleware to require user or admin role (for protected routes)
+export const requireAuth = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): void => {
+    if (!req.user) {
+        res.status(401).json({
+            success: false,
+            message: "Chưa xác thực",
+        });
+        return;
+    }
+
     next();
-  }
+};
+
+// Optional auth middleware (doesn't require authentication but adds user if available)
+export const optionalAuth = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const authHeader = req.headers.authorization;
+        const token = authHeader && authHeader.split(" ")[1];
+
+        if (token) {
+            const jwtSecret = process.env.JWT_SECRET;
+            if (jwtSecret) {
+                const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
+                const user = await User.findById(decoded.userId).select(
+                    "-password"
+                );
+                if (user && user.accountStatus !== "disabled") {
+                    req.user = user;
+                }
+            }
+        }
+
+        next();
+    } catch (error) {
+        // If auth fails, continue without user (optional auth)
+        next();
+    }
 };
