@@ -6,11 +6,7 @@ import express from "express";
 import { User } from "../models/User";
 import Course from "../models/Course";
 import { IELTSExam } from "../models/IELTSExam";
-import IELTSTestResult from "../models/IELTSTestResult";
 import Enrollment from "../models/Enrollment";
-
-// Import utilities
-import { calculateUserLevel } from "../utils/levelCalculator";
 
 // Import controllers
 import {
@@ -61,10 +57,7 @@ import {
 } from "../controllers/simpleEnrollmentController";
 import { simpleChatbotController } from "../controllers/simpleChatbotController";
 import { realDataChatbotController } from "../controllers/realDataChatbotController";
-import {
-    generateCourse,
-    getTopicSuggestions,
-} from "../controllers/aiCourseController";
+import { generateCourse, getTopicSuggestions } from "../controllers/aiCourseController";
 import {
     initializeProgress,
     getUserProgress,
@@ -81,7 +74,6 @@ import {
     optionalAuth,
 } from "../middleware/auth";
 import { setUserOffline } from "../middleware/userActivity";
-import { realtimeService } from "../services/realtimeService";
 
 const router = Router();
 
@@ -155,11 +147,6 @@ router.post("/auth/register", async (req: Request, res: Response) => {
                 fullName: user.fullName,
                 email: user.email,
                 phone: user.phone,
-                bio: user.bio,
-                birthDate: user.birthDate,
-                learningGoal: user.learningGoal,
-                level: user.level,
-                avatar: user.avatar,
                 role: user.role,
             },
             token,
@@ -224,26 +211,6 @@ router.post("/auth/login", async (req: Request, res: Response) => {
         // Generate token
         const token = generateToken(user._id);
 
-        // Broadcast updated statistics when user logs in (for user count updates)
-        await realtimeService.broadcastUpdatedStats();
-
-        // Emit real-time login event (disabled to reduce noise)
-        // await realtimeService.emitUserActivity({
-        //     type: "login",
-        //     userId: user._id.toString(),
-        //     userEmail: user.email,
-        //     userName: user.fullName,
-        //     timestamp: new Date(),
-        // });
-
-        // Emit recent activity (disabled to reduce noise)
-        // await realtimeService.emitRecentActivity({
-        //     type: "login",
-        //     action: `${user.fullName} đã đăng nhập`,
-        //     userEmail: user.email,
-        //     userName: user.fullName,
-        // });
-
         res.json({
             success: true,
             message:
@@ -255,11 +222,7 @@ router.post("/auth/login", async (req: Request, res: Response) => {
                 fullName: user.fullName,
                 email: user.email,
                 phone: user.phone,
-                bio: user.bio,
-                birthDate: user.birthDate,
-                learningGoal: user.learningGoal,
                 level: user.level,
-                avatar: user.avatar,
                 role: user.role,
             },
             token,
@@ -282,26 +245,6 @@ router.post(
             if (req.user && req.user._id) {
                 // Set user offline
                 await setUserOffline(req.user._id);
-
-                // Broadcast updated statistics when user logs out (for user count updates)
-                await realtimeService.broadcastUpdatedStats();
-
-                // Emit real-time logout event (disabled to reduce noise)
-                // await realtimeService.emitUserActivity({
-                //     type: "logout",
-                //     userId: req.user._id.toString(),
-                //     userEmail: req.user.email,
-                //     userName: req.user.fullName,
-                //     timestamp: new Date(),
-                // });
-
-                // Emit recent activity (disabled to reduce noise)
-                // await realtimeService.emitRecentActivity({
-                //     type: "logout",
-                //     action: `${req.user.fullName} đã đăng xuất`,
-                //     userEmail: req.user.email,
-                //     userName: req.user.fullName,
-                // });
             }
 
             res.json({
@@ -330,147 +273,6 @@ router.get("/auth/test", (req, res) => {
 // Cache for heartbeat to reduce database load
 const heartbeatCache = new Map<string, number>();
 const HEARTBEAT_CACHE_DURATION = 60000; // 60 seconds
-
-// Get user profile endpoint (any authenticated user can get their own profile)
-router.get(
-    "/user/profile",
-    authenticateToken,
-    async (req: Request, res: Response): Promise<void> => {
-        try {
-            const userId = req.user?._id;
-            
-            if (!userId) {
-                res.status(401).json({
-                    success: false,
-                    message: "Không tìm thấy thông tin người dùng",
-                });
-                return;
-            }
-
-            // Find user
-            const user = await User.findById(userId).select('-password');
-            if (!user) {
-                res.status(404).json({
-                    success: false,
-                    message: "Không tìm thấy người dùng",
-                });
-                return;
-            }
-
-            // Get latest test results to calculate current level
-            const testResults = await IELTSTestResult.find({ userId }).lean();
-            let currentLevel = user.level;
-            let levelSource = 'default';
-            
-            // Only update level if there are test results with valid band scores
-            const validTestResults = testResults.filter((result: any) => result.score?.bandScore > 0);
-            if (validTestResults.length > 0) {
-                const calculatedLevel = calculateUserLevel(validTestResults.map((result: any) => ({ bandScore: result.score?.bandScore })));
-                currentLevel = calculatedLevel;
-                levelSource = 'test_results';
-                
-                // Update user level if it's different from calculated level
-                if (calculatedLevel !== user.level) {
-                    user.level = calculatedLevel;
-                    await user.save({ validateModifiedOnly: true });
-                }
-            }
-
-            // Prepare response data
-            const responseData: any = {
-                id: user._id,
-                fullName: user.fullName,
-                email: user.email,
-                phone: user.phone,
-                bio: user.bio,
-                birthDate: user.birthDate,
-                learningGoal: user.learningGoal,
-                avatar: user.avatar,
-                role: user.role,
-                levelSource: levelSource
-            };
-
-            // Only include level if there are valid test results
-            if (levelSource === 'test_results') {
-                responseData.level = currentLevel;
-            }
-
-            res.json({
-                success: true,
-                data: responseData
-            });
-        } catch (error) {
-            console.error("Get user profile error:", error);
-            res.status(500).json({
-                success: false,
-                message: "Lỗi server khi lấy thông tin người dùng",
-            });
-        }
-    }
-);
-
-// Update profile endpoint (any authenticated user can update their own profile)
-router.put(
-    "/user/profile",
-    authenticateToken,
-    async (req: Request, res: Response): Promise<void> => {
-        try {
-            const userId = req.user?._id;
-            const { fullName, phone, bio, birthDate, learningGoal, level } = req.body;
-
-            if (!userId) {
-                res.status(401).json({
-                    success: false,
-                    message: "Không tìm thấy thông tin người dùng",
-                });
-                return;
-            }
-
-            // Find user
-            const user = await User.findById(userId);
-            if (!user) {
-                res.status(404).json({
-                    success: false,
-                    message: "Không tìm thấy người dùng",
-                });
-                return;
-            }
-
-            // Update user info (level is auto-calculated from test results, so ignore level updates)
-            if (fullName !== undefined) user.fullName = fullName;
-            if (phone !== undefined) user.phone = phone;
-            if (bio !== undefined) user.bio = bio;
-            if (birthDate !== undefined) user.birthDate = birthDate;
-            if (learningGoal !== undefined) user.learningGoal = learningGoal;
-            // Note: level is automatically managed based on test results
-
-            await user.save({ validateModifiedOnly: true });
-
-            res.json({
-                success: true,
-                message: "Cập nhật thông tin thành công",
-                data: {
-                    id: user._id,
-                    fullName: user.fullName,
-                    email: user.email,
-                    phone: user.phone,
-                    bio: user.bio,
-                    birthDate: user.birthDate,
-                    learningGoal: user.learningGoal,
-                    level: user.level,
-                    avatar: user.avatar,
-                    role: user.role
-                }
-            });
-        } catch (error) {
-            console.error("Update profile error:", error);
-            res.status(500).json({
-                success: false,
-                message: "Lỗi server khi cập nhật thông tin",
-            });
-        }
-    }
-);
 
 // Get user statistics (admin only)
 router.get("/user/stats", authenticateToken, requireAdmin, getUserStats);
@@ -507,12 +309,7 @@ router.patch(
 router.delete("/user/:id", authenticateToken, requireAdmin, deleteUser);
 
 // Upload avatar (authenticated user can upload their own avatar)
-router.post(
-    "/user/:userId/avatar",
-    authenticateToken,
-    avatarUpload.single("avatar"),
-    uploadAvatar
-);
+router.post("/user/:userId/avatar", authenticateToken, avatarUpload.single('avatar'), uploadAvatar);
 
 // Delete avatar (authenticated user can delete their own avatar)
 router.delete("/user/:userId/avatar", authenticateToken, deleteAvatar);
@@ -621,10 +418,9 @@ router.post("/user/offline", async (req: Request, res: Response) => {
         }
 
         const userId = decoded.userId;
-        const userEmail = decoded.email || "unknown";
-        const userName =
-            decoded.fullName ||
-            (userEmail ? userEmail.split("@")[0] : "Unknown User"); // fallback
+        const userEmail = decoded.email;
+
+        console.log(`👋 OFFLINE: User ${userEmail} (${userId}) closing tab`);
 
         // Set user offline immediately
         await User.findByIdAndUpdate(
@@ -638,9 +434,6 @@ router.post("/user/offline", async (req: Request, res: Response) => {
                 new: false,
             }
         );
-
-        // Broadcast updated statistics when user goes offline (for user count updates)
-        await realtimeService.broadcastUpdatedStats();
 
         // Remove from heartbeat cache
         heartbeatCache.delete(userId.toString());
@@ -758,23 +551,7 @@ router.post(
 router.get(
     "/courses/enrollments",
     authenticateToken,
-    async (req: express.Request, res: express.Response) => {
-        try {
-            // Tạm thời trả về mock data
-            res.json({
-                success: true,
-                enrollments: [],
-                totalCourses: 0,
-                activeCourses: 0,
-                completedCourses: 0,
-            });
-        } catch (error) {
-            res.status(500).json({
-                success: false,
-                message: "Failed to fetch enrollments",
-            });
-        }
-    }
+    getUserEnrollments
 );
 
 // Admin routes
@@ -792,31 +569,17 @@ router.patch(
 router.delete("/courses/:id", authenticateToken, requireAdmin, deleteCourse);
 
 // PayOS payment success route
-router.post(
-    "/courses/payos-payment-success",
-    authenticateToken,
-    handlePayOSPaymentSuccess
-);
+router.post("/courses/payos-payment-success", authenticateToken, handlePayOSPaymentSuccess);
 
 // =================================================================
 // AI COURSE GENERATION ROUTES (/api/ai)
 // =================================================================
 
 // Generate course using AI
-router.post(
-    "/ai/generate-course",
-    authenticateToken,
-    requireAdmin,
-    generateCourse
-);
+router.post("/ai/generate-course", authenticateToken, requireAdmin, generateCourse);
 
 // Get topic suggestions for course generation
-router.get(
-    "/ai/topic-suggestions",
-    authenticateToken,
-    requireAdmin,
-    getTopicSuggestions
-);
+router.get("/ai/topic-suggestions", authenticateToken, requireAdmin, getTopicSuggestions);
 
 // =================================================================
 // IELTS ROUTES (/api/ielts)

@@ -39,12 +39,30 @@ export const authAPI = {
         body: JSON.stringify(data),
       });
       
-      const result = await response.json();
-      
       if (!response.ok) {
-        throw new Error(result.message || `HTTP error! status: ${response.status}`);
+        // Xử lý lỗi 429 (Too Many Requests) và các lỗi khác
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        
+        try {
+          const result = await response.json();
+          errorMessage = result.message || errorMessage;
+        } catch {
+          // Nếu response không phải JSON (như lỗi 429), sử dụng text
+          try {
+            const textError = await response.text();
+            errorMessage = textError || errorMessage;
+          } catch {
+            // Nếu không đọc được text, sử dụng message mặc định
+            if (response.status === 429) {
+              errorMessage = 'Quá nhiều yêu cầu đăng nhập. Vui lòng thử lại sau ít phút.';
+            }
+          }
+        }
+        
+        throw new Error(errorMessage);
       }
       
+      const result = await response.json();
       return result;
     } catch (error) {
       console.error('❌ Login error:', error);
@@ -55,7 +73,7 @@ export const authAPI = {
     }
   },
 
-  register: async (data: RegisterData): Promise<AuthResponse> => {
+      register: async (data: RegisterData): Promise<AuthResponse> => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
@@ -65,11 +83,30 @@ export const authAPI = {
         body: JSON.stringify(data),
       });
       
-      const result = await response.json();
-      
       if (!response.ok) {
-        throw new Error(result.message || `HTTP error! status: ${response.status}`);
+        // Xử lý lỗi 429 (Too Many Requests) và các lỗi khác
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        
+        try {
+          const result = await response.json();
+          errorMessage = result.message || errorMessage;
+        } catch {
+          // Nếu response không phải JSON (như lỗi 429), sử dụng text
+          try {
+            const textError = await response.text();
+            errorMessage = textError || errorMessage;
+          } catch {
+            // Nếu không đọc được text, sử dụng message mặc định
+            if (response.status === 429) {
+              errorMessage = 'Quá nhiều yêu cầu đăng ký. Vui lòng thử lại sau ít phút.';
+            }
+          }
+        }
+        
+        throw new Error(errorMessage);
       }
+      
+      const result = await response.json();
       
       return result;
     } catch (error) {

@@ -74,14 +74,27 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
   const [enrolling, setEnrolling] = useState(false);
   
   // PayOS states
-  const [paymentData, setPaymentData] = useState<any>(null);
+  const [paymentData, setPaymentData] = useState<{
+    qrCode?: string;
+    checkoutUrl?: string;
+    orderCode?: number;
+  } | null>(null);
   const [showQR, setShowQR] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<string>('');
+
+  // Debug logging
+  console.log('🎯 CourseDetail received course data:', course);
+  console.log('🎯 Course vocabulary:', course.vocabulary);
+  console.log('🎯 Course grammar:', course.grammar);
+  console.log('🎯 isPurchased:', isPurchased, 'externalIsPurchased:', externalIsPurchased);
   
   const { enrollInCourse, enrollments } = useEnrollment();
 
   // Check if user is already enrolled
-  const isEnrolled = enrollments?.some(enrollment => enrollment.courseId._id === course.id) || false;
+  const isEnrolled = enrollments?.some(enrollment => 
+    enrollment?.courseId && 
+    enrollment.courseId._id === course.id
+  ) || false;
 
   // Update internal state when external prop changes
   useEffect(() => {
@@ -102,8 +115,9 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
         // Call the original onEnroll callback if provided
         onEnroll?.(course.id);
       }
-    } catch (error: any) {
-      alert(`❌ Lỗi đăng ký: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Đã xảy ra lỗi';
+      alert(`❌ Lỗi đăng ký: ${errorMessage}`);
     } finally {
       setEnrolling(false);
     }
@@ -158,9 +172,10 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
         console.error('Payment creation failed:', result);
         alert(`❌ Lỗi tạo thanh toán: ${result.message || 'Unknown error'}`);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Payment creation error:', error);
-      alert(`❌ Lỗi kết nối: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Đã xảy ra lỗi kết nối';
+      alert(`❌ Lỗi kết nối: ${errorMessage}`);
     } finally {
       setEnrolling(false);
     }
@@ -232,9 +247,10 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
         console.error('Payment success handling failed:', result);
         alert(`❌ Lỗi xử lý thanh toán: ${result.message}`);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error handling payment success:', error);
-      alert(`❌ Lỗi xử lý thanh toán: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Đã xảy ra lỗi xử lý thanh toán';
+      alert(`❌ Lỗi xử lý thanh toán: ${errorMessage}`);
     }
   };
 
@@ -726,36 +742,49 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
           <div className="lg:col-span-1">
             <div className="sticky top-8">
               <div className="bg-white rounded-xl shadow-lg p-6">
-                {/* Price */}
-                <div className="text-center mb-6">
-                  <div className="flex items-center justify-center gap-3 mb-2">
-                    <span className="text-3xl font-bold text-blue-600">
-                      {formatPrice(course.price)}
-                    </span>
-                    {course.originalPrice && (
-                      <span className="text-xl text-gray-400 line-through">
-                        {formatPrice(course.originalPrice)}
-                      </span>
-                    )}
+                {!isEnrolled && (
+                  <>
+                    {/* Price */}
+                    <div className="text-center mb-6">
+                      <div className="flex items-center justify-center gap-3 mb-2">
+                        <span className="text-3xl font-bold text-blue-600">
+                          {formatPrice(course.price)}
+                        </span>
+                        {course.originalPrice && (
+                          <span className="text-xl text-gray-400 line-through">
+                            {formatPrice(course.originalPrice)}
+                          </span>
+                        )}
+                      </div>
+                      {course.originalPrice && (
+                        <span className="inline-block bg-red-100 text-red-800 text-sm font-semibold px-3 py-1 rounded-full">
+                          Tiết kiệm {Math.round((1 - course.price / course.originalPrice) * 100)}%
+                        </span>
+                      )}
+                    </div>
+
+                    {/* CTA Button */}
+                    <button 
+                      onClick={() => setShowPayment(true)}
+                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 mb-4"
+                    >
+                      Đăng ký ngay
+                    </button>
+
+                    <div className="text-center text-sm text-gray-600 mb-6">
+                      Đảm bảo hoàn tiền trong 30 ngày
+                    </div>
+                  </>
+                )}
+
+                {isEnrolled && (
+                  <div className="text-center mb-6">
+                    <div className="flex items-center justify-center gap-2 bg-green-100 text-green-800 font-semibold py-3 px-4 rounded-lg">
+                      <CheckCircle className="w-5 h-5" />
+                      <span>Bạn đã sở hữu khóa học này</span>
+                    </div>
                   </div>
-                  {course.originalPrice && (
-                    <span className="inline-block bg-red-100 text-red-800 text-sm font-semibold px-3 py-1 rounded-full">
-                      Tiết kiệm {Math.round((1 - course.price / course.originalPrice) * 100)}%
-                    </span>
-                  )}
-                </div>
-
-                {/* CTA Button */}
-                <button 
-                  onClick={() => setShowPayment(true)}
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 mb-4"
-                >
-                  Đăng ký ngay
-                </button>
-
-                <div className="text-center text-sm text-gray-600 mb-6">
-                  Đảm bảo hoàn tiền trong 30 ngày
-                </div>
+                )}
 
                 {/* Course Includes */}
                 <div className="space-y-3">

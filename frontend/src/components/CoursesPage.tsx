@@ -238,13 +238,15 @@ interface CoursesPageProps {
   onCourseTypeSelect?: (type: CourseType) => void;
   onCourseSelect?: (courseId: string) => void;
   onBack?: () => void;
+  purchasedCourseIds?: string[]; // Danh sách ID các khóa học đã mua
 }
 
 const CoursesPage: React.FC<CoursesPageProps> = ({ 
   selectedType, 
   onCourseTypeSelect, 
   onCourseSelect,
-  onBack 
+  onBack,
+  purchasedCourseIds = [] // Mặc định là array rỗng
 }) => {
   const [activeType, setActiveType] = useState<CourseType | null>(selectedType || null);
   const [courses, setCourses] = useState<APICourse[]>([]);
@@ -631,7 +633,12 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
 
   // Special case for purchased courses
   if (activeType === 'purchased') {
-    return <PurchasedCourses onBack={() => setActiveType(null)} />;
+    return (
+      <PurchasedCourses 
+        onBack={() => setActiveType(null)} 
+        onCourseSelect={onCourseSelect || (() => {})}
+      />
+    );
   }
 
   if (activeType) {
@@ -679,9 +686,11 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {courses.map((course) => (
-                <APICourseCard key={course._id} course={course} />
-              ))}
+              {courses
+                .filter(course => course._id && !purchasedCourseIds.includes(course._id)) // Ẩn khóa học đã mua
+                .map((course) => (
+                  <APICourseCard key={course._id} course={course} />
+                ))}
             </div>
           )}
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '../stores/authStore';
 
 interface Enrollment {
@@ -39,19 +39,28 @@ interface EnrollmentStats {
   completedCourses: number;
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5002/api';
+const CACHE_DURATION = 30000; // 30 seconds cache
+
 export const useEnrollment = () => {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [stats, setStats] = useState<EnrollmentStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastFetch, setLastFetch] = useState<number>(0);
   const { token } = useAuthStore();
 
-  const API_BASE = 'http://localhost:5002/api';
-
   // Fetch user enrollments
-  const fetchEnrollments = async () => {
+  const fetchEnrollments = useCallback(async () => {
     if (!token) {
       setError('Authentication required');
+      return;
+    }
+
+    // Check cache - but don't use enrollments.length as it creates circular dependency
+    const now = Date.now();
+    if (lastFetch && (now - lastFetch) < CACHE_DURATION) {
+      console.log('📋 Using cached enrollment data');
       return;
     }
 
@@ -59,6 +68,7 @@ export const useEnrollment = () => {
       setLoading(true);
       setError(null);
 
+      console.log('🔄 Fetching fresh enrollment data');
       const response = await fetch(`${API_BASE}/courses/enrollments`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -78,14 +88,16 @@ export const useEnrollment = () => {
         activeCourses: data.activeCourses,
         completedCourses: data.completedCourses
       });
+      setLastFetch(now);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch enrollments';
       console.error('Error fetching enrollments:', err);
-      setError(err.message || 'Failed to fetch enrollments');
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, lastFetch]);
 
   // Enroll in a course
   const enrollInCourse = async (courseId: string) => {
@@ -121,9 +133,10 @@ export const useEnrollment = () => {
         message: data.message
       };
 
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to enroll in course';
       console.error('Error enrolling in course:', err);
-      setError(err.message || 'Failed to enroll in course');
+      setError(errorMessage);
       throw err;
     } finally {
       setLoading(false);
@@ -169,9 +182,10 @@ export const useEnrollment = () => {
         message: data.message
       };
 
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update lesson progress';
       console.error('Error updating lesson progress:', err);
-      setError(err.message || 'Failed to update lesson progress');
+      setError(errorMessage);
       throw err;
     } finally {
       setLoading(false);
@@ -203,9 +217,10 @@ export const useEnrollment = () => {
       const data = await response.json();
       return data;
 
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch course progress';
       console.error('Error fetching course progress:', err);
-      setError(err.message || 'Failed to fetch course progress');
+      setError(errorMessage);
       throw err;
     } finally {
       setLoading(false);
@@ -217,7 +232,7 @@ export const useEnrollment = () => {
     if (token) {
       fetchEnrollments();
     }
-  }, [token]);
+  }, [token, fetchEnrollments]);
 
   return {
     enrollments,

@@ -53,6 +53,15 @@ const limiter = rateLimit({
     legacyHeaders: false,
 });
 
+// Auth rate limiter - riêng cho đăng nhập/đăng ký
+const authLimiter = rateLimit({
+    windowMs: 60000, // 1 phút
+    max: 50, // 50 request auth mỗi phút cho mỗi IP
+    message: "Quá nhiều yêu cầu đăng nhập/đăng ký. Vui lòng thử lại sau ít phút.",
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // PayOS rate limiter - riêng cho thanh toán
 const payosLimiter = rateLimit({
     windowMs: 60000, // 1 phút
@@ -102,6 +111,9 @@ app.use("/api/user/heartbeat", heartbeatLimiter);
 // Apply admin statistics rate limiter
 app.use("/api/admin/statistics", adminStatsLimiter);
 
+// Apply auth-specific rate limiter
+app.use("/api/auth", authLimiter);
+
 // Apply PayOS specific rate limiter
 app.use("/api/payos", payosLimiter);
 
@@ -110,6 +122,7 @@ app.use((req, res, next) => {
     if (
         req.path.includes("/heartbeat") ||
         req.path.includes("/admin/statistics") ||
+        req.path.includes("/auth") ||
         req.path.includes("/payos")
     ) {
         // Skip general rate limiting for special endpoints
