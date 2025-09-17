@@ -897,7 +897,28 @@ const QuestionForm: React.FC<QuestionFormProps> = ({ question, index, isListenin
         <label className="block text-sm font-medium text-gray-700 mb-1">Loại câu hỏi</label>
         <select
           value={question.type}
-          onChange={(e) => onUpdate({ type: e.target.value as Question['type'] })}
+          onChange={(e) => {
+            const newType = e.target.value as Question['type'];
+            const updates: Partial<Question> = { type: newType };
+            
+            // Auto-set options and reset correctAnswer when type changes
+            if (newType === 'true-false-notgiven') {
+              updates.options = ['TRUE', 'FALSE', 'NOT GIVEN'];
+              updates.correctAnswer = 0; // Default to first option
+            } else if (newType === 'multiple-choice') {
+              updates.options = ['', '', '', ''];
+              updates.correctAnswer = 0;
+            } else if (newType === 'matching') {
+              updates.options = ['', '', '', ''];
+              updates.correctAnswer = 0;
+            } else {
+              // For fill-blank and map-labeling, remove options
+              updates.options = undefined;
+              updates.correctAnswer = '';
+            }
+            
+            onUpdate(updates);
+          }}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none"
         >
           {questionTypes.map((type) => (

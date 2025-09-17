@@ -62,6 +62,11 @@ import {
 import { simpleChatbotController } from "../controllers/simpleChatbotController";
 import { realDataChatbotController } from "../controllers/realDataChatbotController";
 import { generateCourse, getTopicSuggestions } from "../controllers/aiCourseController";
+import { 
+    generateIELTSReading, 
+    getIELTSTopicSuggestions, 
+    validateIELTSContent 
+} from "../controllers/aiIELTSController";
 import {
     initializeProgress,
     getUserProgress,
@@ -744,6 +749,15 @@ router.post("/ai/generate-course", authenticateToken, requireAdmin, generateCour
 
 // Get topic suggestions for course generation
 router.get("/ai/topic-suggestions", authenticateToken, requireAdmin, getTopicSuggestions);
+
+// Generate IELTS Reading test using AI
+router.post("/ai/generate-ielts-reading", authenticateToken, requireAdmin, generateIELTSReading);
+
+// Get topic suggestions for IELTS Reading
+router.get("/ai/ielts-topic-suggestions", authenticateToken, requireAdmin, getIELTSTopicSuggestions);
+
+// Validate IELTS content
+router.post("/ai/validate-ielts", authenticateToken, requireAdmin, validateIELTSContent);
 
 // =================================================================
 // IELTS ROUTES (/api/ielts)

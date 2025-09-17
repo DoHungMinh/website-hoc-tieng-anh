@@ -3,6 +3,7 @@ import { Search, Plus, Edit, Trash2, BookOpen, FileText, Volume2, Clock, Users, 
 import CreateIELTSExam from './CreateIELTSExam';
 import EditIELTSExam from './EditIELTSExam';
 import AIIELTSReadingCreator from './AIIELTSReadingCreator';
+import { AIGeneratedIELTSReading } from '../../../services/aiIELTSService';
 
 interface Exam {
   _id: string;
@@ -190,16 +191,22 @@ const ExamManagement = () => {
   };
 
   // Handle AI-generated reading exam
-  const handleAIReadingExamGenerated = async (examData: any) => {
+  const handleAIReadingExamGenerated = async (examData: AIGeneratedIELTSReading) => {
     try {
       console.log('AI Reading exam generated:', examData);
-      // For now, just show success message
-      alert('Đề thi Reading được tạo thành công bằng AI! (Chức năng sẽ được hoàn thiện trong tương lai)');
       
-      // In the future, this would save the reading exam to the database
-      // await saveReadingExam(examData);
+      // Display success message with exam details
+      const message = `Đề thi "${examData.title}" đã được tạo thành công!
       
-      // Refresh the exams list
+📋 Chi tiết:
+• ${examData.passages.length} passages
+• ${examData.total_questions} câu hỏi
+• Thời gian: ${examData.duration} phút
+• Target Band: ${examData.target_band}`;
+
+      alert(message);
+      
+      // Refresh the exams list to show the new exam
       await fetchExams();
       await fetchStats();
     } catch (error) {

@@ -225,8 +225,37 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
     // Count correct answers
     const correctAnswers = Object.keys(answers).reduce((count, questionId) => {
       const question = allQuestions.find((q: Question) => q.id === questionId);
-      if (question && answers[questionId] === question.correctAnswer) {
-        return count + 1;
+      if (question && question.correctAnswer !== undefined) {
+        let userAnswer = answers[questionId];
+        let correctAnswer = question.correctAnswer;
+        
+        // Handle multiple choice: convert letters to indices for comparison
+        if (question.type === 'multiple-choice') {
+          // Convert correct answer letter to index
+          if (typeof correctAnswer === 'string' && correctAnswer.match(/^[A-D]$/)) {
+            correctAnswer = correctAnswer.charCodeAt(0) - 65;
+          }
+          // Convert user answer letter to index
+          if (typeof userAnswer === 'string' && userAnswer.match(/^[A-D]$/)) {
+            userAnswer = userAnswer.charCodeAt(0) - 65;
+          }
+        }
+        
+        // Handle True/False/Not Given: normalize both to string format for comparison
+        if (question.type === 'true-false-notgiven') {
+          const tfngOptions = ['TRUE', 'FALSE', 'NOT GIVEN'];
+          // Convert index-based answers to strings for comparison
+          if (typeof correctAnswer === 'number' && correctAnswer >= 0 && correctAnswer < 3) {
+            correctAnswer = tfngOptions[correctAnswer];
+          }
+          if (typeof userAnswer === 'number' && userAnswer >= 0 && userAnswer < 3) {
+            userAnswer = tfngOptions[userAnswer];
+          }
+        }
+        
+        if (userAnswer === correctAnswer) {
+          return count + 1;
+        }
       }
       return count;
     }, 0);
@@ -274,8 +303,42 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
       examData.passages.forEach((passage, passageIndex) => {
         passage.questions.forEach(question => {
           const userAnswer = answers[question.id];
-          const isCorrect = question.correctAnswer !== undefined && 
-                           userAnswer === question.correctAnswer;
+          
+          // Calculate isCorrect with proper comparison for multiple choice and T/F/NG
+          let isCorrect = false;
+          if (question.correctAnswer !== undefined) {
+            let correctAnswer = question.correctAnswer;
+            let currentUserAnswer = userAnswer;
+            
+            // Handle multiple choice: convert letters to indices for comparison
+            if (question.type === 'multiple-choice') {
+              if (typeof correctAnswer === 'string' && correctAnswer.match(/^[A-D]$/)) {
+                correctAnswer = correctAnswer.charCodeAt(0) - 65;
+              }
+              if (typeof currentUserAnswer === 'string' && currentUserAnswer.match(/^[A-D]$/)) {
+                currentUserAnswer = currentUserAnswer.charCodeAt(0) - 65;
+              }
+            }
+            
+            // Handle True/False/Not Given: normalize both to uppercase string format for comparison
+            if (question.type === 'true-false-notgiven') {
+              // Convert index-based answers to strings for comparison
+              const tfngOptions = ['TRUE', 'FALSE', 'NOT GIVEN'];
+              if (typeof correctAnswer === 'number' && correctAnswer >= 0 && correctAnswer < 3) {
+                correctAnswer = tfngOptions[correctAnswer];
+              } else if (typeof correctAnswer === 'string') {
+                correctAnswer = correctAnswer.toUpperCase();
+              }
+              
+              if (typeof currentUserAnswer === 'number' && currentUserAnswer >= 0 && currentUserAnswer < 3) {
+                currentUserAnswer = tfngOptions[currentUserAnswer];
+              } else if (typeof currentUserAnswer === 'string') {
+                currentUserAnswer = currentUserAnswer.toUpperCase();
+              }
+            }
+            
+            isCorrect = currentUserAnswer === correctAnswer;
+          }
           
           questionDetails.push({
             id: question.id,
@@ -293,8 +356,42 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
       examData.sections.forEach((section, sectionIndex) => {
         section.questions.forEach(question => {
           const userAnswer = answers[question.id];
-          const isCorrect = question.correctAnswer !== undefined && 
-                           userAnswer === question.correctAnswer;
+          
+          // Calculate isCorrect with proper comparison for multiple choice and T/F/NG
+          let isCorrect = false;
+          if (question.correctAnswer !== undefined) {
+            let correctAnswer = question.correctAnswer;
+            let currentUserAnswer = userAnswer;
+            
+            // Handle multiple choice: convert letters to indices for comparison
+            if (question.type === 'multiple-choice') {
+              if (typeof correctAnswer === 'string' && correctAnswer.match(/^[A-D]$/)) {
+                correctAnswer = correctAnswer.charCodeAt(0) - 65;
+              }
+              if (typeof currentUserAnswer === 'string' && currentUserAnswer.match(/^[A-D]$/)) {
+                currentUserAnswer = currentUserAnswer.charCodeAt(0) - 65;
+              }
+            }
+            
+            // Handle True/False/Not Given: normalize both to uppercase string format for comparison
+            if (question.type === 'true-false-notgiven') {
+              // Convert index-based answers to strings for comparison
+              const tfngOptions = ['TRUE', 'FALSE', 'NOT GIVEN'];
+              if (typeof correctAnswer === 'number' && correctAnswer >= 0 && correctAnswer < 3) {
+                correctAnswer = tfngOptions[correctAnswer];
+              } else if (typeof correctAnswer === 'string') {
+                correctAnswer = correctAnswer.toUpperCase();
+              }
+              
+              if (typeof currentUserAnswer === 'number' && currentUserAnswer >= 0 && currentUserAnswer < 3) {
+                currentUserAnswer = tfngOptions[currentUserAnswer];
+              } else if (typeof currentUserAnswer === 'string') {
+                currentUserAnswer = currentUserAnswer.toUpperCase();
+              }
+            }
+            
+            isCorrect = currentUserAnswer === correctAnswer;
+          }
           
           questionDetails.push({
             id: question.id,
@@ -499,43 +596,81 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                           {/* Multiple choice options */}
                           {question.type === 'multiple-choice' && question.options && (
                             <div className="space-y-2 mb-3">
-                              {question.options.map((option, optionIndex) => (
-                                <div key={optionIndex} className={`p-2 rounded border ${
-                                  question.correctAnswer === optionIndex ? 'border-green-500 bg-green-100' :
-                                  question.userAnswer === optionIndex ? 'border-red-500 bg-red-100' :
-                                  'border-gray-200'
-                                }`}>
-                                  <span className="font-medium">{String.fromCharCode(65 + optionIndex)}. </span>
-                                  {option}
-                                  {question.correctAnswer === optionIndex && (
-                                    <span className="ml-2 text-green-600 font-medium">(Đáp án đúng)</span>
-                                  )}
-                                  {question.userAnswer === optionIndex && question.correctAnswer !== optionIndex && (
-                                    <span className="ml-2 text-red-600 font-medium">(Bạn đã chọn)</span>
-                                  )}
-                                </div>
-                              ))}
+                              {question.options.map((option, optionIndex) => {
+                                // Convert correct answer letter to index for comparison
+                                const correctAnswerIndex = typeof question.correctAnswer === 'string' && 
+                                  question.correctAnswer.match(/^[A-D]$/) ? 
+                                  question.correctAnswer.charCodeAt(0) - 65 : question.correctAnswer;
+                                
+                                // Convert user answer letter to index for comparison  
+                                const userAnswerIndex = typeof question.userAnswer === 'string' && 
+                                  question.userAnswer.match(/^[A-D]$/) ? 
+                                  question.userAnswer.charCodeAt(0) - 65 : question.userAnswer;
+                                
+                                const isCorrectOption = correctAnswerIndex === optionIndex;
+                                const isUserSelectedOption = userAnswerIndex === optionIndex;
+                                
+                                return (
+                                  <div key={optionIndex} className={`p-2 rounded border ${
+                                    isCorrectOption ? 'border-green-500 bg-green-100' :
+                                    isUserSelectedOption ? 'border-red-500 bg-red-100' :
+                                    'border-gray-200'
+                                  }`}>
+                                    <span className="font-medium">{String.fromCharCode(65 + optionIndex)}. </span>
+                                    {option}
+                                    {isCorrectOption && (
+                                      <span className="ml-2 text-green-600 font-medium">(Đáp án đúng)</span>
+                                    )}
+                                    {isUserSelectedOption && !isCorrectOption && (
+                                      <span className="ml-2 text-red-600 font-medium">(Bạn đã chọn)</span>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
 
                           {/* True/False/Not Given options */}
                           {question.type === 'true-false-notgiven' && (
                             <div className="space-y-2 mb-3">
-                              {['True', 'False', 'Not Given'].map((option) => (
-                                <div key={option} className={`p-2 rounded border ${
-                                  question.correctAnswer === option ? 'border-green-500 bg-green-100' :
-                                  question.userAnswer === option ? 'border-red-500 bg-red-100' :
-                                  'border-gray-200'
-                                }`}>
-                                  {option}
-                                  {question.correctAnswer === option && (
-                                    <span className="ml-2 text-green-600 font-medium">(Đáp án đúng)</span>
-                                  )}
-                                  {question.userAnswer === option && question.correctAnswer !== option && (
-                                    <span className="ml-2 text-red-600 font-medium">(Bạn đã chọn)</span>
-                                  )}
-                                </div>
-                              ))}
+                              {['TRUE', 'FALSE', 'NOT GIVEN'].map((option) => {
+                                const displayOption = option === 'TRUE' ? 'True' : 
+                                                     option === 'FALSE' ? 'False' : 'Not Given';
+                                
+                                // Normalize both answers to uppercase for comparison
+                                let normalizedCorrectAnswer = '';
+                                if (typeof question.correctAnswer === 'string') {
+                                  normalizedCorrectAnswer = question.correctAnswer.toUpperCase();
+                                } else if (typeof question.correctAnswer === 'number' && question.options) {
+                                  normalizedCorrectAnswer = question.options[question.correctAnswer]?.toUpperCase() || '';
+                                }
+                                
+                                let normalizedUserAnswer = '';
+                                if (typeof question.userAnswer === 'string') {
+                                  normalizedUserAnswer = question.userAnswer.toUpperCase();
+                                } else if (typeof question.userAnswer === 'number' && question.options) {
+                                  normalizedUserAnswer = question.options[question.userAnswer]?.toUpperCase() || '';
+                                }
+                                
+                                const isCorrectOption = normalizedCorrectAnswer === option;
+                                const isUserSelectedOption = normalizedUserAnswer === option;
+                                
+                                return (
+                                  <div key={option} className={`p-2 rounded border ${
+                                    isCorrectOption ? 'border-green-500 bg-green-100' :
+                                    isUserSelectedOption && !isCorrectOption ? 'border-red-500 bg-red-100' :
+                                    'border-gray-200'
+                                  }`}>
+                                    {displayOption}
+                                    {isCorrectOption && (
+                                      <span className="ml-2 text-green-600 font-medium">(Đáp án đúng)</span>
+                                    )}
+                                    {isUserSelectedOption && !isCorrectOption && (
+                                      <span className="ml-2 text-red-600 font-medium">(Bạn đã chọn)</span>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
 
@@ -613,6 +748,29 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">IELTS Band Score</h2>
                 <p className="text-lg text-gray-600 mb-4">{testResult.description}</p>
+                
+                {/* Improvement suggestions */}
+                {testResult.bandScore < 7.0 && (
+                  <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                    <h3 className="font-semibold text-blue-900 mb-2">💡 Gợi ý cải thiện:</h3>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      {examData.type === 'reading' && (
+                        <>
+                          <li>• Tăng cường từ vựng học thuật qua việc đọc báo, tạp chí tiếng Anh</li>
+                          <li>• Luyện tập kỹ năng skimming và scanning để tìm thông tin nhanh hơn</li>
+                          <li>• Làm quen với các dạng câu hỏi True/False/Not Given và Multiple Choice</li>
+                        </>
+                      )}
+                      {examData.type === 'listening' && (
+                        <>
+                          <li>• Nghe podcast, TED talks tiếng Anh để quen với nhiều giọng nói khác nhau</li>
+                          <li>• Luyện tập nghe và ghi chú thông tin quan trọng</li>
+                          <li>• Làm quen với các dạng câu hỏi điền từ và chọn đáp án đúng</li>
+                        </>
+                      )}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
             
@@ -884,19 +1042,23 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
               {/* True/False/Not Given */}
               {currentQuestionData.type === 'true-false-notgiven' && (
                 <div className="space-y-3">
-                  {['True', 'False', 'Not Given'].map((option, index) => (
-                    <label key={index} className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="radio"
-                        name={currentQuestionData.id}
-                        value={option}
-                        checked={answers[currentQuestionData.id] === option}
-                        onChange={() => handleAnswer(currentQuestionData.id, option)}
-                        className="text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-gray-700">{option}</span>
-                    </label>
-                  ))}
+                  {['TRUE', 'FALSE', 'NOT GIVEN'].map((option, index) => {
+                    const displayOption = option === 'TRUE' ? 'True' : 
+                                         option === 'FALSE' ? 'False' : 'Not Given';
+                    return (
+                      <label key={index} className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="radio"
+                          name={currentQuestionData.id}
+                          value={option}
+                          checked={answers[currentQuestionData.id] === option}
+                          onChange={() => handleAnswer(currentQuestionData.id, option)}
+                          className="text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-gray-700">{displayOption}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               )}
             </div>

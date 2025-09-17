@@ -47,24 +47,24 @@ const academicReadingBandScores: { [key: number]: number } = {
   0: 0.0
 };
 
-// Band score descriptions
+// Band score descriptions for Reading and Listening skills
 const bandDescriptions: { [key: number]: string } = {
-  9.0: "Expert user - Có khả năng sử dụng ngôn ngữ hoàn toàn thành thạo",
-  8.5: "Very good user - Sử dụng ngôn ngữ rất tốt với một vài lỗi nhỏ",
-  8.0: "Very good user - Sử dụng ngôn ngữ rất tốt với một vài lỗi nhỏ",
-  7.5: "Good user - Sử dụng ngôn ngữ tốt với một vài lỗi",
-  7.0: "Good user - Sử dụng ngôn ngữ tốt với một vài lỗi",
-  6.5: "Competent user - Sử dụng ngôn ngữ hiệu quả với một số thiếu sót",
-  6.0: "Competent user - Sử dụng ngôn ngữ hiệu quả với một số thiếu sót",
-  5.5: "Modest user - Sử dụng ngôn ngữ một phần và hiểu nghĩa chung",
-  5.0: "Modest user - Sử dụng ngôn ngữ một phần và hiểu nghĩa chung",
-  4.5: "Limited user - Khả năng cơ bản chỉ trong tình huống quen thuộc",
-  4.0: "Limited user - Khả năng cơ bản chỉ trong tình huống quen thuộc",
-  3.5: "Extremely limited user - Hiểu và truyền đạt nghĩa chung",
-  3.0: "Extremely limited user - Hiểu và truyền đạt nghĩa chung",
-  2.5: "Intermittent user - Không thể giao tiếp thực sự",
-  2.0: "Intermittent user - Không thể giao tiếp thực sự",
-  1.0: "Non-user - Không có khả năng sử dụng ngôn ngữ",
+  9.0: "Expert user - Hiểu hoàn toàn các văn bản phức tạp và âm thanh tự nhiên",
+  8.5: "Very good user - Hiểu rất tốt với khả năng nắm bắt chi tiết và ngữ cảnh",
+  8.0: "Very good user - Hiểu rất tốt với khả năng nắm bắt chi tiết và ngữ cảnh", 
+  7.5: "Good user - Hiểu tốt các ý chính và chi tiết quan trọng",
+  7.0: "Good user - Hiểu tốt các ý chính và chi tiết quan trọng",
+  6.5: "Competent user - Hiểu được nội dung chính với một số khó khăn nhỏ",
+  6.0: "Competent user - Hiểu được nội dung chính với một số khó khăn nhỏ",
+  5.5: "Modest user - Hiểu được ý chính trong các tình huống quen thuộc",
+  5.0: "Modest user - Hiểu được ý chính trong các tình huống quen thuộc",
+  4.5: "Limited user - Hiểu cơ bản các thông tin đơn giản và rõ ràng",
+  4.0: "Limited user - Hiểu cơ bản các thông tin đơn giản và rõ ràng",
+  3.5: "Extremely limited user - Hiểu một số từ và cụm từ cơ bản",
+  3.0: "Extremely limited user - Hiểu một số từ và cụm từ cơ bản",
+  2.5: "Intermittent user - Khó khăn trong việc hiểu nội dung cơ bản",
+  2.0: "Intermittent user - Khó khăn trong việc hiểu nội dung cơ bản",
+  1.0: "Non-user - Không thể hiểu được nội dung",
   0.0: "Không làm bài thi"
 };
 

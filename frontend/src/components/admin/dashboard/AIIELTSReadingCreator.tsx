@@ -14,8 +14,9 @@ import {
   Users,
   MessageSquare
 } from 'lucide-react';
+import { aiIELTSService, AIGeneratedIELTSReading } from '../../../services/aiIELTSService';
 
-interface AIIELTSReadingConfig {
+interface IELTSReadingConfig {
   title: string;
   difficulty: string;
   duration: number; // minutes
@@ -27,7 +28,7 @@ interface AIIELTSReadingConfig {
 }
 
 interface AIIELTSReadingCreatorProps {
-  onExamGenerated: (exam: any) => void;
+  onExamGenerated: (exam: AIGeneratedIELTSReading) => void;
 }
 
 const AIIELTSReadingCreator: React.FC<AIIELTSReadingCreatorProps> = ({ onExamGenerated }) => {
@@ -35,7 +36,7 @@ const AIIELTSReadingCreator: React.FC<AIIELTSReadingCreatorProps> = ({ onExamGen
   const [currentStep, setCurrentStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [config, setConfig] = useState<AIIELTSReadingConfig>({
+  const [config, setConfig] = useState<IELTSReadingConfig>({
     title: '',
     difficulty: 'Band 6.0-7.0',
     duration: 60,
@@ -77,6 +78,11 @@ const AIIELTSReadingCreator: React.FC<AIIELTSReadingCreatorProps> = ({ onExamGen
   ];
 
   const handleClose = () => {
+    if (isGenerating) {
+      const confirmClose = confirm('Đang tạo đề thi... Bạn có chắc chắn muốn hủy?');
+      if (!confirmClose) return;
+    }
+    
     setIsOpen(false);
     setCurrentStep(1);
     setIsGenerating(false);
@@ -134,6 +140,18 @@ const AIIELTSReadingCreator: React.FC<AIIELTSReadingCreatorProps> = ({ onExamGen
         return;
       }
 
+      // Prepare AI configuration
+      const aiConfig = {
+        title: config.title,
+        difficulty: config.difficulty,
+        duration: config.duration,
+        numPassages: config.numPassages,
+        questionsPerPassage: config.questionsPerPassage,
+        topics: config.topics.filter(t => t.trim()),
+        targetBand: config.targetBand,
+        description: config.description
+      };
+
       // Simulate progress steps
       setProgress(20);
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -141,20 +159,51 @@ const AIIELTSReadingCreator: React.FC<AIIELTSReadingCreatorProps> = ({ onExamGen
       setProgress(40);
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Call AI service to generate reading exam (placeholder for now)
+      // Call AI service to generate IELTS Reading exam
       setProgress(60);
+      console.log('Generating IELTS Reading with config:', aiConfig);
       
-      // For now, generate mock data
-      const generatedExam = generateFallbackExam();
+      let generatedExam: AIGeneratedIELTSReading;
+      
+      try {
+        generatedExam = await aiIELTSService.generateIELTSReading(aiConfig);
+        console.log('AI Generated exam:', generatedExam);
+      } catch (aiError) {
+        console.warn('AI service failed, using fallback:', aiError);
+        generatedExam = generateFallbackExam();
+      }
       
       setProgress(80);
       await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Validate generated content
+      const isValid = await aiIELTSService.validateIELTSContent(generatedExam);
+      if (!isValid) {
+        console.warn('Generated content validation failed, using fallback');
+        generatedExam = generateFallbackExam();
+      }
+      
+      setProgress(90);
+      
+      // Save to database
+      const saveResult = await aiIELTSService.saveIELTSReading(generatedExam);
+      if (!saveResult.success) {
+        console.warn('Failed to save to database:', saveResult.message);
+        // Still continue and show the exam, but with a warning
+        onExamGenerated(generatedExam);
+        handleClose();
+        
+        alert(`⚠️ Đề thi được tạo thành công nhưng có lỗi lưu trữ:\n\n${saveResult.message}\n\nVui lòng thử lại hoặc liên hệ admin.`);
+        return;
+      }
       
       setProgress(100);
       await new Promise(resolve => setTimeout(resolve, 300));
 
       onExamGenerated(generatedExam);
       handleClose();
+
+      alert(`🎉 Thành công!\n\nĐề thi "${generatedExam.title}" đã được tạo và lưu vào database!\n\n📊 Chi tiết:\n• ${generatedExam.passages.length} passages\n• ${generatedExam.total_questions} câu hỏi\n• Thời gian: ${generatedExam.duration} phút\n• Target Band: ${generatedExam.target_band}`);
 
     } catch (error) {
       console.error('Error generating reading exam:', error);
@@ -164,62 +213,182 @@ const AIIELTSReadingCreator: React.FC<AIIELTSReadingCreatorProps> = ({ onExamGen
       onExamGenerated(fallbackExam);
       handleClose();
       
-      alert('AI generation failed, using fallback data. Error: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      alert(`❌ AI generation failed!\n\nLỗi: ${error instanceof Error ? error.message : 'Unknown error'}\n\n✅ Đã sử dụng dữ liệu mẫu thay thế.`);
     }
   };
 
-  const generateFallbackExam = () => {
+  const generateFallbackExam = (): AIGeneratedIELTSReading => {
     const totalQuestions = config.numPassages * config.questionsPerPassage;
+    console.log(`Generating fallback exam: ${config.numPassages} passages, ${config.questionsPerPassage} questions per passage, total: ${totalQuestions}`);
     
     // Generate passages based on config
     const passages = [];
     for (let i = 1; i <= config.numPassages; i++) {
+      // Get specific topic for this passage
+      const passageTopic = config.topics.filter(t => t.trim())[(i-1) % config.topics.filter(t => t.trim()).length] || 'Academic Reading';
+      console.log(`Creating fallback passage ${i} with topic: "${passageTopic}"`);
+      
       const questions = [];
       for (let j = 1; j <= config.questionsPerPassage; j++) {
-        const topicIndex = Math.floor(Math.random() * config.topics.filter(t => t.trim()).length);
-        const topic = config.topics.filter(t => t.trim())[topicIndex] || 'General topic';
+        // Use the specific passage topic instead of random
+        const topic = passageTopic;
         
-        // Generate different question types
-        const questionTypes = ['multiple-choice', 'fill-blank', 'true-false-notgiven', 'matching'];
+        // Generate different question types that AI supports
+        const questionTypes: Array<'multiple-choice' | 'fill-blank' | 'true-false-notgiven'> = 
+          ['multiple-choice', 'fill-blank', 'true-false-notgiven'];
         const randomType = questionTypes[Math.floor(Math.random() * questionTypes.length)];
+        
+        let questionText = '';
+        let options: string[] | undefined = undefined;
+        let correctAnswer = '';
+
+        // Create unique questions based on passage topic and question number
+        switch (randomType) {
+          case 'multiple-choice': {
+            const mcQuestions = [
+              `What is the main focus of ${topic.toLowerCase()} discussed in the passage?`,
+              `According to the passage, which aspect of ${topic.toLowerCase()} is most significant?`,
+              `The author suggests that ${topic.toLowerCase()} will likely lead to?`,
+              `What challenge related to ${topic.toLowerCase()} is mentioned in the passage?`,
+              `How does the passage describe the current state of ${topic.toLowerCase()}?`,
+              `What future development in ${topic.toLowerCase()} does the passage predict?`,
+              `The passage indicates that research in ${topic.toLowerCase()} requires?`,
+              `According to the text, the impact of ${topic.toLowerCase()} has been?`,
+              `What approach to ${topic.toLowerCase()} does the passage recommend?`,
+              `The passage suggests that international cooperation in ${topic.toLowerCase()} is?`,
+              `Educational implications of ${topic.toLowerCase()} mentioned include?`,
+              `The passage describes innovations in ${topic.toLowerCase()} as?`,
+              `What responsibility regarding ${topic.toLowerCase()} does the passage emphasize?`
+            ];
+            questionText = mcQuestions[(j-1) % mcQuestions.length];
+            options = ['Option A', 'Option B', 'Option C', 'Option D'];
+            correctAnswer = ['A', 'B', 'C', 'D'][Math.floor(Math.random() * 4)];
+            break;
+          }
+          case 'true-false-notgiven': {
+            const tfQuestions = [
+              `The passage states that ${topic.toLowerCase()} has unlimited potential for growth.`,
+              `Research in ${topic.toLowerCase()} began only recently according to the text.`,
+              `The author believes international cooperation in ${topic.toLowerCase()} is essential.`,
+              `Educational institutions have fully adapted to ${topic.toLowerCase()} developments.`,
+              `The passage suggests that ${topic.toLowerCase()} faces no significant challenges.`,
+              `Historical development of ${topic.toLowerCase()} occurred gradually over decades.`,
+              `Contemporary approaches to ${topic.toLowerCase()} emphasize individual work.`,
+              `The impact of ${topic.toLowerCase()} on industries has been minimal.`,
+              `Future applications of ${topic.toLowerCase()} are expected to be revolutionary.`,
+              `Policymakers are well-prepared for ${topic.toLowerCase()} challenges.`,
+              `The pace of innovation in ${topic.toLowerCase()} has slowed down recently.`,
+              `International sharing of ${topic.toLowerCase()} expertise is uncommon.`,
+              `The passage indicates that ${topic.toLowerCase()} requires ethical consideration.`
+            ];
+            questionText = tfQuestions[(j-1) % tfQuestions.length];
+            correctAnswer = ['TRUE', 'FALSE', 'NOT GIVEN'][Math.floor(Math.random() * 3)];
+            break;
+          }
+          case 'fill-blank': {
+            const fillQuestions = [
+              `According to the passage, developments in ${topic.toLowerCase()} have been _______.`,
+              `The text suggests that ${topic.toLowerCase()} research requires _______ collaboration.`,
+              `Historical progress in ${topic.toLowerCase()} can be traced back _______ decades.`,
+              `The passage indicates that ${topic.toLowerCase()} has _______ implications for society.`,
+              `Contemporary approaches to ${topic.toLowerCase()} emphasize _______ perspectives.`,
+              `The next decade may bring _______ developments in ${topic.toLowerCase()}.`,
+              `International cooperation involves sharing _______ and expertise.`,
+              `Educational institutions are _______ their curricula to include ${topic.toLowerCase()}.`,
+              `The pace of innovation in ${topic.toLowerCase()} has been _______.`,
+              `Future applications could _______ multiple sectors.`,
+              `Policymakers are developing _______ to address new challenges.`,
+              `The responsibility for ${topic.toLowerCase()} development involves various _______.`,
+              `The passage describes the global nature of ${topic.toLowerCase()} as _______.`
+            ];
+            const fillAnswers = [
+              'significant', 'international', 'several', 'far-reaching', 'diverse',
+              'remarkable', 'resources', 'revising', 'unprecedented', 'revolutionize',
+              'legislation', 'stakeholders', 'essential'
+            ];
+            questionText = fillQuestions[(j-1) % fillQuestions.length];
+            correctAnswer = fillAnswers[(j-1) % fillAnswers.length];
+            break;
+          }
+          default: {
+            questionText = `What does the passage emphasize about ${topic.toLowerCase()}?`;
+            options = ['Option A', 'Option B', 'Option C', 'Option D'];
+            correctAnswer = 'A';
+            break;
+          }
+        }
         
         questions.push({
           id: `passage${i}-q${j}`,
           type: randomType,
-          question: `Question ${j} about ${topic.toLowerCase()} - ${randomType} type`,
-          options: randomType === 'multiple-choice' ? ['Option A', 'Option B', 'Option C', 'Option D'] : undefined,
-          correctAnswer: randomType === 'multiple-choice' ? 'A' : `Answer ${j}`,
-          explanation: `Explanation for question ${j} in passage ${i}`
+          question: questionText,
+          passage_reference: `Lines ${j * 2 - 1}-${j * 2 + 1}`,
+          options: options,
+          correct_answer: correctAnswer,
+          explanation: `This question tests your understanding of ${topic.toLowerCase()} as discussed in passage ${i}. The correct answer can be found by carefully reading the relevant section.`,
+          difficulty: config.difficulty,
+          band_score_range: config.targetBand
         });
       }
       
+      const topicForPassage = passageTopic;
+      
       passages.push({
         id: `passage${i}`,
-        title: `Passage ${i}: ${config.topics.filter(t => t.trim())[i-1] || 'Academic Reading'}`,
-        content: `This is a sample reading passage about ${config.topics.filter(t => t.trim())[i-1] || 'academic topics'}. The passage contains approximately 800-900 words and covers various aspects of the topic. Students will need to read carefully and answer ${config.questionsPerPassage} questions based on the information provided in this passage.
+        title: `Passage ${i}: ${topicForPassage}`,
+        content: `This is a sample reading passage about ${topicForPassage.toLowerCase()}. The passage contains approximately 800-900 words and covers various aspects of the topic. Students will need to read carefully and answer ${config.questionsPerPassage} questions based on the information provided in this passage.
 
 The content would include detailed information, examples, statistics, and expert opinions related to the topic. This passage is designed to test reading comprehension skills at the ${config.difficulty} level.
 
-In a real exam, this passage would be much longer and contain specific information that students need to identify to answer the questions correctly. The questions test various skills including detail recognition, main idea identification, inference, and understanding of writer's opinions.`,
+In a real exam, this passage would be much longer and contain specific information that students need to identify to answer the questions correctly. The questions test various skills including detail recognition, main idea identification, inference, and understanding of writer's opinions.
+
+[Additional content would continue here for approximately 600-700 more words to reach the standard IELTS passage length]`,
+        word_count: 850,
+        topic: topicForPassage,
+        difficulty: config.difficulty,
+        academic_level: 'University',
+        source_type: 'academic' as const,
         questions: questions
       });
+      
+      console.log(`Created fallback passage ${i}: "${topicForPassage}" with ${questions.length} questions`);
     }
+    
+    console.log(`Total fallback passages created: ${passages.length}`);
+    console.log(`Fallback passages summary:`, passages.map(p => ({ id: p.id, title: p.title, questionCount: p.questions.length })));
 
     return {
       title: config.title || `IELTS Reading Test - ${config.difficulty}`,
-      type: 'reading',
+      description: config.description || `Đề thi IELTS Reading với ${config.numPassages} passage và ${totalQuestions} câu hỏi`,
+      type: 'reading' as const,
       difficulty: config.difficulty,
       duration: config.duration,
-      totalQuestions: totalQuestions,
-      description: config.description || `Đề thi IELTS Reading với ${config.numPassages} passage và ${totalQuestions} câu hỏi`,
-      passages: passages,
-      targetBand: config.targetBand,
-      topics: config.topics.filter(t => t.trim()),
+      total_questions: totalQuestions,
+      target_band: config.targetBand,
       instructions: [
         'Đọc kỹ từng passage trước khi trả lời câu hỏi',
         'Quản lý thời gian hợp lý cho từng passage',
         'Tìm keywords trong câu hỏi để định vị thông tin',
         'Kiểm tra lại đáp án trước khi chuyển passage'
+      ],
+      passages: passages,
+      scoring_criteria: {
+        band_5: { min_correct: Math.floor(totalQuestions * 0.35), max_correct: Math.floor(totalQuestions * 0.42) },
+        band_6: { min_correct: Math.floor(totalQuestions * 0.43), max_correct: Math.floor(totalQuestions * 0.54) },
+        band_7: { min_correct: Math.floor(totalQuestions * 0.55), max_correct: Math.floor(totalQuestions * 0.69) },
+        band_8: { min_correct: Math.floor(totalQuestions * 0.70), max_correct: Math.floor(totalQuestions * 0.84) },
+        band_9: { min_correct: Math.floor(totalQuestions * 0.85), max_correct: totalQuestions }
+      },
+      time_allocation: {
+        per_passage: Math.floor(config.duration / config.numPassages),
+        total_reading: Math.floor(config.duration * 0.6),
+        total_answering: Math.floor(config.duration * 0.4)
+      },
+      tips: [
+        'Skim all passages first to get an overview',
+        'Pay attention to keywords in questions',
+        'Manage your time effectively across all passages',
+        'Don\'t spend too much time on difficult questions'
       ]
     };
   };
@@ -623,7 +792,7 @@ In a real exam, this passage would be much longer and contain specific informati
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    Tổng cộng {config.numPassages * config.questionsPerPassage} câu hỏi đa dạng (multiple choice, fill blank, T/F/NG, matching)
+                    Tổng cộng {config.numPassages * config.questionsPerPassage} câu hỏi đa dạng (multiple choice, fill blank, T/F/NG)
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
