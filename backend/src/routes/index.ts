@@ -6,7 +6,11 @@ import express from "express";
 import { User } from "../models/User";
 import Course from "../models/Course";
 import { IELTSExam } from "../models/IELTSExam";
+import IELTSTestResult from "../models/IELTSTestResult";
 import Enrollment from "../models/Enrollment";
+
+// Import utilities
+import { calculateUserLevel } from "../utils/levelCalculator";
 
 // Import controllers
 import {
@@ -74,6 +78,7 @@ import {
     optionalAuth,
 } from "../middleware/auth";
 import { setUserOffline } from "../middleware/userActivity";
+import { realtimeService } from "../services/realtimeService";
 
 const router = Router();
 
@@ -147,6 +152,11 @@ router.post("/auth/register", async (req: Request, res: Response) => {
                 fullName: user.fullName,
                 email: user.email,
                 phone: user.phone,
+                bio: user.bio,
+                birthDate: user.birthDate,
+                learningGoal: user.learningGoal,
+                level: user.level,
+                avatar: user.avatar,
                 role: user.role,
             },
             token,
@@ -211,6 +221,9 @@ router.post("/auth/login", async (req: Request, res: Response) => {
         // Generate token
         const token = generateToken(user._id);
 
+        // Broadcast updated statistics when user logs in (for user count updates)
+        await realtimeService.broadcastUpdatedStats();
+
         res.json({
             success: true,
             message:
@@ -222,7 +235,11 @@ router.post("/auth/login", async (req: Request, res: Response) => {
                 fullName: user.fullName,
                 email: user.email,
                 phone: user.phone,
+                bio: user.bio,
+                birthDate: user.birthDate,
+                learningGoal: user.learningGoal,
                 level: user.level,
+                avatar: user.avatar,
                 role: user.role,
             },
             token,
@@ -245,6 +262,8 @@ router.post(
             if (req.user && req.user._id) {
                 // Set user offline
                 await setUserOffline(req.user._id);
+                // Broadcast updated statistics when user logs out (for user count updates)
+                await realtimeService.broadcastUpdatedStats();
             }
 
             res.json({
@@ -273,6 +292,148 @@ router.get("/auth/test", (req, res) => {
 // Cache for heartbeat to reduce database load
 const heartbeatCache = new Map<string, number>();
 const HEARTBEAT_CACHE_DURATION = 60000; // 60 seconds
+
+// Get user profile endpoint (any authenticated user can get their own profile)
+router.get(
+    "/user/profile",
+    authenticateToken,
+    async (req: Request, res: Response): Promise<void> => {
+        try {
+            const userId = req.user?._id;
+            
+            if (!userId) {
+                res.status(401).json({
+                    success: false,
+                    message: "Không tìm thấy thông tin người dùng",
+                });
+                return;
+            }
+
+            // Find user
+            const user = await User.findById(userId).select('-password');
+            if (!user) {
+                res.status(404).json({
+                    success: false,
+                    message: "Không tìm thấy người dùng",
+                });
+                return;
+            }
+
+            // Get latest test results to calculate current level
+            const testResults = await IELTSTestResult.find({ userId }).lean();
+            let currentLevel = user.level;
+            let levelSource = 'default';
+            
+            // Only update level if there are test results with valid band scores
+            const validTestResults = testResults.filter((result: any) => result.score?.bandScore > 0);
+            if (validTestResults.length > 0) {
+                const calculatedLevel = calculateUserLevel(validTestResults.map((result: any) => ({ bandScore: result.score?.bandScore })));
+                currentLevel = calculatedLevel;
+                levelSource = 'test_results';
+                
+                // Update user level if it's different from calculated level
+                if (calculatedLevel !== user.level) {
+                    user.level = calculatedLevel;
+                    await user.save({ validateModifiedOnly: true });
+                }
+            }
+
+            // Prepare response data
+            const responseData: any = {
+                id: user._id,
+                fullName: user.fullName,
+                email: user.email,
+                phone: user.phone,
+                bio: user.bio,
+                birthDate: user.birthDate,
+                learningGoal: user.learningGoal,
+                avatar: user.avatar,
+                role: user.role,
+                levelSource: levelSource
+            };
+
+            // Only include level if there are valid test results
+            if (levelSource === 'test_results') {
+                responseData.level = currentLevel;
+            }
+
+            res.json({
+                success: true,
+                data: responseData
+            });
+        } catch (error) {
+            console.error("Get user profile error:", error);
+            res.status(500).json({
+                success: false,
+                message: "Lỗi server khi lấy thông tin người dùng",
+            });
+        }
+    }
+);
+
+// Update profile endpoint (any authenticated user can update their own profile)
+router.put(
+    "/user/profile",
+    authenticateToken,
+    async (req: Request, res: Response): Promise<void> => {
+        try {
+            const userId = req.user?._id;
+            const { fullName, phone, bio, birthDate, learningGoal, level } = req.body;
+
+            if (!userId) {
+                res.status(401).json({
+                    success: false,
+                    message: "Không tìm thấy thông tin người dùng",
+                });
+                return;
+            }
+
+            // Find user
+            const user = await User.findById(userId);
+            if (!user) {
+                res.status(404).json({
+                    success: false,
+                    message: "Không tìm thấy người dùng",
+                });
+                return;
+            }
+
+            // Update user info (level is auto-calculated from test results, so ignore level updates)
+            if (fullName !== undefined) user.fullName = fullName;
+            if (phone !== undefined) user.phone = phone;
+            if (bio !== undefined) user.bio = bio;
+            if (birthDate !== undefined) user.birthDate = birthDate;
+            if (learningGoal !== undefined) user.learningGoal = learningGoal;
+            // Note: level is automatically managed based on test results
+
+            await user.save({ validateModifiedOnly: true });
+
+            res.json({
+                success: true,
+                message: "Cập nhật thông tin thành công",
+                data: {
+                    id: user._id,
+                    fullName: user.fullName,
+                    email: user.email,
+                    phone: user.phone,
+                    bio: user.bio,
+                    birthDate: user.birthDate,
+                    learningGoal: user.learningGoal,
+                    level: user.level,
+                    avatar: user.avatar,
+                    role: user.role
+                }
+            });
+        } catch (error) {
+            console.error("Update profile error:", error);
+            res.status(500).json({
+                success: false,
+                message: "Lỗi server khi cập nhật thông tin",
+            });
+        }
+    }
+);
+
 
 // Get user statistics (admin only)
 router.get("/user/stats", authenticateToken, requireAdmin, getUserStats);
@@ -434,6 +595,9 @@ router.post("/user/offline", async (req: Request, res: Response) => {
                 new: false,
             }
         );
+
+        // Broadcast updated statistics when user goes offline (for user count updates)
+        await realtimeService.broadcastUpdatedStats();
 
         // Remove from heartbeat cache
         heartbeatCache.delete(userId.toString());
