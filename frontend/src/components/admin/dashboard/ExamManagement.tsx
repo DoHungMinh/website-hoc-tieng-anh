@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Plus, Edit, Trash2, BookOpen, FileText, Volume2, Clock, Users, X } from 'lucide-react';
 import CreateIELTSExam from './CreateIELTSExam';
 import EditIELTSExam from './EditIELTSExam';
+import AIIELTSReadingCreator from './AIIELTSReadingCreator';
 
 interface Exam {
   _id: string;
@@ -188,6 +189,25 @@ const ExamManagement = () => {
     }
   };
 
+  // Handle AI-generated reading exam
+  const handleAIReadingExamGenerated = async (examData: any) => {
+    try {
+      console.log('AI Reading exam generated:', examData);
+      // For now, just show success message
+      alert('Đề thi Reading được tạo thành công bằng AI! (Chức năng sẽ được hoàn thiện trong tương lai)');
+      
+      // In the future, this would save the reading exam to the database
+      // await saveReadingExam(examData);
+      
+      // Refresh the exams list
+      await fetchExams();
+      await fetchStats();
+    } catch (error) {
+      console.error('Error handling AI reading exam:', error);
+      alert('Có lỗi xảy ra khi xử lý đề thi Reading');
+    }
+  };
+
   const filteredExams = exams.filter(exam => {
     const matchesSearch = exam.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || exam.type === filterType;
@@ -271,13 +291,18 @@ const ExamManagement = () => {
           <h1 className="text-2xl font-bold text-gray-900">Quản lý đề thi</h1>
           <p className="text-gray-600">Tạo và quản lý các đề thi IELTS Reading và Listening</p>
         </div>
-        <button
-          onClick={() => setShowCreateForm(true)}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-        >
-          <Plus className="h-5 w-5" />
-          Tạo đề thi mới
-        </button>
+        <div className="flex space-x-3">
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          >
+            <Plus className="h-5 w-5" />
+            Tạo đề thi thủ công
+          </button>
+          <AIIELTSReadingCreator
+            onExamGenerated={handleAIReadingExamGenerated}
+          />
+        </div>
       </div>
 
       {/* Statistics Cards */}
