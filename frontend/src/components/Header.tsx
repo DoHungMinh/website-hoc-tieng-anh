@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BookOpen, Menu, X, Bell } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
+import { useNotificationStore, loadNotificationsFromStorage } from '../stores/notificationStore';
+import NotificationDropdown from './NotificationDropdown';
 import AvatarDisplay from './AvatarDisplay';
 
 interface HeaderProps {
@@ -11,6 +13,12 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onAuthClick, onNavigate }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { isAuthenticated, user } = useAuthStore();
+  const { unreadCount, isDropdownOpen, setDropdownOpen } = useNotificationStore();
+
+  // Load notifications từ localStorage khi component mount
+  useEffect(() => {
+    loadNotificationsFromStorage();
+  }, []);
 
   const handleAuthAction = () => {
     if (isAuthenticated) {
@@ -19,6 +27,10 @@ const Header: React.FC<HeaderProps> = ({ onAuthClick, onNavigate }) => {
     } else {
       onAuthClick?.();
     }
+  };
+
+  const toggleNotificationDropdown = () => {
+    setDropdownOpen(!isDropdownOpen);
   };
 
   return (
@@ -82,9 +94,25 @@ const Header: React.FC<HeaderProps> = ({ onAuthClick, onNavigate }) => {
                 <span>Đăng nhập</span>
               </button>
             )}
-            <button className="text-white hover:text-lime-200 transition-colors duration-200">
-              <Bell className="h-6 w-6" />
-            </button>
+            {/* Notification Bell */}
+            <div className="relative">
+              <button 
+                onClick={toggleNotificationDropdown}
+                className="text-white hover:text-lime-200 transition-colors duration-200 relative"
+              >
+                <Bell className="h-6 w-6" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+              
+              <NotificationDropdown 
+                isOpen={isDropdownOpen}
+                onClose={() => setDropdownOpen(false)}
+              />
+            </div>
           </div>
 
           {/* Mobile menu button */}

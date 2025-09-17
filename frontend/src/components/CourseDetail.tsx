@@ -16,6 +16,7 @@ import {
   Globe
 } from 'lucide-react';
 import { useEnrollment } from '../hooks/useEnrollment';
+import { useNotificationStore } from '../stores/notificationStore';
 import { STORAGE_KEYS } from '../utils/constants';
 
 interface DetailCourse {
@@ -72,6 +73,7 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
   const [showPreview, setShowPreview] = useState(false);
   const [isPurchased, setIsPurchased] = useState(externalIsPurchased || false); // Use external purchased status
   const [enrolling, setEnrolling] = useState(false);
+  const { addNotification } = useNotificationStore();
   
   // PayOS states
   const [paymentData, setPaymentData] = useState<{
@@ -234,6 +236,9 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ course, onBack, onEnroll, i
       console.log('Payment success response data:', result);
       
       if (result.success) {
+        // Thêm notification khi thanh toán thành công
+        addNotification(course.id, course.title);
+        
         alert('✅ Thanh toán thành công! Bạn đã được đăng ký khóa học.');
         setShowQR(false);
         setShowPayment(false);
