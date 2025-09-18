@@ -61,15 +61,19 @@ import {
 } from "../controllers/simpleEnrollmentController";
 import { simpleChatbotController } from "../controllers/simpleChatbotController";
 import { realDataChatbotController } from "../controllers/realDataChatbotController";
-import { generateCourse, getTopicSuggestions } from "../controllers/aiCourseController";
-import { 
-    generateIELTSReading, 
-    getIELTSTopicSuggestions, 
-    validateIELTSContent 
+import {
+    generateCourse,
+    getTopicSuggestions,
+} from "../controllers/aiCourseController";
+import {
+    generateIELTSReading,
+    getIELTSTopicSuggestions,
+    validateIELTSContent,
 } from "../controllers/aiIELTSController";
 import {
     initializeProgress,
     getUserProgress,
+    getWeeklyActivity,
     updateVocabularyProgress,
     updateListeningProgress,
     updateTestProgress,
@@ -305,7 +309,7 @@ router.get(
     async (req: Request, res: Response): Promise<void> => {
         try {
             const userId = req.user?._id;
-            
+
             if (!userId) {
                 res.status(401).json({
                     success: false,
@@ -315,7 +319,7 @@ router.get(
             }
 
             // Find user
-            const user = await User.findById(userId).select('-password');
+            const user = await User.findById(userId).select("-password");
             if (!user) {
                 res.status(404).json({
                     success: false,
@@ -327,15 +331,21 @@ router.get(
             // Get latest test results to calculate current level
             const testResults = await IELTSTestResult.find({ userId }).lean();
             let currentLevel = user.level;
-            let levelSource = 'default';
-            
+            let levelSource = "default";
+
             // Only update level if there are test results with valid band scores
-            const validTestResults = testResults.filter((result: any) => result.score?.bandScore > 0);
+            const validTestResults = testResults.filter(
+                (result: any) => result.score?.bandScore > 0
+            );
             if (validTestResults.length > 0) {
-                const calculatedLevel = calculateUserLevel(validTestResults.map((result: any) => ({ bandScore: result.score?.bandScore })));
+                const calculatedLevel = calculateUserLevel(
+                    validTestResults.map((result: any) => ({
+                        bandScore: result.score?.bandScore,
+                    }))
+                );
                 currentLevel = calculatedLevel;
-                levelSource = 'test_results';
-                
+                levelSource = "test_results";
+
                 // Update user level if it's different from calculated level
                 if (calculatedLevel !== user.level) {
                     user.level = calculatedLevel;
@@ -354,17 +364,17 @@ router.get(
                 learningGoal: user.learningGoal,
                 avatar: user.avatar,
                 role: user.role,
-                levelSource: levelSource
+                levelSource: levelSource,
             };
 
             // Only include level if there are valid test results
-            if (levelSource === 'test_results') {
+            if (levelSource === "test_results") {
                 responseData.level = currentLevel;
             }
 
             res.json({
                 success: true,
-                data: responseData
+                data: responseData,
             });
         } catch (error) {
             console.error("Get user profile error:", error);
@@ -383,7 +393,8 @@ router.put(
     async (req: Request, res: Response): Promise<void> => {
         try {
             const userId = req.user?._id;
-            const { fullName, phone, bio, birthDate, learningGoal, level } = req.body;
+            const { fullName, phone, bio, birthDate, learningGoal, level } =
+                req.body;
 
             if (!userId) {
                 res.status(401).json({
@@ -426,8 +437,8 @@ router.put(
                     learningGoal: user.learningGoal,
                     level: user.level,
                     avatar: user.avatar,
-                    role: user.role
-                }
+                    role: user.role,
+                },
             });
         } catch (error) {
             console.error("Update profile error:", error);
@@ -438,7 +449,6 @@ router.put(
         }
     }
 );
-
 
 // Get user statistics (admin only)
 router.get("/user/stats", authenticateToken, requireAdmin, getUserStats);
@@ -475,7 +485,12 @@ router.patch(
 router.delete("/user/:id", authenticateToken, requireAdmin, deleteUser);
 
 // Upload avatar (authenticated user can upload their own avatar)
-router.post("/user/:userId/avatar", authenticateToken, avatarUpload.single('avatar'), uploadAvatar);
+router.post(
+    "/user/:userId/avatar",
+    authenticateToken,
+    avatarUpload.single("avatar"),
+    uploadAvatar
+);
 
 // Delete avatar (authenticated user can delete their own avatar)
 router.delete("/user/:userId/avatar", authenticateToken, deleteAvatar);
@@ -717,11 +732,7 @@ router.post(
 );
 
 // Get user enrollments (authenticated users)
-router.get(
-    "/courses/enrollments",
-    authenticateToken,
-    getUserEnrollments
-);
+router.get("/courses/enrollments", authenticateToken, getUserEnrollments);
 
 // Admin routes
 router.get("/courses", authenticateToken, requireAdmin, getCourses);
@@ -738,26 +749,55 @@ router.patch(
 router.delete("/courses/:id", authenticateToken, requireAdmin, deleteCourse);
 
 // PayOS payment success route
-router.post("/courses/payos-payment-success", authenticateToken, handlePayOSPaymentSuccess);
+router.post(
+    "/courses/payos-payment-success",
+    authenticateToken,
+    handlePayOSPaymentSuccess
+);
 
 // =================================================================
 // AI COURSE GENERATION ROUTES (/api/ai)
 // =================================================================
 
 // Generate course using AI
-router.post("/ai/generate-course", authenticateToken, requireAdmin, generateCourse);
+router.post(
+    "/ai/generate-course",
+    authenticateToken,
+    requireAdmin,
+    generateCourse
+);
 
 // Get topic suggestions for course generation
-router.get("/ai/topic-suggestions", authenticateToken, requireAdmin, getTopicSuggestions);
+router.get(
+    "/ai/topic-suggestions",
+    authenticateToken,
+    requireAdmin,
+    getTopicSuggestions
+);
 
 // Generate IELTS Reading test using AI
-router.post("/ai/generate-ielts-reading", authenticateToken, requireAdmin, generateIELTSReading);
+router.post(
+    "/ai/generate-ielts-reading",
+    authenticateToken,
+    requireAdmin,
+    generateIELTSReading
+);
 
 // Get topic suggestions for IELTS Reading
-router.get("/ai/ielts-topic-suggestions", authenticateToken, requireAdmin, getIELTSTopicSuggestions);
+router.get(
+    "/ai/ielts-topic-suggestions",
+    authenticateToken,
+    requireAdmin,
+    getIELTSTopicSuggestions
+);
 
 // Validate IELTS content
-router.post("/ai/validate-ielts", authenticateToken, requireAdmin, validateIELTSContent);
+router.post(
+    "/ai/validate-ielts",
+    authenticateToken,
+    requireAdmin,
+    validateIELTSContent
+);
 
 // =================================================================
 // IELTS ROUTES (/api/ielts)
@@ -881,6 +921,9 @@ router.post("/progress/initialize", requireAuth, initializeProgress);
 
 // Get user progress
 router.get("/progress", requireAuth, getUserProgress);
+
+// Get weekly activity
+router.get("/progress/weekly-activity", requireAuth, getWeeklyActivity);
 
 // Update vocabulary progress
 router.post("/progress/vocabulary", requireAuth, updateVocabularyProgress);

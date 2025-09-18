@@ -1,161 +1,208 @@
-import { useState, useEffect } from 'react';
-import Header from './components/Header';
-import Hero from './components/Hero';
-import Features from './components/Features';
-import Practice from './components/Practice';
-import Progress from './components/Progress';
-import Footer from './components/Footer';
-import Chatbot from './components/Chatbot';
-import Login from './components/Login';
-import Register from './components/Register';
-import AdminDashboard from './components/admin/AdminDashboard';
-import PlacementTest from './components/assessment/PlacementTest';
-import ProgressDashboard from './components/dashboard/ProgressDashboard';
-import CourseApp from './components/CourseApp';
-import NewCourseNotification from './components/NewCourseNotification';
-import UserProfile from './components/UserProfile';
-import IELTSExamList from './components/ielts/IELTSExamList';
-import AccountDisabledNotification from './components/AccountDisabledNotification';
-import PaymentSuccessHandler from './components/PaymentSuccessHandler';
-import { AuthDebugger } from './components/AuthDebugger';
-import { useAuthStore } from './stores/authStore';
-import { syncTokens } from './utils/tokenSync';
-import { useHeartbeat } from './hooks/useHeartbeat';
-import { useActivityHeartbeat } from './hooks/useActivityHeartbeat';
-import { setupGlobalErrorInterceptor } from './utils/errorInterceptor';
+import { useState, useEffect } from "react";
+import Header from "./components/Header";
+import Hero from "./components/Hero";
+import Features from "./components/Features";
+import Practice from "./components/Practice";
+import Progress from "./components/Progress";
+import Footer from "./components/Footer";
+import Chatbot from "./components/Chatbot";
+import Login from "./components/Login";
+import Register from "./components/Register";
+import AdminDashboard from "./components/admin/AdminDashboard";
+import PlacementTest from "./components/assessment/PlacementTest";
+import CourseApp from "./components/CourseApp";
+import NewCourseNotification from "./components/NewCourseNotification";
+import UserProfile from "./components/UserProfile";
+import IELTSExamList from "./components/ielts/IELTSExamList";
+import AccountDisabledNotification from "./components/AccountDisabledNotification";
+import PaymentSuccessHandler from "./components/PaymentSuccessHandler";
+import { AuthDebugger } from "./components/AuthDebugger";
+import { useAuthStore } from "./stores/authStore";
+import { syncTokens } from "./utils/tokenSync";
+import { useHeartbeat } from "./hooks/useHeartbeat";
+import { useActivityHeartbeat } from "./hooks/useActivityHeartbeat";
+import { setupGlobalErrorInterceptor } from "./utils/errorInterceptor";
 
-type Page = 'home' | 'login' | 'register' | 'auth' | 'placement-test' | 'dashboard' | 'courses' | 'profile' | 'practice';
+type Page =
+    | "home"
+    | "login"
+    | "register"
+    | "auth"
+    | "placement-test"
+    | "dashboard"
+    | "courses"
+    | "profile"
+    | "practice";
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<Page>('home');
-  const { user, isAuthenticated } = useAuthStore();
-  
-  // Check if we're on payment success page
-  const isPaymentSuccessPage = window.location.pathname.includes('/payment/success');
-  
-  // Initialize heartbeat for authenticated users and get account disabled state
-  const { accountDisabledMessage, clearAccountDisabledMessage } = useHeartbeat();
-  
-  // Initialize activity-based heartbeat for faster detection
-  useActivityHeartbeat();
+    const [currentPage, setCurrentPage] = useState<Page>("home");
+    const { user, isAuthenticated } = useAuthStore();
 
-  // Setup global error interceptor on app start
-  useEffect(() => {
-    setupGlobalErrorInterceptor();
-    
-    // Sync tokens để đảm bảo admin và user components đều có token
-    syncTokens();
-  }, []);
+    // Check if we're on payment success page
+    const isPaymentSuccessPage =
+        window.location.pathname.includes("/payment/success");
 
-  const handleNavigation = (page: string) => {
-    const validPages: Page[] = ['home', 'login', 'register', 'auth', 'placement-test', 'dashboard', 'courses', 'profile', 'practice'];
-    if (validPages.includes(page as Page)) {
-      // Nếu navigate đến 'auth', chuyển đến 'register' (trang đăng ký)
-      if (page === 'auth') {
-        setCurrentPage('register');
-      } else {
-        setCurrentPage(page as Page);
-      }
+    // Initialize heartbeat for authenticated users and get account disabled state
+    const { accountDisabledMessage, clearAccountDisabledMessage } =
+        useHeartbeat();
+
+    // Initialize activity-based heartbeat for faster detection
+    useActivityHeartbeat();
+
+    // Setup global error interceptor on app start
+    useEffect(() => {
+        setupGlobalErrorInterceptor();
+
+        // Sync tokens để đảm bảo admin và user components đều có token
+        syncTokens();
+    }, []);
+
+    const handleNavigation = (page: string) => {
+        const validPages: Page[] = [
+            "home",
+            "login",
+            "register",
+            "auth",
+            "placement-test",
+            "dashboard",
+            "courses",
+            "profile",
+            "practice",
+        ];
+        if (validPages.includes(page as Page)) {
+            // Nếu navigate đến 'auth', chuyển đến 'register' (trang đăng ký)
+            if (page === "auth") {
+                setCurrentPage("register");
+            } else {
+                setCurrentPage(page as Page);
+            }
+        }
+    };
+
+    const handleAuthClick = () => {
+        setCurrentPage("login");
+    };
+
+    const handleAuthSuccess = () => {
+        setCurrentPage("home");
+    };
+
+    const handleAdminLogout = () => {
+        setCurrentPage("home");
+    };
+
+    // Handle payment success page
+    if (isPaymentSuccessPage) {
+        return <PaymentSuccessHandler />;
     }
-  };
 
-  const handleAuthClick = () => {
-    setCurrentPage('login');
-  };
-
-  const handleAuthSuccess = () => {
-    setCurrentPage('home');
-  };
-
-  const handleAdminLogout = () => {
-    setCurrentPage('home');
-  };
-
-  // Handle payment success page
-  if (isPaymentSuccessPage) {
-    return <PaymentSuccessHandler />;
-  }
-
-  // If user is admin and authenticated, show admin dashboard
-  if (isAuthenticated && user?.role === 'admin') {
-    return <AdminDashboard onLogout={handleAdminLogout} />;
-  }
-
-  // If user is authenticated (regular user), show user dashboard
-  if (isAuthenticated && user?.role === 'user') {
-    if (currentPage === 'placement-test') {
-      return <PlacementTest />;
+    // If user is admin and authenticated, show admin dashboard
+    if (isAuthenticated && user?.role === "admin") {
+        return <AdminDashboard onLogout={handleAdminLogout} />;
     }
-    if (currentPage === 'dashboard') {
-      return <ProgressDashboard onNavigate={handleNavigation} />;
-    }
-    if (currentPage === 'profile') {
-      return <UserProfile onBack={() => setCurrentPage('home')} onNavigate={handleNavigation} />;
-    }
-  }
 
-  if (currentPage === 'login') {
+    // If user is authenticated (regular user), show user dashboard
+    if (isAuthenticated && user?.role === "user") {
+        if (currentPage === "placement-test") {
+            return <PlacementTest />;
+        }
+        if (currentPage === "dashboard") {
+            return (
+                <UserProfile
+                    onBack={() => setCurrentPage("home")}
+                    onNavigate={handleNavigation}
+                />
+            );
+        }
+    }
+
+    if (currentPage === "login") {
+        return (
+            <Login
+                onLoginSuccess={handleAuthSuccess}
+                onSwitchToRegister={() => setCurrentPage("register")}
+                onBackToHome={() => setCurrentPage("home")}
+            />
+        );
+    }
+
+    if (currentPage === "register") {
+        return (
+            <Register
+                onRegisterSuccess={handleAuthSuccess}
+                onSwitchToLogin={() => setCurrentPage("login")}
+                onBackToHome={() => setCurrentPage("home")}
+            />
+        );
+    }
+
+    if (currentPage === "placement-test") {
+        return <PlacementTest />;
+    }
+
+    // Dashboard route - always redirect to profile for authenticated users
+    if (currentPage === "dashboard") {
+        if (isAuthenticated) {
+            return (
+                <UserProfile
+                    onBack={() => setCurrentPage("home")}
+                    onNavigate={handleNavigation}
+                />
+            );
+        } else {
+            // Redirect non-authenticated users to login
+            setCurrentPage("login");
+            return null;
+        }
+    }
+    if (currentPage === "courses") {
+        return (
+            <CourseApp
+                onBack={() => setCurrentPage("home")}
+                onAuthRequired={() => setCurrentPage("login")}
+            />
+        );
+    }
+
+    if (currentPage === "practice") {
+        return <IELTSExamList onBack={() => setCurrentPage("home")} />;
+    }
+
+    if (currentPage === "profile") {
+        return (
+            <UserProfile
+                onBack={() => setCurrentPage("home")}
+                onNavigate={handleNavigation}
+            />
+        );
+    }
+
     return (
-      <Login
-        onLoginSuccess={handleAuthSuccess}
-        onSwitchToRegister={() => setCurrentPage('register')}
-        onBackToHome={() => setCurrentPage('home')}
-      />
+        <div className="min-h-screen bg-white">
+            <Header
+                onAuthClick={handleAuthClick}
+                onNavigate={handleNavigation}
+            />
+            <Hero />
+            <Features onNavigate={handleNavigation} />
+            <Practice />
+            <Progress />
+            <Footer />
+            <Chatbot />
+            <NewCourseNotification onNavigate={handleNavigation} />
+
+            {/* Account Disabled Notification */}
+            {accountDisabledMessage && (
+                <AccountDisabledNotification
+                    message={accountDisabledMessage}
+                    onClose={clearAccountDisabledMessage}
+                />
+            )}
+
+            {/* Auth Debugger - only in development */}
+            {import.meta.env.DEV && <AuthDebugger />}
+        </div>
     );
-  }
-
-  if (currentPage === 'register') {
-    return (
-      <Register
-        onRegisterSuccess={handleAuthSuccess}
-        onSwitchToLogin={() => setCurrentPage('login')}
-        onBackToHome={() => setCurrentPage('home')}
-      />
-    );
-  }
-
-  if (currentPage === 'placement-test') {
-    return <PlacementTest />;
-  }
-
-  if (currentPage === 'dashboard') {
-    return <ProgressDashboard onNavigate={handleNavigation} />;
-  }
-
-  if (currentPage === 'courses') {
-    return <CourseApp 
-      onBack={() => setCurrentPage('home')} 
-      onAuthRequired={() => setCurrentPage('login')} 
-    />;
-  }
-
-  if (currentPage === 'practice') {
-    return <IELTSExamList onBack={() => setCurrentPage('home')} />;
-  }
-
-  return (
-    <div className="min-h-screen bg-white">
-      <Header onAuthClick={handleAuthClick} onNavigate={handleNavigation} />
-      <Hero />
-      <Features onNavigate={handleNavigation} />
-      <Practice />
-      <Progress />
-      <Footer />
-      <Chatbot />
-      <NewCourseNotification onNavigate={handleNavigation} />
-      
-      {/* Account Disabled Notification */}
-      {accountDisabledMessage && (
-        <AccountDisabledNotification
-          message={accountDisabledMessage}
-          onClose={clearAccountDisabledMessage}
-        />
-      )}
-      
-      {/* Auth Debugger - only in development */}
-      {import.meta.env.DEV && <AuthDebugger />}
-    </div>
-  );
 }
 
 export default App;
