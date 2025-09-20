@@ -6,6 +6,17 @@
 const payOSService = require("./payos-service");
 
 /**
+ * Helper function để tạo timestamp với timezone Việt Nam (+7)
+ */
+const getVietnamTime = () => {
+    const now = new Date();
+    // Tính offset +7 giờ so với UTC (7 * 60 * 60 * 1000 = 25200000)
+    const vietnamOffset = 7 * 60 * 60 * 1000;
+    const vietnamTime = new Date(now.getTime() + vietnamOffset);
+    return vietnamTime;
+};
+
+/**
  * Tạo payment link cho khóa học
  * POST /api/payos/create-payment
  */
@@ -465,14 +476,14 @@ const handleEnrollmentFromWebhook = async (
 
         console.log(`✅ Đã cập nhật PaymentHistory với course và user info`);
 
-        // Gửi email thông báo (async, không chờ)
+        // Gửi email thông báo (async, không chờ) với Vietnam timezone
         const emailService = require("./email-service");
         const paymentInfo = {
             userEmail: user.email,
             courseName: course.title,
             courseId: courseId,
             amount: webhookData.amount || course.price,
-            paymentDate: new Date(),
+            paymentDate: getVietnamTime(),
             orderCode: orderCode,
         };
 
@@ -515,12 +526,12 @@ const handleSuccessfulPayment = async (webhookData) => {
 
         console.log(`💰 Xử lý thanh toán thành công: ${orderCode}`);
 
-        // Cập nhật PaymentHistory
+        // Cập nhật PaymentHistory với Vietnam timezone
         const updatedPayment = await PaymentHistory.findOneAndUpdate(
             { orderCode },
             {
                 status: "PAID",
-                paidAt: new Date(),
+                paidAt: getVietnamTime(),
                 webhookReceived: true,
                 webhookData,
             },
@@ -550,12 +561,12 @@ const handleCancelledPayment = async (webhookData) => {
 
         console.log(`🚫 Xử lý thanh toán bị hủy: ${orderCode}`);
 
-        // Cập nhật PaymentHistory
+        // Cập nhật PaymentHistory với Vietnam timezone
         await PaymentHistory.findOneAndUpdate(
             { orderCode },
             {
                 status: "CANCELLED",
-                cancelledAt: new Date(),
+                cancelledAt: getVietnamTime(),
                 webhookReceived: true,
                 webhookData,
             }
