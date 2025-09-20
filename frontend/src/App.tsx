@@ -185,7 +185,7 @@ function App() {
             />
             <Hero />
             <Features onNavigate={handleNavigation} />
-            <Practice />
+            <Practice onNavigate={handleNavigation} />
             <Progress />
             <Footer />
             <Chatbot />

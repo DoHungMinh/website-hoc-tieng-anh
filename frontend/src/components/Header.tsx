@@ -69,12 +69,6 @@ const Header: React.FC<HeaderProps> = ({ onAuthClick, onNavigate }) => {
                         >
                             Luyện tập
                         </button>
-                        <a
-                            href="#tests"
-                            className="text-white hover:text-lime-200 transition-colors duration-200 font-medium"
-                        >
-                            Kiểm tra
-                        </a>
                         <button
                             onClick={() => {
                                 const progressSection =
@@ -181,12 +175,6 @@ const Header: React.FC<HeaderProps> = ({ onAuthClick, onNavigate }) => {
                             >
                                 Luyện tập
                             </button>
-                            <a
-                                href="#tests"
-                                className="text-white hover:text-lime-200 transition-colors duration-200 py-2 font-medium"
-                            >
-                                Kiểm tra
-                            </a>
                             <button
                                 onClick={() => {
                                     const progressSection =

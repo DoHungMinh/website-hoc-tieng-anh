@@ -1,19 +1,34 @@
 import { useState } from 'react';
-import { PlayCircle, CheckCircle, Star, Clock, ArrowRight, Trophy, Target } from 'lucide-react';
+import { PlayCircle, CheckCircle, Star, Clock } from 'lucide-react';
 import IELTSCenter from './ielts/IELTSCenter';
 
-const Practice = () => {
+interface PracticeProps {
+  onNavigate?: (page: string) => void;
+}
+
+interface PracticeItem {
+  title: string;
+  level: string;
+  duration: string;
+  rating: number;
+  image: string;
+  description?: string;
+  isIELTS?: boolean;
+  courseType?: string;
+  youtubeUrl?: string;
+}
+
+const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
   const [showIELTS, setShowIELTS] = useState(false);
 
   if (showIELTS) {
     return <IELTSCenter />;
   }
-  const practiceItems = [
+  const practiceItems: PracticeItem[] = [
     {
       title: 'IELTS Practice Center',
       level: 'All Levels',
       duration: 'Flexible',
-      completed: 0,
       rating: 4.9,
       image: 'https://images.pexels.com/photos/3184338/pexels-photo-3184338.jpeg?auto=compress&cs=tinysrgb&w=400',
       isIELTS: true,
@@ -23,25 +38,27 @@ const Practice = () => {
       title: 'Bài tập từ vựng cơ bản',
       level: 'Beginner',
       duration: '15 phút',
-      completed: 85,
       rating: 4.8,
-      image: 'https://images.pexels.com/photos/159711/books-bookstore-book-reading-159711.jpeg?auto=compress&cs=tinysrgb&w=400'
+      image: 'https://images.pexels.com/photos/159711/books-bookstore-book-reading-159711.jpeg?auto=compress&cs=tinysrgb&w=400',
+      courseType: 'vocabulary',
+      description: 'Nắm vững 500+ từ vựng thiết yếu cho cuộc sống hàng ngày với phương pháp ghi nhớ thông minh'
     },
     {
-      title: 'Luyện nghe tin tức BBC',
+      title: 'Luyện nghe BBC Learning English',
       level: 'Intermediate',
       duration: '25 phút',
-      completed: 60,
       rating: 4.9,
-      image: 'https://images.pexels.com/photos/3184302/pexels-photo-3184302.jpeg?auto=compress&cs=tinysrgb&w=400'
+      image: 'https://images.pexels.com/photos/3184302/pexels-photo-3184302.jpeg?auto=compress&cs=tinysrgb&w=400',
+      description: 'Học tiếng Anh qua chương trình BBC Learning English với phương pháp giảng dạy chuyên nghiệp',
+      youtubeUrl: 'https://www.youtube.com/playlist?list=PLcetZ6gSk9692J5Mq2pY4siPVbMCu4v6c'
     },
     {
       title: 'Luyện nghe BBC News',
       level: 'Advanced',
       duration: '30 phút',
-      completed: 45,
       rating: 4.7,
-      image: 'https://images.pexels.com/photos/3184338/pexels-photo-3184338.jpeg?auto=compress&cs=tinysrgb&w=400'
+      image: 'https://images.pexels.com/photos/3184338/pexels-photo-3184338.jpeg?auto=compress&cs=tinysrgb&w=400',
+      description: 'Thách thức bản thân với tin tức BBC nâng cao, phát triển kỹ năng nghe chuyên sâu'
     }
   ];
 
@@ -61,7 +78,7 @@ const Practice = () => {
           {practiceItems.map((item, index) => (
             <div
               key={index}
-              className={`bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 group ${
+              className={`bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 group flex flex-col h-full ${
                 item.isIELTS ? 'ring-2 ring-green-500 relative' : ''
               }`}
             >
@@ -93,13 +110,13 @@ const Practice = () => {
                 </div>
               </div>
 
-              <div className="p-6">
+              <div className="p-6 flex-1 flex flex-col">
                 <h3 className="text-lg font-bold text-gray-900 mb-3 group-hover:text-green-700 transition-colors duration-300">
                   {item.title}
                 </h3>
 
                 {item.description && (
-                  <p className="text-sm text-gray-600 mb-3">{item.description}</p>
+                  <p className="text-sm text-gray-600 mb-3 flex-1">{item.description}</p>
                 )}
 
                 <div className="flex items-center gap-4 mb-4 text-sm text-gray-600">
@@ -113,24 +130,17 @@ const Practice = () => {
                   </div>
                 </div>
 
-                {!item.isIELTS && (
-                  <div className="mb-4">
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-600">Tiến độ hoàn thành</span>
-                      <span className="font-medium text-green-700">{item.completed}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-gradient-to-r from-green-500 to-lime-500 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${item.completed}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                )}
-
                 <button 
-                  onClick={() => item.isIELTS ? setShowIELTS(true) : null}
-                  className={`w-full py-3 rounded-xl font-medium transition-all duration-300 flex items-center justify-center gap-2 ${
+                  onClick={() => {
+                    if (item.isIELTS) {
+                      setShowIELTS(true);
+                    } else if (item.courseType === 'vocabulary') {
+                      onNavigate?.('courses');
+                    } else if (item.youtubeUrl) {
+                      window.open(item.youtubeUrl, '_blank');
+                    }
+                  }}
+                  className={`w-full py-3 rounded-xl font-medium transition-all duration-300 flex items-center justify-center gap-2 mt-auto ${
                     item.isIELTS 
                       ? 'bg-gradient-to-r from-green-600 to-lime-600 hover:from-green-700 hover:to-lime-700 text-white shadow-lg hover:shadow-xl' 
                       : 'bg-gradient-to-r from-green-600 to-lime-600 hover:from-green-700 hover:to-lime-700 text-white'
