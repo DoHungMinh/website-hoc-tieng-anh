@@ -83,6 +83,39 @@ class PayOSService {
         qrCode: paymentLinkResponse.qrCode
       });
 
+      // Lưu PaymentHistory vào database
+      try {
+        const PaymentHistory = require('./PaymentHistory');
+        const Course = require('../src/models/Course');
+        const { User } = require('../src/models/User');
+        
+        // Lấy thông tin course và user
+        const course = await Course.findById(courseId);
+        const user = await User.findById(userId);
+        
+        if (course && user) {
+          const paymentHistory = new PaymentHistory({
+            orderCode: paymentLinkResponse.orderCode,
+            status: 'PENDING',
+            amount: paymentData.amount,
+            description: paymentData.description,
+            courseId,
+            userId,
+            courseName: course.title,
+            userEmail: user.email,
+            userFullName: user.fullName,
+            checkoutUrl: paymentLinkResponse.checkoutUrl,
+            qrCode: paymentLinkResponse.qrCode,
+            expiredAt: new Date(paymentData.expiredAt * 1000)
+          });
+          
+          await paymentHistory.save();
+          console.log('💾 Đã lưu PaymentHistory:', paymentLinkResponse.orderCode);
+        }
+      } catch (historyError) {
+        console.warn('⚠️ Không thể lưu PaymentHistory (không ảnh hưởng payment):', historyError.message);
+      }
+
       return {
         success: true,
         data: {

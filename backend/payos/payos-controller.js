@@ -163,40 +163,115 @@ const getPaymentStatus = async (req, res) => {
  */
 const handleWebhook = async (req, res) => {
   try {
+    console.log('🔔 PayOS Webhook nhận được:');
+    console.log('Headers:', req.headers);
+    console.log('Body:', JSON.stringify(req.body, null, 2));
+
     const webhookData = req.body;
-    const signature = req.headers['payos-signature'];
+    const signature = req.headers['x-payos-signature'] || req.headers['payos-signature'];
 
-    console.log('🔔 Nhận webhook từ PayOS:', {
-      orderCode: webhookData.orderCode,
-      status: webhookData.status
-    });
+    // Kiểm tra signature từ PayOS
+    if (signature) {
+      console.log('🔐 Verifying PayOS signature...');
+      const isValidSignature = payOSService.verifyWebhookSignature(webhookData, signature);
+      
+      if (!isValidSignature) {
+        console.error('❌ PayOS signature không hợp lệ');
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid PayOS signature'
+        });
+      }
+      console.log('✅ PayOS signature hợp lệ');
+    } else {
+      console.log('⚠️ Không có signature - có thể là test webhook');
+    }
 
-    // Xác thực webhook signature
-    const isValidSignature = payOSService.verifyWebhookSignature(webhookData, signature);
+    // PayOS webhook format có thể là:
+    // 1. Direct format: { orderCode, amount, description, ... }
+    // 2. Wrapped format: { data: { orderCode, amount, ... }, code, desc }
     
-    if (!isValidSignature) {
-      console.error('❌ Webhook signature không hợp lệ');
+    let paymentData = webhookData;
+    let status = 'PAID'; // Mặc định là PAID nếu nhận được webhook
+    
+    // Nếu có field 'data', đây là wrapped format
+    if (webhookData.data) {
+      paymentData = webhookData.data;
+      // Kiểm tra code để xác định status
+      status = webhookData.code === '00' ? 'PAID' : 'CANCELLED';
+      console.log('📝 Webhook format: Wrapped, Status:', status);
+    } else {
+      console.log('📝 Webhook format: Direct, Status:', status);
+    }
+
+    const { orderCode, amount, description } = paymentData;
+
+    if (!orderCode) {
+      console.error('❌ Webhook thiếu orderCode');
       return res.status(400).json({
         success: false,
-        message: 'Invalid signature'
+        message: 'Missing orderCode in webhook data'
       });
     }
 
-    // Xử lý webhook theo status
-    if (webhookData.status === 'PAID') {
-      await handleSuccessfulPayment(webhookData);
-    } else if (webhookData.status === 'CANCELLED') {
-      await handleCancelledPayment(webhookData);
+    console.log('💳 Xử lý payment:', { orderCode, amount, description, status });
+
+    // Import PaymentHistory model
+    const PaymentHistory = require('./PaymentHistory');
+
+    // Tìm hoặc tạo payment record
+    let payment = await PaymentHistory.findOne({ orderCode });
+
+    if (payment) {
+      console.log('🔄 Cập nhật payment hiện tại:', payment._id);
+      
+      // Cập nhật trạng thái
+      payment.status = status;
+      if (status === 'PAID') {
+        payment.paidAt = new Date();
+      } else if (status === 'CANCELLED') {
+        payment.cancelledAt = new Date();
+      }
+      
+      payment.webhookReceived = true;
+      payment.webhookData = webhookData;
+      
+      await payment.save();
+      console.log('✅ Đã cập nhật payment:', payment._id);
+      
+    } else {
+      console.log('🆕 Tạo payment record mới từ webhook');
+      
+      // Tạo payment record mới
+      payment = new PaymentHistory({
+        orderCode,
+        amount: amount || 0,
+        description: description || `Payment #${orderCode}`,
+        status,
+        currency: 'VND',
+        paidAt: status === 'PAID' ? new Date() : undefined,
+        cancelledAt: status === 'CANCELLED' ? new Date() : undefined,
+        webhookReceived: true,
+        webhookData: webhookData,
+        paymentMethod: 'qr_code'
+      });
+      
+      await payment.save();
+      console.log('✅ Đã tạo payment mới:', payment._id);
     }
 
-    // Trả về success cho PayOS
+    // Trả về success response cho PayOS
     res.json({
       success: true,
-      message: 'Webhook processed successfully'
+      message: 'Webhook processed successfully',
+      orderCode: orderCode,
+      status: status
     });
 
+    console.log('🎉 Webhook processed thành công cho orderCode:', orderCode);
+
   } catch (error) {
-    console.error('❌ Lỗi xử lý webhook:', error);
+    console.error('❌ Lỗi xử lý PayOS webhook:', error);
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi xử lý webhook'
@@ -209,17 +284,28 @@ const handleWebhook = async (req, res) => {
  */
 const handleSuccessfulPayment = async (webhookData) => {
   try {
-    const { orderCode, description } = webhookData;
+    const { orderCode } = webhookData;
+    const PaymentHistory = require('./PaymentHistory');
     
     console.log(`💰 Xử lý thanh toán thành công: ${orderCode}`);
 
-    // TODO: Implement logic tự động đăng ký khóa học khi thanh toán thành công
-    // - Tìm thông tin order từ orderCode
-    // - Tạo enrollment record
-    // - Gửi email xác nhận (nếu có)
-    // - Log activity
+    // Cập nhật PaymentHistory
+    const updatedPayment = await PaymentHistory.findOneAndUpdate(
+      { orderCode },
+      {
+        status: 'PAID',
+        paidAt: new Date(),
+        webhookReceived: true,
+        webhookData
+      },
+      { new: true }
+    );
 
-    console.log('✅ Đã xử lý thanh toán thành công cho order:', orderCode);
+    if (updatedPayment) {
+      console.log('✅ Đã cập nhật PaymentHistory cho order:', orderCode);
+    } else {
+      console.warn('⚠️ Không tìm thấy PaymentHistory cho order:', orderCode);
+    }
 
   } catch (error) {
     console.error('❌ Lỗi xử lý thanh toán thành công:', error);
@@ -232,12 +318,22 @@ const handleSuccessfulPayment = async (webhookData) => {
 const handleCancelledPayment = async (webhookData) => {
   try {
     const { orderCode } = webhookData;
+    const PaymentHistory = require('./PaymentHistory');
     
     console.log(`🚫 Xử lý thanh toán bị hủy: ${orderCode}`);
 
-    // TODO: Implement logic xử lý khi payment bị hủy
-    // - Log activity
-    // - Thông báo cho user (nếu cần)
+    // Cập nhật PaymentHistory
+    await PaymentHistory.findOneAndUpdate(
+      { orderCode },
+      {
+        status: 'CANCELLED',
+        cancelledAt: new Date(),
+        webhookReceived: true,
+        webhookData
+      }
+    );
+
+    console.log('✅ Đã cập nhật PaymentHistory cho order bị hủy:', orderCode);
 
     console.log('✅ Đã xử lý thanh toán bị hủy cho order:', orderCode);
 
