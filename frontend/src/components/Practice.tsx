@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { PlayCircle, CheckCircle, Star, Clock } from 'lucide-react';
 import IELTSCenter from './ielts/IELTSCenter';
+import YouTubePlayer from './YouTubePlayer';
 
 interface PracticeProps {
   onNavigate?: (page: string) => void;
@@ -16,10 +17,20 @@ interface PracticeItem {
   isIELTS?: boolean;
   courseType?: string;
   youtubeUrl?: string;
+  youtubePlaylistId?: string;
 }
 
 const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
   const [showIELTS, setShowIELTS] = useState(false);
+  const [youtubePlayer, setYoutubePlayer] = useState<{
+    isOpen: boolean;
+    playlistId: string;
+    title: string;
+  }>({
+    isOpen: false,
+    playlistId: '',
+    title: ''
+  });
 
   if (showIELTS) {
     return <IELTSCenter />;
@@ -50,7 +61,7 @@ const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
       rating: 4.9,
       image: 'https://images.pexels.com/photos/3184302/pexels-photo-3184302.jpeg?auto=compress&cs=tinysrgb&w=400',
       description: 'Học tiếng Anh qua chương trình BBC Learning English với phương pháp giảng dạy chuyên nghiệp',
-      youtubeUrl: 'https://www.youtube.com/playlist?list=PLcetZ6gSk9692J5Mq2pY4siPVbMCu4v6c'
+      youtubePlaylistId: 'PLcetZ6gSk9692J5Mq2pY4siPVbMCu4v6c'
     },
     {
       title: 'Luyện nghe BBC News',
@@ -58,7 +69,8 @@ const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
       duration: '30 phút',
       rating: 4.7,
       image: 'https://images.pexels.com/photos/3184338/pexels-photo-3184338.jpeg?auto=compress&cs=tinysrgb&w=400',
-      description: 'Thách thức bản thân với tin tức BBC nâng cao, phát triển kỹ năng nghe chuyên sâu'
+      description: 'Thách thức bản thân với tin tức BBC nâng cao, phát triển kỹ năng nghe chuyên sâu',
+      youtubePlaylistId: 'PLS3XGZxi7cBUS3bvpmcjIeqSAiwTceDmj'
     }
   ];
 
@@ -136,6 +148,12 @@ const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
                       setShowIELTS(true);
                     } else if (item.courseType === 'vocabulary') {
                       onNavigate?.('courses');
+                    } else if (item.youtubePlaylistId) {
+                      setYoutubePlayer({
+                        isOpen: true,
+                        playlistId: item.youtubePlaylistId,
+                        title: item.title
+                      });
                     } else if (item.youtubeUrl) {
                       window.open(item.youtubeUrl, '_blank');
                     }
@@ -154,6 +172,14 @@ const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
           ))}
         </div>
       </div>
+
+      {/* YouTube Player Modal */}
+      <YouTubePlayer
+        playlistId={youtubePlayer.playlistId}
+        isOpen={youtubePlayer.isOpen}
+        onClose={() => setYoutubePlayer({ isOpen: false, playlistId: '', title: '' })}
+        title={youtubePlayer.title}
+      />
     </section>
   );
 };
