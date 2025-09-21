@@ -11,9 +11,14 @@ import AvatarDisplay from "./AvatarDisplay";
 interface HeaderProps {
     onAuthClick?: () => void;
     onNavigate?: (page: string) => void;
+    currentPage?: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ onAuthClick, onNavigate }) => {
+const Header: React.FC<HeaderProps> = ({
+    onAuthClick,
+    onNavigate,
+    currentPage,
+}) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { isAuthenticated, user } = useAuthStore();
     const { unreadCount, isDropdownOpen, setDropdownOpen } =
@@ -37,12 +42,25 @@ const Header: React.FC<HeaderProps> = ({ onAuthClick, onNavigate }) => {
         setDropdownOpen(!isDropdownOpen);
     };
 
+    const handleHomeClick = () => {
+        if (currentPage === "home") {
+            // Nếu đang ở trang home, scroll về đầu trang
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        } else {
+            // Nếu không ở trang home, navigate về home
+            onNavigate?.("home");
+        }
+    };
+
     return (
         <header className="bg-gradient-to-r from-green-800 via-green-700 to-lime-600 shadow-lg sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     {/* Logo */}
-                    <div className="flex items-center space-x-2">
+                    <div
+                        className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity duration-200"
+                        onClick={() => window.location.reload()}
+                    >
                         <BookOpen className="h-8 w-8 text-white" />
                         <span className="font-bold text-xl text-white">
                             EnglishPro
@@ -52,7 +70,7 @@ const Header: React.FC<HeaderProps> = ({ onAuthClick, onNavigate }) => {
                     {/* Desktop Navigation */}
                     <nav className="hidden md:flex space-x-8">
                         <button
-                            onClick={() => onNavigate?.("home")}
+                            onClick={handleHomeClick}
                             className="text-white hover:text-lime-200 transition-colors duration-200 font-medium"
                         >
                             Trang chủ
@@ -150,7 +168,7 @@ const Header: React.FC<HeaderProps> = ({ onAuthClick, onNavigate }) => {
                         <div className="flex flex-col space-y-2">
                             <button
                                 onClick={() => {
-                                    onNavigate?.("home");
+                                    handleHomeClick();
                                     setIsMenuOpen(false);
                                 }}
                                 className="text-white hover:text-lime-200 transition-colors duration-200 py-2 font-medium text-left"

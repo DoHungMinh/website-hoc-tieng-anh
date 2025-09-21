@@ -11,7 +11,6 @@ import Register from "./components/Register";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import PlacementTest from "./components/assessment/PlacementTest";
 import CourseApp from "./components/CourseApp";
-import NewCourseNotification from "./components/NewCourseNotification";
 import UserProfile from "./components/UserProfile";
 import IELTSExamList from "./components/ielts/IELTSExamList";
 import AccountDisabledNotification from "./components/AccountDisabledNotification";
@@ -182,14 +181,14 @@ function App() {
             <Header
                 onAuthClick={handleAuthClick}
                 onNavigate={handleNavigation}
+                currentPage={currentPage}
             />
-            <Hero />
+            <Hero onNavigate={handleNavigation} />
             <Features onNavigate={handleNavigation} />
             <Practice onNavigate={handleNavigation} />
             <Progress />
             <Footer />
             <Chatbot />
-            <NewCourseNotification onNavigate={handleNavigation} />
 
             {/* Account Disabled Notification */}
             {accountDisabledMessage && (
