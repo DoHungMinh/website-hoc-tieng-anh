@@ -6,6 +6,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 import { Readable } from 'stream';
 import { calculateUserLevel } from '../utils/levelCalculator';
+import { calculateIELTSScore } from '../utils/ieltsScoring';
 
 // Function to update user level based on test results
 const updateUserLevelFromTestResults = async (userId: string) => {
@@ -522,35 +523,14 @@ export const submitTestResult = async (req: Request, res: Response): Promise<voi
     const totalQuestions = allQuestions.length;
     const percentage = Math.round((correctCount / totalQuestions) * 100);
 
-    // Calculate IELTS band score if possible
+    // Calculate IELTS band score using official scoring system
     let bandScore: number | undefined;
     let description: string | undefined;
     
     if (exam.type === 'listening' || exam.type === 'reading') {
-      // Use IELTS scoring tables (simplified)
-      if (exam.type === 'listening') {
-        if (correctCount >= 38) bandScore = 9.0;
-        else if (correctCount >= 36) bandScore = 8.0;
-        else if (correctCount >= 32) bandScore = 7.0;
-        else if (correctCount >= 26) bandScore = 6.0;
-        else if (correctCount >= 18) bandScore = 5.0;
-        else if (correctCount >= 12) bandScore = 4.0;
-        else bandScore = 3.0;
-      } else if (exam.type === 'reading') {
-        if (correctCount >= 38) bandScore = 9.0;
-        else if (correctCount >= 36) bandScore = 8.0;
-        else if (correctCount >= 32) bandScore = 7.0;
-        else if (correctCount >= 27) bandScore = 6.0;
-        else if (correctCount >= 19) bandScore = 5.0;
-        else if (correctCount >= 13) bandScore = 4.0;
-        else bandScore = 3.0;
-      }
-
-      if (bandScore && bandScore >= 8.5) description = 'Xuất sắc';
-      else if (bandScore && bandScore >= 7.0) description = 'Tốt';
-      else if (bandScore && bandScore >= 6.0) description = 'Khá';
-      else if (bandScore && bandScore >= 5.0) description = 'Trung bình';
-      else description = 'Cần cải thiện';
+      const ieltsResult = calculateIELTSScore(exam.type, correctCount);
+      bandScore = ieltsResult.bandScore;
+      description = ieltsResult.description;
     }
 
     // Save result to database
