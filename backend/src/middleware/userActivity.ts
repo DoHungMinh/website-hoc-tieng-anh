@@ -62,13 +62,55 @@ export const setUserOffline = async (userId: string) => {
             },
             { runValidators: false }
         );
+
+        // Remove from cache when user goes offline
+        userActivityCache.delete(userId);
+
+        // Trigger immediate cleanup after logout
+        await triggerManualCleanup();
     } catch (error) {
         console.error("Error setting user offline:", error);
     }
 };
 
+// Function to trigger manual cleanup (called on login/logout)
+export const triggerManualCleanup = async () => {
+    try {
+        console.log(
+            "🔄 Manual user activity cleanup triggered (login/logout event)"
+        );
+        await updateInactiveUsers(true); // Pass true for manual cleanup
+    } catch (error) {
+        console.error("Error in manual cleanup:", error);
+    }
+};
+
+// Function to set user online (called on login)
+export const setUserOnline = async (userId: string) => {
+    try {
+        await User.findByIdAndUpdate(
+            userId,
+            {
+                isOnline: true,
+                lastSeen: new Date(),
+            },
+            { runValidators: false }
+        );
+
+        // Update cache when user comes online
+        userActivityCache.set(userId, Date.now());
+
+        // Trigger immediate cleanup after login
+        await triggerManualCleanup();
+
+        console.log(`👤 User ${userId} set online with manual cleanup`);
+    } catch (error) {
+        console.error("Error setting user online:", error);
+    }
+};
+
 // Function to set inactive users offline (run periodically)
-export const updateInactiveUsers = async () => {
+export const updateInactiveUsers = async (isManual: boolean = false) => {
     try {
         // Set users offline if they haven't been active for more than 2 minutes
         // But exclude admin users to prevent dashboard reload issues
@@ -86,11 +128,14 @@ export const updateInactiveUsers = async () => {
             { runValidators: false }
         );
 
-        // Increment cleanup counter
-        cleanupCounter++;
+        // Increment cleanup counter only for scheduled cleanup
+        if (!isManual) {
+            cleanupCounter++;
+        }
 
         // Clean up old cache entries only every CACHE_CLEANUP_INTERVAL cycles (every ~1 minute)
-        if (cleanupCounter >= CACHE_CLEANUP_INTERVAL) {
+        // Or immediately for manual cleanup
+        if (isManual || cleanupCounter >= CACHE_CLEANUP_INTERVAL) {
             const oneHourAgo = Date.now() - 60 * 60 * 1000;
             let cleanedCount = 0;
 
@@ -102,14 +147,18 @@ export const updateInactiveUsers = async () => {
             }
 
             if (result.modifiedCount > 0 || cleanedCount > 0) {
+                const logPrefix = isManual ? "🔄 Manual" : "🔄 Scheduled";
                 console.log(
-                    `🔄 User activity cleanup completed - ${result.modifiedCount} users set offline, ${cleanedCount} cache entries cleaned`
+                    `${logPrefix} user activity cleanup completed - ${result.modifiedCount} users set offline, ${cleanedCount} cache entries cleaned`
                 );
             }
-            cleanupCounter = 0; // Reset counter
+
+            if (!isManual) {
+                cleanupCounter = 0; // Reset counter only for scheduled cleanup
+            }
         } else if (result.modifiedCount > 0) {
             console.log(
-                `🔄 ${result.modifiedCount} inactive users set offline`
+                `🔄 ${result.modifiedCount} inactive users set offline (scheduled)`
             );
         }
     } catch (error) {

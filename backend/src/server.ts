@@ -18,7 +18,12 @@ const connectDB = require("../config/database");
 import allRoutes from "./routes/index";
 
 // Import middleware
-import { errorHandler } from "./middleware/errorHandler";
+import {
+    errorHandler,
+    handleUncaughtException,
+    handleUnhandledRejection,
+} from "./middleware/errorHandler";
+import { timeoutMiddleware, healthCheck } from "./middleware/timeout";
 import { requestLogger } from "./middleware/logger";
 import {
     updateUserActivity,
@@ -26,6 +31,10 @@ import {
 } from "./middleware/userActivity";
 import { optionalAuth } from "./middleware/auth";
 import { realtimeService } from "./services/realtimeService";
+
+// Setup global error handlers
+handleUncaughtException();
+handleUnhandledRejection();
 
 // Initialize Express app
 const app = express();
@@ -44,6 +53,9 @@ const io = new Server(server, {
 app.use(helmet());
 app.use(compression());
 
+// Timeout middleware (30 second timeout)
+app.use(timeoutMiddleware(30000));
+
 // Rate limiting
 const limiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || "900000"), // 15 minutes
@@ -57,7 +69,8 @@ const limiter = rateLimit({
 const authLimiter = rateLimit({
     windowMs: 60000, // 1 phút
     max: 50, // 50 request auth mỗi phút cho mỗi IP
-    message: "Quá nhiều yêu cầu đăng nhập/đăng ký. Vui lòng thử lại sau ít phút.",
+    message:
+        "Quá nhiều yêu cầu đăng nhập/đăng ký. Vui lòng thử lại sau ít phút.",
     standardHeaders: true,
     legacyHeaders: false,
 });
@@ -157,6 +170,9 @@ app.use("/api", allRoutes);
 // PayOS Routes
 const payOSRoutes = require("../payos/payos-routes");
 app.use("/api/payos", payOSRoutes);
+
+// Health check endpoint
+app.get("/health", healthCheck);
 
 // Trigger restart for PayOS fix
 
