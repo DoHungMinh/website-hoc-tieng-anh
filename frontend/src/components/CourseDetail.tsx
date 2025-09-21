@@ -4,8 +4,6 @@ import {
     Clock,
     Star,
     CheckCircle,
-    Download,
-    Award,
     BookOpen,
     ChevronDown,
     ChevronUp,
@@ -450,17 +448,16 @@ const CourseDetail: React.FC<CourseDetailProps> = ({
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-3 text-sm text-green-600">
-                                            <Smartphone className="w-4 h-4" />
+                                            <Globe className="w-4 h-4" />
                                             <span>
                                                 Truy cập trọn đời trên mọi thiết
                                                 bị
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-3 text-sm text-green-600">
-                                            <Award className="w-4 h-4" />
+                                            <Smartphone className="w-4 h-4" />
                                             <span>
-                                                Chứng chỉ hoàn thành được công
-                                                nhận
+                                                Học trên mọi thiết bị
                                             </span>
                                         </div>
                                     </div>
@@ -1086,19 +1083,6 @@ const CourseDetail: React.FC<CourseDetailProps> = ({
                                     </h3>
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-3">
-                                            <Play className="w-4 h-4 text-gray-500" />
-                                            <span className="text-sm text-gray-700">
-                                                {course.lessonsCount} video bài
-                                                giảng
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <Download className="w-4 h-4 text-gray-500" />
-                                            <span className="text-sm text-gray-700">
-                                                Tài liệu tải về
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-3">
                                             <Globe className="w-4 h-4 text-gray-500" />
                                             <span className="text-sm text-gray-700">
                                                 Truy cập trọn đời
@@ -1108,12 +1092,6 @@ const CourseDetail: React.FC<CourseDetailProps> = ({
                                             <Smartphone className="w-4 h-4 text-gray-500" />
                                             <span className="text-sm text-gray-700">
                                                 Học trên mọi thiết bị
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <Award className="w-4 h-4 text-gray-500" />
-                                            <span className="text-sm text-gray-700">
-                                                Chứng chỉ hoàn thành
                                             </span>
                                         </div>
                                     </div>

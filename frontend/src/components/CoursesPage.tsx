@@ -471,7 +471,7 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
     const priceVND = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(course.price);
 
     return (
-      <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer"
+      <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer flex flex-col h-full"
            onClick={() => onCourseSelect?.(course._id!)}>
         <div className="relative">
           <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center relative overflow-hidden">
@@ -485,12 +485,16 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-6 flex flex-col flex-grow">
           <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
             {course.title}
           </h3>
           
-          <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+          <p className="text-gray-600 text-sm mb-4 h-10 overflow-hidden" style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical'
+          }}>
             {course.description}
           </p>
 
@@ -509,7 +513,7 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mt-auto">
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold text-blue-600">{priceVND}</span>
@@ -537,7 +541,7 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
     const IconComponent = illustration.icon;
 
     return (
-      <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
+      <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col h-full">
         {course.isPopular && (
           <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-sm font-semibold px-4 py-1 text-center">
             🔥 Phổ biến nhất
@@ -568,12 +572,16 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-6 flex flex-col flex-grow">
           <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
             {course.title}
           </h3>
           
-          <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+          <p className="text-gray-600 text-sm mb-4 h-10 overflow-hidden" style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical'
+          }}>
             {course.description}
           </p>
 
@@ -621,7 +629,7 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
 
           <button 
             onClick={() => onCourseSelect?.(course.id)}
-            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 group"
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 group mt-auto"
           >
             <span>Đăng ký ngay</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
