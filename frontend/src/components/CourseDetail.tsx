@@ -292,7 +292,10 @@ const CourseDetail: React.FC<CourseDetailProps> = ({
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${token}`,
                     },
-                    body: JSON.stringify({ orderCode }),
+                    body: JSON.stringify({
+                        orderCode,
+                        courseId: course.id,
+                    }),
                 }
             );
 

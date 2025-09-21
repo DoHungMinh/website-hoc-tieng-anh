@@ -17,7 +17,7 @@ const clientId = "99e81be5-7170-43dc-b87a-66062bb4a530";
 const apiKey = "ec43e303-8879-4b1c-ac4c-0c10b533fd86";
 
 // Webhook URL - sử dụng ngrok URL của bạn (cập nhật từ ảnh ngrok)
-const webhookUrl = "https://871f0858b1c1.ngrok-free.app/api/payos/webhook";
+const webhookUrl = "https://98140395b6cd.ngrok-free.app/api/payos/webhook";
 
 console.log("🔧 Đăng ký webhook PayOS...");
 console.log("📡 Webhook URL:", webhookUrl);
