@@ -1,5 +1,5 @@
 import React from 'react';
-import { Book, Headphones, Mic, PenTool, Target, Brain, Clock, Trophy } from 'lucide-react';
+import { Book, Headphones, PenTool, Target, Brain, Clock, Trophy, Zap } from 'lucide-react';
 
 interface FeaturesProps {
   onNavigate?: (page: string) => void;
@@ -31,9 +31,9 @@ const Features: React.FC<FeaturesProps> = ({ onNavigate }) => {
       clickable: false
     },
     {
-      icon: Mic,
-      title: 'Luyện phát âm AI',
-      description: 'Công nghệ AI đánh giá và sửa phát âm theo thời gian thực',
+      icon: Zap,
+      title: 'Công nghệ hiện đại',
+      description: 'Ứng dụng trí tuệ nhân tạo và công nghệ tiên tiến trong việc học tiếng Anh',
       color: 'from-green-700 to-lime-600',
       clickable: false
     },
@@ -47,7 +47,7 @@ const Features: React.FC<FeaturesProps> = ({ onNavigate }) => {
     {
       icon: Brain,
       title: 'AI Chatbot thông minh',
-      description: 'Trò chuyện với AI để luyện giao tiếp và giải đáp thắc mắc 24/7',
+      description: 'Trò chuyện với AI để luyện Tiếng Anh và giải đáp thắc mắc 24/7',
       color: 'from-lime-600 to-green-500',
       clickable: false
     },

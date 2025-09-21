@@ -9,10 +9,12 @@ import {
   Trophy,
   Target,
   Users,
-  Calendar
+  Calendar,
+  BarChart3
 } from 'lucide-react';
 import IELTSReadingTest from './IELTSReadingTest';
 import IELTSListeningTest from './IELTSListeningTest';
+import IELTSTestHistory from './IELTSTestHistory';
 
 interface ReadingTest {
   id: number;
@@ -43,7 +45,7 @@ interface ListeningTest {
 }
 
 const IELTSPractice = () => {
-  const [activeTab, setActiveTab] = useState<'reading' | 'listening'>('reading');
+  const [activeTab, setActiveTab] = useState<'reading' | 'listening' | 'history'>('reading');
   const [showReadingTest, setShowReadingTest] = useState(false);
   const [showListeningTest, setShowListeningTest] = useState(false);
 
@@ -148,6 +150,55 @@ const IELTSPractice = () => {
 
   const currentTests = activeTab === 'reading' ? readingTests : listeningTests;
 
+  // Render tab lịch sử
+  if (activeTab === 'history') {
+    return (
+      <section className="min-h-screen bg-gradient-to-br from-green-50 via-white to-lime-50 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-800 to-lime-600 bg-clip-text text-transparent mb-6">
+              IELTS Practice Center
+            </h1>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+              Luyện tập với bộ đề IELTS chính thức. Nâng cao kỹ năng Reading và Listening của bạn với các bài test thực tế.
+            </p>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex justify-center mb-12">
+            <div className="bg-white rounded-2xl p-2 shadow-lg border border-gray-100">
+              <button
+                onClick={() => setActiveTab('reading')}
+                className="flex items-center gap-3 px-8 py-4 rounded-xl font-medium transition-all duration-300 text-gray-600 hover:text-green-600 hover:bg-green-50"
+              >
+                <BookOpen className="h-5 w-5" />
+                IELTS Reading
+              </button>
+              <button
+                onClick={() => setActiveTab('listening')}
+                className="flex items-center gap-3 px-8 py-4 rounded-xl font-medium transition-all duration-300 text-gray-600 hover:text-green-600 hover:bg-green-50"
+              >
+                <Headphones className="h-5 w-5" />
+                IELTS Listening
+              </button>
+              <button
+                onClick={() => setActiveTab('history')}
+                className="flex items-center gap-3 px-8 py-4 rounded-xl font-medium transition-all duration-300 bg-gradient-to-r from-green-600 to-lime-600 text-white shadow-lg"
+              >
+                <BarChart3 className="h-5 w-5" />
+                Lịch sử
+              </button>
+            </div>
+          </div>
+
+          {/* History Content */}
+          <IELTSTestHistory />
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="min-h-screen bg-gradient-to-br from-green-50 via-white to-lime-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -185,6 +236,17 @@ const IELTSPractice = () => {
             >
               <Headphones className="h-5 w-5" />
               IELTS Listening
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`flex items-center gap-3 px-8 py-4 rounded-xl font-medium transition-all duration-300 ${
+                activeTab === 'history'
+                  ? 'bg-gradient-to-r from-green-600 to-lime-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-green-600 hover:bg-green-50'
+              }`}
+            >
+              <BarChart3 className="h-5 w-5" />
+              Lịch sử
             </button>
           </div>
         </div>

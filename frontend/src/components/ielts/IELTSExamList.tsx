@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, BookOpen, Clock, Target } from 'lucide-react';
 import IELTSExamCard from './IELTSExamCard';
 import IELTSTest from './IELTSTest';
+import IELTSTestHistory from './IELTSTestHistory';
 
 interface IELTSExam {
   _id: string;
@@ -143,44 +144,56 @@ const IELTSExamList: React.FC<IELTSExamListProps> = ({ onBack }) => {
           </div>
         </div>
 
-        {/* Exam List */}
-        <div className="bg-white rounded-xl shadow-sm border p-6">
-          <div className="mb-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Danh sách đề thi</h2>
-            <p className="text-gray-600">
-              Chọn đề thi để bắt đầu luyện tập. Các đề thi được sắp xếp từ mới nhất.
-            </p>
-          </div>
+        {/* Main Content - 2 Column Layout */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          {/* Left column - Exam List */}
+          <div className="xl:col-span-2">
+            <div className="bg-white rounded-xl shadow-sm border p-6">
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Danh sách đề thi</h2>
+                <p className="text-gray-600">
+                  Chọn đề thi để bắt đầu luyện tập. Các đề thi được sắp xếp từ mới nhất.
+                </p>
+              </div>
 
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
-          ) : (
-            <>
-              {exams.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {exams.map((exam) => (
-                    <IELTSExamCard
-                      key={exam._id}
-                      exam={exam}
-                      onStartExam={handleStartExam}
-                    />
-                  ))}
+              {loading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <div className="mx-auto h-24 w-24 text-gray-400 mb-4">
-                    <BookOpen className="h-full w-full" />
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có đề thi nào</h3>
-                  <p className="text-gray-500">
-                    Các đề thi IELTS sẽ được cập nhật sớm nhất có thể.
-                  </p>
-                </div>
+                <>
+                  {exams.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {exams.map((exam) => (
+                        <IELTSExamCard
+                          key={exam._id}
+                          exam={exam}
+                          onStartExam={handleStartExam}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="mx-auto h-24 w-24 text-gray-400 mb-4">
+                        <BookOpen className="h-full w-full" />
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có đề thi nào</h3>
+                      <p className="text-gray-500">
+                        Các đề thi IELTS sẽ được cập nhật sớm nhất có thể.
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
-            </>
-          )}
+            </div>
+          </div>
+
+          {/* Right column - Test History */}
+          <div className="xl:col-span-1">
+            <div className="sticky top-8">
+              <IELTSTestHistory />
+            </div>
+          </div>
         </div>
       </div>
     </div>

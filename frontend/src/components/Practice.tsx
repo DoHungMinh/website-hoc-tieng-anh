@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { PlayCircle, CheckCircle, Star, Clock } from 'lucide-react';
 import IELTSCenter from './ielts/IELTSCenter';
+import RecentTestHistory from './ielts/RecentTestHistory';
 import YouTubePlayer from './YouTubePlayer';
 
 interface PracticeProps {
@@ -86,7 +87,11 @@ const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {/* Main Content Grid - 2 columns */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          {/* Left column - Practice Items */}
+          <div className="xl:col-span-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {practiceItems.map((item, index) => (
             <div
               key={index}
@@ -170,6 +175,17 @@ const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
               </div>
             </div>
           ))}
+            </div>
+          </div>
+
+          {/* Right column - IELTS Test History */}
+          <div className="xl:col-span-1">
+            <div className="sticky top-8">
+              <RecentTestHistory 
+                onViewAll={() => setShowIELTS(true)}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
