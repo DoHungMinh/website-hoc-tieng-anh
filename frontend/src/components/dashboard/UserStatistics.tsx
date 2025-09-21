@@ -32,10 +32,10 @@ const UserStatistics: React.FC<UserStatisticsProps> = () => {
                     <div className="relative p-8 overflow-hidden text-center bg-white rounded-3xl">
                         <div className="relative flex flex-col items-center justify-center gap-6 text-center">
                             <div>
-                                <h1 className="mb-4 text-4xl font-bold md:text-5xl bg-gradient-to-r from-green-800 to-lime-600 bg-clip-text text-transparent">
+                                <h1 className="mb-4 text-4xl font-bold text-transparent md:text-5xl bg-gradient-to-r from-green-800 to-lime-600 bg-clip-text">
                                     Theo dõi tiến độ
                                 </h1>
-                                <p className="mb-6 text-xl text-gray-600 max-w-3xl mx-auto">
+                                <p className="max-w-3xl mx-auto mb-6 text-xl text-gray-600">
                                     Xem chi tiết quá trình học tập của bạn và
                                     đạt được những mục tiêu đã đề ra
                                 </p>
@@ -47,18 +47,18 @@ const UserStatistics: React.FC<UserStatisticsProps> = () => {
                 <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
                     {/* Left Column - Thống kê tổng quan */}
                     <div className="space-y-6">
-                        <h3 className="text-2xl font-bold text-gray-900 mb-6">
+                        <h3 className="mb-6 text-2xl font-bold text-gray-900">
                             Thống kê tổng quan
                         </h3>
 
                         {/* Stats Items */}
                         <div className="space-y-6">
                             {/* Số hoạt động trong tuần */}
-                            <div className="bg-gradient-to-r from-green-50 to-lime-50 rounded-2xl p-6 border border-green-100">
+                            <div className="p-6 border border-green-100 bg-gradient-to-r from-green-50 to-lime-50 rounded-2xl">
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-lime-500 rounded-xl flex items-center justify-center">
-                                            <Clock className="h-6 w-6 text-white" />
+                                        <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-green-500 to-lime-500 rounded-xl">
+                                            <Clock className="w-6 h-6 text-white" />
                                         </div>
                                         <div>
                                             <h3 className="text-lg font-semibold text-gray-900">
@@ -73,7 +73,7 @@ const UserStatistics: React.FC<UserStatisticsProps> = () => {
                                         +12%
                                     </div>
                                 </div>
-                                <div className="w-full bg-gray-200 rounded-full h-3">
+                                <div className="w-full h-3 bg-gray-200 rounded-full">
                                     <div
                                         className="h-3 rounded-full bg-gradient-to-r from-green-500 to-lime-500"
                                         style={{ width: "80%" }}
@@ -82,11 +82,11 @@ const UserStatistics: React.FC<UserStatisticsProps> = () => {
                             </div>
 
                             {/* Các đề thi đã làm */}
-                            <div className="bg-gradient-to-r from-green-50 to-lime-50 rounded-2xl p-6 border border-green-100">
+                            <div className="p-6 border border-green-100 bg-gradient-to-r from-green-50 to-lime-50 rounded-2xl">
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-gradient-to-r from-green-600 to-green-400 rounded-xl flex items-center justify-center">
-                                            <Target className="h-6 w-6 text-white" />
+                                        <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-green-600 to-green-400 rounded-xl">
+                                            <Target className="w-6 h-6 text-white" />
                                         </div>
                                         <div>
                                             <h3 className="text-lg font-semibold text-gray-900">
@@ -101,7 +101,7 @@ const UserStatistics: React.FC<UserStatisticsProps> = () => {
                                         45
                                     </div>
                                 </div>
-                                <div className="w-full bg-gray-200 rounded-full h-3">
+                                <div className="w-full h-3 bg-gray-200 rounded-full">
                                     <div
                                         className="h-3 rounded-full bg-gradient-to-r from-green-600 to-green-400"
                                         style={{ width: "75%" }}
@@ -110,11 +110,11 @@ const UserStatistics: React.FC<UserStatisticsProps> = () => {
                             </div>
 
                             {/* Các khóa học đã mua */}
-                            <div className="bg-gradient-to-r from-green-50 to-lime-50 rounded-2xl p-6 border border-green-100">
+                            <div className="p-6 border border-green-100 bg-gradient-to-r from-green-50 to-lime-50 rounded-2xl">
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-gradient-to-r from-lime-500 to-green-500 rounded-xl flex items-center justify-center">
-                                            <Medal className="h-6 w-6 text-white" />
+                                        <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-lime-500 to-green-500 rounded-xl">
+                                            <Medal className="w-6 h-6 text-white" />
                                         </div>
                                         <div>
                                             <h3 className="text-lg font-semibold text-gray-900">
@@ -129,7 +129,7 @@ const UserStatistics: React.FC<UserStatisticsProps> = () => {
                                         5
                                     </div>
                                 </div>
-                                <div className="w-full bg-gray-200 rounded-full h-3">
+                                <div className="w-full h-3 bg-gray-200 rounded-full">
                                     <div
                                         className="h-3 rounded-full bg-gradient-to-r from-lime-500 to-green-500"
                                         style={{ width: "100%" }}
@@ -138,11 +138,11 @@ const UserStatistics: React.FC<UserStatisticsProps> = () => {
                             </div>
 
                             {/* Điểm và điểm trung bình */}
-                            <div className="bg-gradient-to-r from-green-50 to-lime-50 rounded-2xl p-6 border border-green-100">
+                            <div className="p-6 border border-green-100 bg-gradient-to-r from-green-50 to-lime-50 rounded-2xl">
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-gradient-to-r from-green-700 to-lime-600 rounded-xl flex items-center justify-center">
-                                            <TrendingUp className="h-6 w-6 text-white" />
+                                        <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-green-700 to-lime-600 rounded-xl">
+                                            <TrendingUp className="w-6 h-6 text-white" />
                                         </div>
                                         <div>
                                             <h3 className="text-lg font-semibold text-gray-900">
@@ -157,7 +157,7 @@ const UserStatistics: React.FC<UserStatisticsProps> = () => {
                                         7.8
                                     </div>
                                 </div>
-                                <div className="w-full bg-gray-200 rounded-full h-3">
+                                <div className="w-full h-3 bg-gray-200 rounded-full">
                                     <div
                                         className="h-3 rounded-full bg-gradient-to-r from-green-700 to-lime-600"
                                         style={{ width: "78%" }}
@@ -169,11 +169,11 @@ const UserStatistics: React.FC<UserStatisticsProps> = () => {
 
                     {/* Right Column - Hoạt động trong tuần */}
                     <div className="space-y-6">
-                        <h3 className="text-2xl font-bold text-gray-900 mb-6">
+                        <h3 className="mb-6 text-2xl font-bold text-gray-900">
                             Hoạt động trong tuần
                         </h3>
 
-                        <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
+                        <div className="p-8 bg-white border border-gray-100 shadow-lg rounded-2xl">
                             <div className="space-y-4">
                                 {weeklyActivity.map((day, index) => (
                                     <div

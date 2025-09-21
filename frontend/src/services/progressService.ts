@@ -68,6 +68,25 @@ class ProgressService {
         };
     }
 
+    // Helper function to sort weekly activity in T2-CN order
+    private sortWeeklyActivity(
+        weeklyActivity: Array<{
+            day: string;
+            dayLabel: string;
+            hours: number;
+        }>
+    ) {
+        const dayOrder = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+        return weeklyActivity.sort((a, b) => {
+            const indexA = dayOrder.indexOf(a.dayLabel);
+            const indexB = dayOrder.indexOf(b.dayLabel);
+            // If dayLabel not found in order, put it at the end
+            return (
+                (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB)
+            );
+        });
+    }
+
     // Lấy dữ liệu tiến độ từ backend
     async getUserProgress(): Promise<ProgressData | null> {
         try {
@@ -287,15 +306,17 @@ class ProgressService {
                     : 0;
 
             // Sử dụng dữ liệu từ API hoặc fallback
-            const weeklyActivity = weeklyData?.weeklyActivity || [
-                { day: "Mon", dayLabel: "T2", hours: 0 },
-                { day: "Tue", dayLabel: "T3", hours: 0 },
-                { day: "Wed", dayLabel: "T4", hours: 0 },
-                { day: "Thu", dayLabel: "T5", hours: 0 },
-                { day: "Fri", dayLabel: "T6", hours: 0 },
-                { day: "Sat", dayLabel: "T7", hours: 0 },
-                { day: "Sun", dayLabel: "CN", hours: 0 },
-            ];
+            const weeklyActivity = this.sortWeeklyActivity(
+                weeklyData?.weeklyActivity || [
+                    { day: "Mon", dayLabel: "T2", hours: 0 },
+                    { day: "Tue", dayLabel: "T3", hours: 0 },
+                    { day: "Wed", dayLabel: "T4", hours: 0 },
+                    { day: "Thu", dayLabel: "T5", hours: 0 },
+                    { day: "Fri", dayLabel: "T6", hours: 0 },
+                    { day: "Sat", dayLabel: "T7", hours: 0 },
+                    { day: "Sun", dayLabel: "CN", hours: 0 },
+                ]
+            );
 
             // Sử dụng dữ liệu thực từ API, không tạo ngẫu nhiên
             let weeklyStudyTime = weeklyData?.weeklyStudyTime || 0;
@@ -321,11 +342,13 @@ class ProgressService {
             });
 
             return {
-                weeklyActivity: weeklyActivity.map((day) => ({
-                    day: day.day,
-                    dayLabel: day.dayLabel,
-                    hours: day.hours,
-                })),
+                weeklyActivity: this.sortWeeklyActivity(
+                    weeklyActivity.map((day) => ({
+                        day: day.day,
+                        dayLabel: day.dayLabel,
+                        hours: day.hours,
+                    }))
+                ),
                 testsCompleted,
                 coursesEnrolled,
                 averageScore: Math.round(averageScore * 10) / 10,
@@ -338,7 +361,7 @@ class ProgressService {
 
             // Fallback to default data if error
             return {
-                weeklyActivity: [
+                weeklyActivity: this.sortWeeklyActivity([
                     { day: "Mon", dayLabel: "T2", hours: 0 },
                     { day: "Tue", dayLabel: "T3", hours: 0 },
                     { day: "Wed", dayLabel: "T4", hours: 0 },
@@ -346,7 +369,7 @@ class ProgressService {
                     { day: "Fri", dayLabel: "T6", hours: 0 },
                     { day: "Sat", dayLabel: "T7", hours: 0 },
                     { day: "Sun", dayLabel: "CN", hours: 0 },
-                ],
+                ]),
                 testsCompleted: 0,
                 coursesEnrolled: 0,
                 averageScore: 0,

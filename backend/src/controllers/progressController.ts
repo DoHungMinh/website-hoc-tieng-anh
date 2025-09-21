@@ -449,16 +449,20 @@ const updateStudyActivity = async (
 
         const today = new Date();
         const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
-        const dayNames = [
-            "Chủ nhật",
+
+        // Use consistent day order matching getWeeklyActivity (T2-CN)
+        const orderedDayNames = [
             "Thứ 2",
             "Thứ 3",
             "Thứ 4",
             "Thứ 5",
             "Thứ 6",
             "Thứ 7",
+            "Chủ nhật",
         ];
-        const currentDay = dayNames[dayOfWeek];
+        // Convert JavaScript day (0=Sunday, 1=Monday) to our day name
+        const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Map Sunday to index 6, Monday to 0
+        const currentDay = orderedDayNames[dayIndex];
 
         // Get current week (ISO format)
         const year = today.getFullYear();
@@ -473,7 +477,7 @@ const updateStudyActivity = async (
         if (!currentWeek) {
             currentWeek = {
                 week: weekString,
-                days: dayNames.map((day) => ({
+                days: orderedDayNames.map((day) => ({
                     day,
                     hours: 0,
                     activities: [],

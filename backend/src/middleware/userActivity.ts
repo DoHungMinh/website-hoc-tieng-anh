@@ -1,9 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 import { User } from "../models/User";
+import { Progress } from "../models/Progress";
 
 // Cache to track last update time for each user to prevent excessive DB updates
 const userActivityCache = new Map<string, number>();
 const ACTIVITY_UPDATE_THRESHOLD = 10000; // Only update if last update was more than 10 seconds ago
+
+// Cache to track user online session start time
+const userOnlineSessionCache = new Map<string, number>();
 
 // Counter for cache cleanup optimization
 let cleanupCounter = 0;
@@ -63,11 +67,34 @@ export const setUserOffline = async (userId: string) => {
             { runValidators: false }
         );
 
+        // Calculate online session time and update weekly activity
+        const sessionStartTime = userOnlineSessionCache.get(userId);
+        if (sessionStartTime) {
+            const sessionEndTime = Date.now();
+            const sessionDurationMinutes = Math.round(
+                (sessionEndTime - sessionStartTime) / (1000 * 60)
+            );
+            const sessionDurationHours = sessionDurationMinutes / 60;
+
+            // Update weekly online time if session was significant (> 1 minute)
+            if (sessionDurationMinutes > 1) {
+                await updateWeeklyOnlineTime(userId, sessionDurationHours);
+                console.log(
+                    `📊 Recorded ${sessionDurationMinutes} minutes of online time for user ${userId}`
+                );
+            }
+
+            // Remove from session cache
+            userOnlineSessionCache.delete(userId);
+        }
+
         // Remove from cache when user goes offline
         userActivityCache.delete(userId);
 
         // Trigger immediate cleanup after logout
         await triggerManualCleanup();
+
+        console.log(`👤 User ${userId} set offline with session time recorded`);
     } catch (error) {
         console.error("Error setting user offline:", error);
     }
@@ -100,6 +127,9 @@ export const setUserOnline = async (userId: string) => {
         // Update cache when user comes online
         userActivityCache.set(userId, Date.now());
 
+        // Record session start time for online time tracking
+        userOnlineSessionCache.set(userId, Date.now());
+
         // Trigger immediate cleanup after login
         await triggerManualCleanup();
 
@@ -109,7 +139,103 @@ export const setUserOnline = async (userId: string) => {
     }
 };
 
-// Function to set inactive users offline (run periodically)
+// Helper function to get week number (ISO week)
+const getWeekNumber = (date: Date): number => {
+    const target = new Date(date.valueOf());
+    const dayNr = (date.getDay() + 6) % 7;
+    target.setDate(target.getDate() - dayNr + 3);
+    const firstThursday = target.valueOf();
+    target.setMonth(0, 1);
+    if (target.getDay() !== 4) {
+        target.setMonth(0, 1 + ((4 - target.getDay() + 7) % 7));
+    }
+    return 1 + Math.ceil((firstThursday - target.valueOf()) / 604800000);
+};
+
+// Function to update weekly online time
+const updateWeeklyOnlineTime = async (
+    userId: string,
+    onlineTimeHours: number
+) => {
+    try {
+        const progress = await Progress.findOne({ userId });
+        if (!progress) return;
+
+        const today = new Date();
+        const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+        // Map to correct day names matching progress controller order (T2-CN)
+        const dayNames = [
+            "Thứ 2",
+            "Thứ 3",
+            "Thứ 4",
+            "Thứ 5",
+            "Thứ 6",
+            "Thứ 7",
+            "Chủ nhật",
+        ];
+        // Convert JavaScript day (0=Sunday, 1=Monday) to our index (0=Monday, 6=Sunday)
+        const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        const currentDay = dayNames[dayIndex];
+
+        // Get current week (ISO format)
+        const year = today.getFullYear();
+        const week = getWeekNumber(today);
+        const weekString = `${year}-W${week.toString().padStart(2, "0")}`;
+
+        // Find or create current week activity
+        let currentWeek = progress.weeklyActivity.find(
+            (w) => w.week === weekString
+        );
+
+        if (!currentWeek) {
+            currentWeek = {
+                week: weekString,
+                days: dayNames.map((day) => ({
+                    day,
+                    hours: 0,
+                    activities: [],
+                })),
+                totalHours: 0,
+            };
+            progress.weeklyActivity.push(currentWeek);
+        }
+
+        // Update current day online time
+        const currentDayActivity = currentWeek.days.find(
+            (d) => d.day === currentDay
+        );
+        if (currentDayActivity) {
+            currentDayActivity.hours += onlineTimeHours;
+
+            // Add online activity if significant time (> 5 minutes)
+            if (onlineTimeHours > 0.08) {
+                // 5 minutes = 0.08 hours
+                const onlineMinutes = Math.round(onlineTimeHours * 60);
+                const onlineActivityString = `Hoạt động online ${onlineMinutes} phút`;
+
+                // Check if we already have an online activity for today
+                const hasOnlineActivity = currentDayActivity.activities.some(
+                    (activity) => activity.includes("Hoạt động online")
+                );
+
+                if (!hasOnlineActivity) {
+                    currentDayActivity.activities.push(onlineActivityString);
+                }
+            }
+        }
+
+        // Update total hours for the week
+        currentWeek.totalHours = currentWeek.days.reduce(
+            (sum, day) => sum + day.hours,
+            0
+        );
+
+        await progress.save();
+    } catch (error) {
+        console.error("Error updating weekly online time:", error);
+    }
+}; // Function to set inactive users offline (run periodically)
 export const updateInactiveUsers = async (isManual: boolean = false) => {
     try {
         // Set users offline if they haven't been active for more than 2 minutes
