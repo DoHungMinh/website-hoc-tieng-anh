@@ -856,6 +856,186 @@ router.get(
     }
 );
 
+// Get today's payment statistics
+router.get(
+    "/payments/stats/today",
+    authenticateToken,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+        try {
+            const PaymentHistory = require("../../payos/PaymentHistory");
+
+            // Get start and end of today in Vietnam timezone
+            const today = new Date();
+            const startOfDay = new Date(
+                today.getFullYear(),
+                today.getMonth(),
+                today.getDate()
+            );
+            const endOfDay = new Date(
+                today.getFullYear(),
+                today.getMonth(),
+                today.getDate() + 1
+            );
+
+            // Today's revenue (only PAID transactions)
+            const todayRevenue = await PaymentHistory.aggregate([
+                {
+                    $match: {
+                        status: "PAID",
+                        paidAt: {
+                            $gte: startOfDay,
+                            $lt: endOfDay,
+                        },
+                    },
+                },
+                {
+                    $group: {
+                        _id: null,
+                        totalRevenue: { $sum: "$amount" },
+                    },
+                },
+            ]);
+
+            // Today's transaction count
+            const todayTransactions = await PaymentHistory.countDocuments({
+                createdAt: {
+                    $gte: startOfDay,
+                    $lt: endOfDay,
+                },
+            });
+
+            res.json({
+                success: true,
+                data: {
+                    todayRevenue: todayRevenue[0]?.totalRevenue || 0,
+                    todayTransactions: todayTransactions,
+                },
+            });
+        } catch (error: any) {
+            console.error("❌ Get today's payment stats error:", error);
+            res.status(500).json({
+                success: false,
+                message: "Lỗi khi lấy thống kê thanh toán hôm nay",
+                error:
+                    process.env.NODE_ENV === "development"
+                        ? error.message
+                        : undefined,
+            });
+        }
+    }
+);
+
+// Get this month's payment statistics
+router.get(
+    "/payments/stats/month",
+    authenticateToken,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+        try {
+            const PaymentHistory = require("../../payos/PaymentHistory");
+
+            // Get start and end of current month
+            const today = new Date();
+            const startOfMonth = new Date(
+                today.getFullYear(),
+                today.getMonth(),
+                1
+            );
+            const endOfMonth = new Date(
+                today.getFullYear(),
+                today.getMonth() + 1,
+                1
+            );
+
+            // This month's revenue (only PAID transactions)
+            const monthRevenue = await PaymentHistory.aggregate([
+                {
+                    $match: {
+                        status: "PAID",
+                        paidAt: {
+                            $gte: startOfMonth,
+                            $lt: endOfMonth,
+                        },
+                    },
+                },
+                {
+                    $group: {
+                        _id: null,
+                        totalRevenue: { $sum: "$amount" },
+                    },
+                },
+            ]);
+
+            res.json({
+                success: true,
+                data: {
+                    monthRevenue: monthRevenue[0]?.totalRevenue || 0,
+                },
+            });
+        } catch (error: any) {
+            console.error("❌ Get month's payment stats error:", error);
+            res.status(500).json({
+                success: false,
+                message: "Lỗi khi lấy thống kê thanh toán tháng này",
+                error:
+                    process.env.NODE_ENV === "development"
+                        ? error.message
+                        : undefined,
+            });
+        }
+    }
+);
+
+// Get payment success rate statistics
+router.get(
+    "/payments/stats/success-rate",
+    authenticateToken,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+        try {
+            const PaymentHistory = require("../../payos/PaymentHistory");
+
+            // Get total transactions count
+            const totalTransactions = await PaymentHistory.countDocuments({});
+
+            // Get successful transactions count (PAID status)
+            const successfulTransactions = await PaymentHistory.countDocuments({
+                status: "PAID",
+            });
+
+            // Calculate success rate as percentage
+            const successRate =
+                totalTransactions > 0
+                    ? Math.round(
+                          (successfulTransactions / totalTransactions) *
+                              100 *
+                              10
+                      ) / 10 // Round to 1 decimal
+                    : 0;
+
+            res.json({
+                success: true,
+                data: {
+                    successRate: successRate,
+                    totalTransactions: totalTransactions,
+                    successfulTransactions: successfulTransactions,
+                },
+            });
+        } catch (error: any) {
+            console.error("❌ Get payment success rate error:", error);
+            res.status(500).json({
+                success: false,
+                message: "Lỗi khi lấy tỷ lệ thành công thanh toán",
+                error:
+                    process.env.NODE_ENV === "development"
+                        ? error.message
+                        : undefined,
+            });
+        }
+    }
+);
+
 // =================================================================
 // AI COURSE GENERATION ROUTES (/api/ai)
 // =================================================================
