@@ -44,6 +44,14 @@ interface PaymentTransaction {
 }
 
 const PaymentManagement: React.FC = () => {
+    // Format date to YYYY-MM-DD using local timezone - định nghĩa trước để tránh hoisting error
+    const formatDateForInput = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, "0");
+        const day = date.getDate().toString().padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    };
+
     const [stats, setStats] = useState<PaymentStats>({
         todayRevenue: 0,
         monthRevenue: 0,
@@ -66,12 +74,12 @@ const PaymentManagement: React.FC = () => {
     const getDefaultFromDate = (): string => {
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        return oneWeekAgo.toISOString().split("T")[0];
+        return formatDateForInput(oneWeekAgo);
     };
 
     const getDefaultToDate = (): string => {
         const today = new Date();
-        return today.toISOString().split("T")[0];
+        return formatDateForInput(today);
     };
 
     const [fromDate, setFromDate] = useState<string>(getDefaultFromDate());
@@ -273,12 +281,12 @@ const PaymentManagement: React.FC = () => {
     const getMinDate = (): string => {
         const tenYearsAgo = new Date();
         tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
-        return tenYearsAgo.toISOString().split("T")[0];
+        return formatDateForInput(tenYearsAgo);
     };
 
     const getMaxDate = (): string => {
         const today = new Date();
-        return today.toISOString().split("T")[0];
+        return formatDateForInput(today);
     };
 
     // Get maximum days in a specific month/year
