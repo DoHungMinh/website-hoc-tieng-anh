@@ -33,6 +33,7 @@ interface StatItem {
     value: number;
     growth: number;
     display: string;
+    label?: string; // Thêm label tùy chọn
 }
 
 interface OverviewData {
@@ -59,6 +60,13 @@ interface UserGrowthData {
     date: string;
 }
 
+interface RevenueData {
+    name: string;
+    revenue: number;
+    fullDate: string;
+    date: string;
+}
+
 interface RecentActivity {
     type: string;
     action: string;
@@ -69,9 +77,36 @@ interface RecentActivity {
 }
 
 const DashboardStats: React.FC = () => {
+    // Prevent page reload on unhandled errors
+    useEffect(() => {
+        const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+            console.error("Unhandled promise rejection:", event.reason);
+            event.preventDefault(); // Prevent default browser behavior
+            return false;
+        };
+
+        const handleError = (event: ErrorEvent) => {
+            console.error("Unhandled error:", event.error);
+            event.preventDefault(); // Prevent default browser behavior
+            return false;
+        };
+
+        window.addEventListener("unhandledrejection", handleUnhandledRejection);
+        window.addEventListener("error", handleError);
+
+        return () => {
+            window.removeEventListener(
+                "unhandledrejection",
+                handleUnhandledRejection
+            );
+            window.removeEventListener("error", handleError);
+        };
+    }, []);
+
     const [stats, setStats] = useState<OverviewData | null>(null);
     const [realtimeData, setRealtimeData] = useState<RealtimeData | null>(null);
     const [userGrowthData, setUserGrowthData] = useState<UserGrowthData[]>([]);
+    const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
     const [recentActivities, setRecentActivities] = useState<RecentActivity[]>(
         []
     );
@@ -89,6 +124,9 @@ const DashboardStats: React.FC = () => {
     // Socket.IO for real-time updates
     const socketRef = useRef<Socket | null>(null);
 
+    // Track initial load to reduce unnecessary logs
+    const initialLoadRef = useRef<boolean>(false);
+
     // Cache duration: 2 minutes for overview, 10 seconds for realtime
     const OVERVIEW_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
     const REALTIME_CACHE_DURATION = 10 * 1000; // 10 seconds
@@ -98,12 +136,18 @@ const DashboardStats: React.FC = () => {
         fetchRealtimeData();
         fetchUserGrowthData();
         fetchRecentActivities();
+        fetchRevenueData();
 
         // Setup Socket.IO connection for real-time updates
         const setupSocket = () => {
             try {
                 const socket = io("http://localhost:5002", {
                     transports: ["websocket", "polling"],
+                    timeout: 5000,
+                    reconnection: true,
+                    reconnectionAttempts: 3,
+                    reconnectionDelay: 2000,
+                    forceNew: true,
                 });
 
                 socketRef.current = socket;
@@ -111,6 +155,15 @@ const DashboardStats: React.FC = () => {
                 socket.on("connect", () => {
                     console.log("🔗 Connected to real-time server");
                     socket.emit("join_admin"); // Join admin room for statistics
+                });
+
+                socket.on("connect_error", (error) => {
+                    console.warn("🔌 Socket connection error:", error.message);
+                    // Don't throw error, just log it
+                });
+
+                socket.on("disconnect", (reason) => {
+                    console.log("🔌 Socket disconnected:", reason);
                 });
 
                 // Listen for user activity events
@@ -136,20 +189,16 @@ const DashboardStats: React.FC = () => {
                         ...prev.slice(0, 5),
                     ]);
                 });
-
-                socket.on("disconnect", () => {
-                    console.log("🔌 Disconnected from real-time server");
-                });
-
-                socket.on("error", (error) => {
-                    console.error("❌ Socket error:", error);
-                });
             } catch (error) {
-                console.error("Failed to setup socket:", error);
+                console.warn("� Failed to setup socket connection:", error);
+                // Continue without real-time features
             }
         };
 
-        setupSocket();
+        // Try to setup socket with delay to ensure backend is ready
+        const socketTimer = setTimeout(() => {
+            setupSocket();
+        }, 1000);
 
         // Cập nhật real-time data mỗi 10 giây (fallback)
         const realtimeInterval = setInterval(fetchRealtimeData, 10000);
@@ -161,6 +210,7 @@ const DashboardStats: React.FC = () => {
         const activitiesInterval = setInterval(fetchRecentActivities, 30000);
 
         return () => {
+            clearTimeout(socketTimer);
             clearInterval(realtimeInterval);
             clearInterval(overviewInterval);
             clearInterval(activitiesInterval);
@@ -177,6 +227,38 @@ const DashboardStats: React.FC = () => {
     useEffect(() => {
         fetchUserGrowthData();
     }, [userGrowthPeriod]);
+
+    // Fetch revenue data khi revenueTimeframe thay đổi
+    useEffect(() => {
+        // Chỉ log lần đầu tiên khi component mount
+        if (!initialLoadRef.current) {
+            console.log(
+                "📊 Dashboard initialized with period:",
+                revenueTimeframe
+            );
+            initialLoadRef.current = true;
+        }
+
+        const fetchData = async () => {
+            try {
+                // Reset cache để force refresh overview stats
+                setLastOverviewFetch(0);
+
+                // Fetch both revenue data and overview stats
+                await Promise.all([fetchRevenueData(), fetchOverviewStats()]);
+
+                // Không log gì thêm để giảm noise
+            } catch (error) {
+                console.error(
+                    "❌ Error updating data for timeframe change:",
+                    error
+                );
+                // Don't throw error to prevent page reload
+            }
+        };
+
+        fetchData();
+    }, [revenueTimeframe]);
 
     const fetchOverviewStats = async () => {
         try {
@@ -195,7 +277,7 @@ const DashboardStats: React.FC = () => {
             }
 
             const response = await fetch(
-                `${API_BASE_URL}${API_ENDPOINTS.ADMIN.STATISTICS_OVERVIEW}`,
+                `${API_BASE_URL}${API_ENDPOINTS.ADMIN.STATISTICS_OVERVIEW}?period=${revenueTimeframe}`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -375,6 +457,52 @@ const DashboardStats: React.FC = () => {
         }
     };
 
+    const fetchRevenueData = async () => {
+        try {
+            const token = localStorage.getItem("token");
+
+            if (!token) {
+                console.error("No auth token found for revenue data");
+                return;
+            }
+
+            const response = await fetch(
+                `${API_BASE_URL}/admin/statistics/revenue?period=${revenueTimeframe}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                if (response.status === 429) {
+                    console.warn("Rate limited for revenue data");
+                    return;
+                }
+                if (response.status === 401 || response.status === 403) {
+                    console.warn(
+                        "Auth error in revenue data - ignoring to prevent reload"
+                    );
+                    return;
+                }
+                console.error(
+                    "Error response for revenue data:",
+                    response.status
+                );
+                return; // Don't throw, just return to prevent page reload
+            }
+
+            const data = await response.json();
+            if (data.success) {
+                setRevenueData(data.data.revenueData);
+            }
+        } catch (error) {
+            console.error("Error fetching revenue data:", error);
+        }
+    };
+
     // Helper function để map icon string sang React component
     const getIconComponent = (iconName: string) => {
         switch (iconName) {
@@ -464,68 +592,34 @@ const DashboardStats: React.FC = () => {
         };
     };
 
-    // Generate revenue chart data
+    // Generate revenue chart data using real data
     const getRevenueChartData = () => {
-        const generateRevenueData = () => {
-            const baseRevenue = stats.monthlyRevenue.value / 1000000; // Convert to millions
-            const dataPoints = [];
-
-            if (revenueTimeframe === "week") {
-                // Generate daily data for current week
-                const weekDays = [
-                    "Thứ 2",
-                    "Thứ 3",
-                    "Thứ 4",
-                    "Thứ 5",
-                    "Thứ 6",
-                    "Thứ 7",
-                    "Chủ nhật",
-                ];
-                for (let i = 0; i < 7; i++) {
-                    const dailyRevenue =
-                        (baseRevenue / 30) * (0.5 + Math.random() * 1.0);
-                    dataPoints.push(Math.round(dailyRevenue * 10) / 10);
-                }
-                return {
-                    labels: weekDays,
-                    data: dataPoints,
-                };
-            } else if (revenueTimeframe === "year") {
-                // Generate yearly data (5 years)
-                for (let i = 4; i >= 0; i--) {
-                    const yearRevenue =
-                        baseRevenue * 12 * (0.6 + Math.random() * 0.8);
-                    dataPoints.push(Math.round(yearRevenue * 10) / 10);
-                }
-                return {
-                    labels: Array.from(
-                        { length: 5 },
-                        (_, i) => `${new Date().getFullYear() - 4 + i}`
-                    ),
-                    data: dataPoints,
-                };
-            } else {
-                // Generate monthly data (12 months)
-                for (let i = 11; i >= 0; i--) {
-                    const monthRevenue =
-                        baseRevenue * (0.7 + Math.random() * 0.6);
-                    dataPoints.push(Math.round(monthRevenue * 10) / 10);
-                }
-                return {
-                    labels: Array.from({ length: 12 }, (_, i) => `T${i + 1}`),
-                    data: dataPoints,
-                };
-            }
-        };
-
-        const revenueData = generateRevenueData();
+        if (!revenueData || revenueData.length === 0) {
+            // Fallback to empty data if no revenue data available
+            return {
+                labels: [],
+                datasets: [
+                    {
+                        label: "Doanh thu (Triệu VNĐ)",
+                        data: [],
+                        backgroundColor: "rgba(147, 51, 234, 0.8)",
+                        borderColor: "rgba(147, 51, 234, 1)",
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        borderSkipped: false,
+                    },
+                ],
+            };
+        }
 
         return {
-            labels: revenueData.labels,
+            labels: revenueData.map((item) => item.name),
             datasets: [
                 {
                     label: "Doanh thu (Triệu VNĐ)",
-                    data: revenueData.data,
+                    data: revenueData.map(
+                        (item) => Math.round(item.revenue * 10) / 10
+                    ), // Round to 1 decimal
                     backgroundColor: "rgba(147, 51, 234, 0.8)",
                     borderColor: "rgba(147, 51, 234, 1)",
                     borderWidth: 1,
@@ -711,19 +805,11 @@ const DashboardStats: React.FC = () => {
 
     // Function to get revenue text based on timeframe
     const getRevenueTitle = () => {
-        return "Doanh thu";
+        return stats?.monthlyRevenue?.label || "Doanh thu";
     };
 
     const getRevenueValue = () => {
-        const baseValue = stats.monthlyRevenue.value;
-        switch (revenueTimeframe) {
-            case "week":
-                return `${Math.round(baseValue / 4 / 1000000)}M VNĐ`;
-            case "year":
-                return `${Math.round((baseValue * 12) / 1000000)}M VNĐ`;
-            default:
-                return stats.monthlyRevenue.display;
-        }
+        return stats?.monthlyRevenue?.display || "0 VNĐ";
     };
 
     // Tạo array stats theo đúng thứ tự trong giao diện
@@ -814,14 +900,43 @@ const DashboardStats: React.FC = () => {
                                         <div className="relative">
                                             <select
                                                 value={revenueTimeframe}
-                                                onChange={(e) =>
-                                                    setRevenueTimeframe(
-                                                        e.target.value as
-                                                            | "week"
-                                                            | "month"
-                                                            | "year"
-                                                    )
-                                                }
+                                                onChange={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    try {
+                                                        const newValue =
+                                                            e.target.value;
+                                                        // Removed logging to reduce console noise
+
+                                                        // Validate value
+                                                        if (
+                                                            [
+                                                                "week",
+                                                                "month",
+                                                                "year",
+                                                            ].includes(newValue)
+                                                        ) {
+                                                            setRevenueTimeframe(
+                                                                newValue as
+                                                                    | "week"
+                                                                    | "month"
+                                                                    | "year"
+                                                            );
+                                                            // Removed success logging
+                                                        } else {
+                                                            console.warn(
+                                                                "Invalid timeframe value:",
+                                                                newValue
+                                                            );
+                                                        }
+                                                    } catch (error) {
+                                                        console.error(
+                                                            "Error changing revenue timeframe:",
+                                                            error
+                                                        );
+                                                    }
+                                                    return false;
+                                                }}
                                                 className="px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
                                             >
                                                 <option value="week">
@@ -863,14 +978,44 @@ const DashboardStats: React.FC = () => {
                             <Calendar className="w-4 h-4 text-gray-500" />
                             <select
                                 value={userGrowthPeriod}
-                                onChange={(e) =>
-                                    setUserGrowthPeriod(
-                                        e.target.value as
-                                            | "week"
-                                            | "month"
-                                            | "year"
-                                    )
-                                }
+                                onChange={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    try {
+                                        const newValue = e.target.value;
+                                        console.log(
+                                            "User growth period changing to:",
+                                            newValue
+                                        );
+
+                                        if (
+                                            ["week", "month", "year"].includes(
+                                                newValue
+                                            )
+                                        ) {
+                                            setUserGrowthPeriod(
+                                                newValue as
+                                                    | "week"
+                                                    | "month"
+                                                    | "year"
+                                            );
+                                            console.log(
+                                                "User growth period changed successfully"
+                                            );
+                                        } else {
+                                            console.warn(
+                                                "Invalid period value:",
+                                                newValue
+                                            );
+                                        }
+                                    } catch (error) {
+                                        console.error(
+                                            "Error changing user growth period:",
+                                            error
+                                        );
+                                    }
+                                    return false;
+                                }}
                                 className="px-2 py-1 text-sm bg-gray-100 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                                 <option value="week">Tuần</option>
@@ -905,14 +1050,39 @@ const DashboardStats: React.FC = () => {
                             <DollarSign className="w-4 h-4 text-gray-500" />
                             <select
                                 value={revenueTimeframe}
-                                onChange={(e) =>
-                                    setRevenueTimeframe(
-                                        e.target.value as
-                                            | "week"
-                                            | "month"
-                                            | "year"
-                                    )
-                                }
+                                onChange={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    try {
+                                        const newValue = e.target.value;
+                                        // Removed logging to reduce console noise
+
+                                        if (
+                                            ["week", "month", "year"].includes(
+                                                newValue
+                                            )
+                                        ) {
+                                            setRevenueTimeframe(
+                                                newValue as
+                                                    | "week"
+                                                    | "month"
+                                                    | "year"
+                                            );
+                                            // Removed success logging
+                                        } else {
+                                            console.warn(
+                                                "Invalid timeframe value:",
+                                                newValue
+                                            );
+                                        }
+                                    } catch (error) {
+                                        console.error(
+                                            "Error changing revenue timeframe:",
+                                            error
+                                        );
+                                    }
+                                    return false;
+                                }}
                                 className="px-2 py-1 text-sm bg-gray-100 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
                             >
                                 <option value="week">Tuần</option>

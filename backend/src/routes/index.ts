@@ -1228,6 +1228,7 @@ router.get(
     requireAdmin,
     async (req: Request, res: Response) => {
         try {
+            const { period = "month" } = req.query; // Thêm parameter period
             // Tổng người dùng
             const totalUsers = await User.countDocuments();
 
@@ -1319,47 +1320,116 @@ router.get(
                 examGrowthRate = 100;
             }
 
-            // Doanh thu thực tế từ enrollments và course prices
-            // Tháng này (từ đầu tháng đến cuối tháng)
-            const thisMonthStart = new Date(currentMonth);
-            const nextMonthStart = new Date(currentMonth);
-            nextMonthStart.setMonth(nextMonthStart.getMonth() + 1);
+            // Doanh thu thực tế từ PaymentHistory theo period được chọn
+            const PaymentHistory = require("../../payos/PaymentHistory");
+            const now = new Date();
+            let currentRevenue = 0;
+            let previousRevenue = 0;
+            let revenueLabel = "Doanh thu tháng";
 
-            const previousMonthStart = new Date(previousMonth);
+            if (period === "week") {
+                // Tuần hiện tại (từ Thứ 2 đến Chủ nhật)
+                const today = new Date(now);
+                const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, ...
 
-            const thisMonthEnrollments = await Enrollment.find({
-                enrolledAt: { $gte: thisMonthStart, $lt: nextMonthStart },
-            }).populate("courseId");
+                const monday = new Date(today);
+                monday.setDate(
+                    today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1)
+                );
+                monday.setHours(0, 0, 0, 0);
 
-            const previousMonthEnrollments = await Enrollment.find({
-                enrolledAt: { $gte: previousMonthStart, $lt: thisMonthStart },
-            }).populate("courseId");
+                const nextMonday = new Date(monday);
+                nextMonday.setDate(monday.getDate() + 7);
 
-            // Tính doanh thu tháng này
-            let monthlyRevenue = 0;
-            for (const enrollment of thisMonthEnrollments) {
-                if (enrollment.courseId && (enrollment.courseId as any).price) {
-                    monthlyRevenue += (enrollment.courseId as any).price;
-                }
-            }
+                // Tuần trước
+                const prevMonday = new Date(monday);
+                prevMonday.setDate(monday.getDate() - 7);
 
-            // Tính doanh thu tháng trước
-            let previousMonthRevenue = 0;
-            for (const enrollment of previousMonthEnrollments) {
-                if (enrollment.courseId && (enrollment.courseId as any).price) {
-                    previousMonthRevenue += (enrollment.courseId as any).price;
-                }
+                const currentWeekPayments = await PaymentHistory.find({
+                    createdAt: { $gte: monday, $lt: nextMonday },
+                    status: "PAID",
+                });
+
+                const previousWeekPayments = await PaymentHistory.find({
+                    createdAt: { $gte: prevMonday, $lt: monday },
+                    status: "PAID",
+                });
+
+                currentRevenue = currentWeekPayments.reduce(
+                    (sum: number, payment: any) => sum + payment.amount,
+                    0
+                );
+                previousRevenue = previousWeekPayments.reduce(
+                    (sum: number, payment: any) => sum + payment.amount,
+                    0
+                );
+                revenueLabel = "Doanh thu tuần";
+            } else if (period === "year") {
+                // Năm hiện tại
+                const yearStart = new Date(now.getFullYear(), 0, 1);
+                const nextYearStart = new Date(now.getFullYear() + 1, 0, 1);
+
+                // Năm trước
+                const prevYearStart = new Date(now.getFullYear() - 1, 0, 1);
+
+                const currentYearPayments = await PaymentHistory.find({
+                    createdAt: { $gte: yearStart, $lt: nextYearStart },
+                    status: "PAID",
+                });
+
+                const previousYearPayments = await PaymentHistory.find({
+                    createdAt: { $gte: prevYearStart, $lt: yearStart },
+                    status: "PAID",
+                });
+
+                currentRevenue = currentYearPayments.reduce(
+                    (sum: number, payment: any) => sum + payment.amount,
+                    0
+                );
+                previousRevenue = previousYearPayments.reduce(
+                    (sum: number, payment: any) => sum + payment.amount,
+                    0
+                );
+                revenueLabel = "Doanh thu năm";
+            } else {
+                // Mặc định: Tháng hiện tại
+                const thisMonthStart = new Date(currentMonth);
+                const nextMonthStart = new Date(currentMonth);
+                nextMonthStart.setMonth(nextMonthStart.getMonth() + 1);
+
+                const previousMonthStart = new Date(previousMonth);
+
+                const thisMonthPayments = await PaymentHistory.find({
+                    createdAt: { $gte: thisMonthStart, $lt: nextMonthStart },
+                    status: "PAID",
+                });
+
+                const previousMonthPayments = await PaymentHistory.find({
+                    createdAt: {
+                        $gte: previousMonthStart,
+                        $lt: thisMonthStart,
+                    },
+                    status: "PAID",
+                });
+
+                currentRevenue = thisMonthPayments.reduce(
+                    (sum: number, payment: any) => sum + payment.amount,
+                    0
+                );
+                previousRevenue = previousMonthPayments.reduce(
+                    (sum: number, payment: any) => sum + payment.amount,
+                    0
+                );
+                revenueLabel = "Doanh thu tháng";
             }
 
             // Tính tỷ lệ tăng trưởng doanh thu
             let revenueGrowthRate = 0;
-            if (previousMonthRevenue > 0) {
+            if (previousRevenue > 0) {
                 revenueGrowthRate = Math.round(
-                    ((monthlyRevenue - previousMonthRevenue) /
-                        previousMonthRevenue) *
-                        100
+                    ((currentRevenue - previousRevenue) / previousRevenue) * 100
                 );
-            } else if (monthlyRevenue > 0) {
+            } else if (currentRevenue > 0) {
                 revenueGrowthRate = 100;
             }
 
@@ -1396,9 +1466,17 @@ router.get(
                         display: totalExams.toString(),
                     },
                     monthlyRevenue: {
-                        value: monthlyRevenue,
+                        value: currentRevenue,
                         growth: revenueGrowthRate,
-                        display: `${Math.round(monthlyRevenue / 1000000)}M VNĐ`,
+                        display:
+                            currentRevenue >= 1000000
+                                ? `${(currentRevenue / 1000000).toFixed(
+                                      1
+                                  )}M VNĐ`
+                                : currentRevenue >= 1000
+                                ? `${(currentRevenue / 1000).toFixed(0)}K VNĐ`
+                                : `${currentRevenue.toLocaleString()} VNĐ`,
+                        label: revenueLabel,
                     },
                     activeUsers: {
                         value: activeUsers,
@@ -1820,6 +1898,156 @@ router.get(
             res.status(500).json({
                 success: false,
                 message: "Lỗi khi lấy hoạt động gần đây",
+            });
+        }
+    }
+);
+
+// GET /api/admin/statistics/revenue - Thống kê doanh thu theo thời gian
+router.get(
+    "/admin/statistics/revenue",
+    authenticateToken,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+        try {
+            const { period = "month" } = req.query;
+            const PaymentHistory = require("../../payos/PaymentHistory");
+            const now = new Date();
+            const revenueData = [];
+
+            if (period === "week") {
+                // Lấy dữ liệu 7 ngày gần nhất
+                const today = new Date(now);
+                const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, ...
+
+                // Tính ngày đầu tuần (Thứ 2)
+                const monday = new Date(today);
+                monday.setDate(
+                    today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1)
+                );
+                monday.setHours(0, 0, 0, 0);
+
+                const weekDays = [
+                    "Thứ 2",
+                    "Thứ 3",
+                    "Thứ 4",
+                    "Thứ 5",
+                    "Thứ 6",
+                    "Thứ 7",
+                    "Chủ nhật",
+                ];
+
+                for (let i = 0; i < 7; i++) {
+                    const dayStart = new Date(monday);
+                    dayStart.setDate(monday.getDate() + i);
+                    dayStart.setHours(0, 0, 0, 0);
+
+                    const dayEnd = new Date(dayStart);
+                    dayEnd.setDate(dayEnd.getDate() + 1);
+
+                    const dailyPayments = await PaymentHistory.find({
+                        createdAt: { $gte: dayStart, $lt: dayEnd },
+                        status: "PAID",
+                    });
+
+                    const dailyRevenue = dailyPayments.reduce(
+                        (sum: number, payment: any) => sum + payment.amount,
+                        0
+                    );
+
+                    revenueData.push({
+                        name: weekDays[i],
+                        revenue: dailyRevenue / 1000000, // Convert to millions
+                        fullDate: dayStart.toLocaleDateString("vi-VN"),
+                        date: dayStart.toISOString().split("T")[0],
+                    });
+                }
+            } else if (period === "month") {
+                // Lấy dữ liệu 12 tháng gần nhất
+                for (let i = 11; i >= 0; i--) {
+                    const monthStart = new Date(now);
+                    monthStart.setMonth(monthStart.getMonth() - i);
+                    monthStart.setDate(1);
+                    monthStart.setHours(0, 0, 0, 0);
+
+                    const monthEnd = new Date(monthStart);
+                    monthEnd.setMonth(monthEnd.getMonth() + 1);
+
+                    const monthlyPayments = await PaymentHistory.find({
+                        createdAt: { $gte: monthStart, $lt: monthEnd },
+                        status: "PAID",
+                    });
+
+                    const monthlyRevenue = monthlyPayments.reduce(
+                        (sum: number, payment: any) => sum + payment.amount,
+                        0
+                    );
+
+                    // Tạo tên tháng ngắn gọn
+                    const monthNumber = monthStart.getMonth() + 1;
+                    const year = monthStart.getFullYear();
+                    const currentYear = now.getFullYear();
+
+                    let displayName = `T${monthNumber}`;
+                    if (year !== currentYear) {
+                        displayName = `T${monthNumber}/${year
+                            .toString()
+                            .slice(-2)}`;
+                    }
+
+                    revenueData.push({
+                        name: displayName,
+                        revenue: monthlyRevenue / 1000000, // Convert to millions
+                        fullDate: monthStart.toLocaleDateString("vi-VN", {
+                            month: "long",
+                            year: "numeric",
+                        }),
+                        date: monthStart.toISOString().split("T")[0],
+                    });
+                }
+            } else if (period === "year") {
+                // Lấy dữ liệu 5 năm gần nhất
+                for (let i = 4; i >= 0; i--) {
+                    const yearStart = new Date(now);
+                    yearStart.setFullYear(yearStart.getFullYear() - i);
+                    yearStart.setMonth(0, 1);
+                    yearStart.setHours(0, 0, 0, 0);
+
+                    const yearEnd = new Date(yearStart);
+                    yearEnd.setFullYear(yearEnd.getFullYear() + 1);
+
+                    const yearlyPayments = await PaymentHistory.find({
+                        createdAt: { $gte: yearStart, $lt: yearEnd },
+                        status: "PAID",
+                    });
+
+                    const yearlyRevenue = yearlyPayments.reduce(
+                        (sum: number, payment: any) => sum + payment.amount,
+                        0
+                    );
+
+                    revenueData.push({
+                        name: yearStart.getFullYear().toString(),
+                        revenue: yearlyRevenue / 1000000, // Convert to millions
+                        fullDate: `Năm ${yearStart.getFullYear()}`,
+                        date: yearStart.toISOString().split("T")[0],
+                    });
+                }
+            }
+
+            res.json({
+                success: true,
+                data: {
+                    period,
+                    revenueData,
+                    totalPeriods: revenueData.length,
+                },
+            });
+        } catch (error) {
+            console.error("Error fetching revenue statistics:", error);
+            res.status(500).json({
+                success: false,
+                message: "Lỗi khi lấy thống kê doanh thu",
             });
         }
     }

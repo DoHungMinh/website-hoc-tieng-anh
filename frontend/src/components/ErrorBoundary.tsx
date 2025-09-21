@@ -41,6 +41,28 @@ class ErrorBoundary extends Component<Props, State> {
             errorInfo,
         });
 
+        // Prevent page reload - stop event propagation
+        if (window.event) {
+            window.event.preventDefault();
+            window.event.stopPropagation();
+        }
+
+        // Add global error handler to prevent reload
+        const preventReload = (e: Event) => {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        };
+
+        window.addEventListener("beforeunload", preventReload);
+        window.addEventListener("unload", preventReload);
+
+        // Remove after 5 seconds
+        setTimeout(() => {
+            window.removeEventListener("beforeunload", preventReload);
+            window.removeEventListener("unload", preventReload);
+        }, 5000);
+
         // Trong production có thể gửi error lên monitoring service
         if (process.env.NODE_ENV === "production") {
             // this.logErrorToService(error, errorInfo);
@@ -101,10 +123,23 @@ class ErrorBoundary extends Component<Props, State> {
 
                             <div className="flex flex-col gap-2">
                                 <button
-                                    onClick={() => window.location.reload()}
+                                    onClick={() =>
+                                        this.setState({
+                                            hasError: false,
+                                            error: null,
+                                            errorInfo: null,
+                                        })
+                                    }
                                     className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
                                 >
-                                    Tải lại trang
+                                    Thử lại
+                                </button>
+
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md transition-colors"
+                                >
+                                    Tải lại trang (nếu cần thiết)
                                 </button>
 
                                 <button
