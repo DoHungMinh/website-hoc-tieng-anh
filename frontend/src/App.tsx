@@ -18,7 +18,7 @@ import PaymentSuccessHandler from "./components/PaymentSuccessHandler";
 import { AuthDebugger } from "./components/AuthDebugger";
 import { useAuthStore } from "./stores/authStore";
 import { syncTokens } from "./utils/tokenSync";
-import { useHeartbeat } from "./hooks/useHeartbeat";
+// import { useHeartbeat } from "./hooks/useHeartbeat"; // TẠMTHỜI TẮT để tránh crash backend
 import { useActivityHeartbeat } from "./hooks/useActivityHeartbeat";
 import { setupGlobalErrorInterceptor } from "./utils/errorInterceptor";
 
@@ -42,11 +42,36 @@ function App() {
         window.location.pathname.includes("/payment/success");
 
     // Initialize heartbeat for authenticated users and get account disabled state
-    const { accountDisabledMessage, clearAccountDisabledMessage } =
-        useHeartbeat();
+    // TẠMTHỜI TẮT Regular Heartbeat để tránh crash backend - chỉ dùng activity heartbeat
+    // const { accountDisabledMessage, clearAccountDisabledMessage } = useHeartbeat();
 
     // Initialize activity-based heartbeat for faster detection
-    useActivityHeartbeat();
+    useActivityHeartbeat(); // Re-enabled với throttling tốt hơn
+
+    // Mock disabled message state for now - activity heartbeat will handle via events
+    const [accountDisabledMessage, setAccountDisabledMessage] = useState<
+        string | null
+    >(null);
+    const clearAccountDisabledMessage = () => setAccountDisabledMessage(null);
+
+    // Listen for account disabled events from activity heartbeat
+    useEffect(() => {
+        const handleAccountDisabled = (event: CustomEvent) => {
+            setAccountDisabledMessage(event.detail.message);
+        };
+
+        window.addEventListener(
+            "accountDisabled",
+            handleAccountDisabled as EventListener
+        );
+
+        return () => {
+            window.removeEventListener(
+                "accountDisabled",
+                handleAccountDisabled as EventListener
+            );
+        };
+    }, []);
 
     // Setup global error interceptor on app start
     useEffect(() => {

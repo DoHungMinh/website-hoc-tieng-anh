@@ -107,6 +107,19 @@ const adminStatsLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+// Payment management rate limiter - higher limits for payment dashboard
+const paymentStatsLimiter = rateLimit({
+    windowMs: 60000, // 1 minute
+    max: 200, // allow 200 requests per minute for payment stats/history
+    message: "Too many payment management requests, please try again later.",
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => {
+        // Only apply to payment-related endpoints
+        return !req.path.includes("/payments/");
+    },
+});
+
 // CORS configuration
 app.use(
     cors({
@@ -124,6 +137,9 @@ app.use("/api/user/heartbeat", heartbeatLimiter);
 // Apply admin statistics rate limiter
 app.use("/api/admin/statistics", adminStatsLimiter);
 
+// Apply payment management rate limiter
+app.use("/api/payments", paymentStatsLimiter);
+
 // Apply auth-specific rate limiter
 app.use("/api/auth", authLimiter);
 
@@ -136,7 +152,8 @@ app.use((req, res, next) => {
         req.path.includes("/heartbeat") ||
         req.path.includes("/admin/statistics") ||
         req.path.includes("/auth") ||
-        req.path.includes("/payos")
+        req.path.includes("/payos") ||
+        req.path.includes("/payments")
     ) {
         // Skip general rate limiting for special endpoints
         return next();

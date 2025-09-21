@@ -971,6 +971,106 @@ router.get(
     }
 );
 
+// Get week's payment statistics (Monday to Sunday)
+router.get(
+    "/payments/stats/week",
+    authenticateToken,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+        try {
+            const PaymentHistory = require("../../payos/PaymentHistory");
+
+            // Sử dụng Vietnam timezone (UTC+7) để tính tuần chính xác
+            const now = new Date();
+            console.log(`🕐 Current server time: ${now.toString()}`);
+
+            // Tính ngày thứ 2 của tuần hiện tại (start of week) theo Vietnam time
+            const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+            const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1;
+
+            const startOfWeek = new Date(now);
+            startOfWeek.setDate(now.getDate() - daysFromMonday);
+            startOfWeek.setHours(0, 0, 0, 0);
+
+            // Tính Chủ nhật (end of week)
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            endOfWeek.setHours(23, 59, 59, 999);
+
+            console.log(
+                `📅 Week range (Vietnam time): ${startOfWeek.toLocaleString(
+                    "vi-VN"
+                )} → ${endOfWeek.toLocaleString("vi-VN")}`
+            );
+            console.log(
+                `📅 Week range (UTC): ${startOfWeek.toISOString()} → ${endOfWeek.toISOString()}`
+            );
+
+            // Get this week's payments (Monday to Sunday)
+            const weekPayments = await PaymentHistory.find({
+                createdAt: {
+                    $gte: startOfWeek,
+                    $lte: endOfWeek,
+                },
+            });
+
+            console.log(
+                `💳 Found ${weekPayments.length} total payments in current week`
+            );
+
+            // Log payment details for debugging
+            if (weekPayments.length > 0) {
+                console.log(`📋 Payment details:`);
+                weekPayments.forEach((payment: any, index: number) => {
+                    const paymentDate = new Date(payment.createdAt);
+                    console.log(
+                        `  ${index + 1}. ${paymentDate.toLocaleString(
+                            "vi-VN"
+                        )} - ${payment.amount} VNĐ - ${payment.status}`
+                    );
+                });
+            }
+
+            const paidPayments = weekPayments.filter(
+                (payment: any) => payment.status === "PAID"
+            );
+            const weekRevenue = paidPayments.reduce(
+                (sum: number, payment: any) => sum + payment.amount,
+                0
+            );
+
+            console.log(
+                `💰 Week revenue: ${weekRevenue} VNĐ from ${paidPayments.length} PAID payments (out of ${weekPayments.length} total)`
+            );
+
+            res.json({
+                success: true,
+                data: {
+                    weekRevenue,
+                    weekTransactions: weekPayments.length,
+                    paidTransactions: paidPayments.length,
+                    startDate: startOfWeek.toISOString(),
+                    endDate: endOfWeek.toISOString(),
+                    weekRange: {
+                        start: startOfWeek.toLocaleString("vi-VN"),
+                        end: endOfWeek.toLocaleString("vi-VN"),
+                    },
+                },
+            });
+        } catch (error: any) {
+            console.error("❌ Get week stats error:", error);
+            res.status(500).json({
+                success: false,
+                message: "Lỗi khi lấy thống kê tuần",
+                error:
+                    process.env.NODE_ENV === "development"
+                        ? error.message
+                        : undefined,
+            });
+        }
+    }
+);
+
 // Get payment success rate statistics
 router.get(
     "/payments/stats/success-rate",

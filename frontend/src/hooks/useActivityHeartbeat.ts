@@ -9,9 +9,9 @@ export const useActivityHeartbeat = () => {
     const checkAccountStatus = async () => {
         if (!user || !token || isCheckingRef.current) return;
 
-        // Tránh spam requests - chỉ check mỗi 60 giây một lần
+        // Tránh spam requests - chỉ check mỗi 2 phút một lần (tăng từ 30s)
         const now = Date.now();
-        if (now - lastHeartbeatRef.current < 60000) return; // Tăng từ 3 giây lên 60 giây
+        if (now - lastHeartbeatRef.current < 120000) return; // Tăng từ 30 giây lên 2 phút
 
         isCheckingRef.current = true;
         lastHeartbeatRef.current = now;
@@ -63,11 +63,18 @@ export const useActivityHeartbeat = () => {
             });
         });
 
+        // Backup timer: Nếu user không có activity trong 5 phút, vẫn gửi heartbeat
+        const backupTimer = setInterval(() => {
+            console.log("🔄 Backup activity heartbeat sent");
+            checkAccountStatus();
+        }, 300000); // 5 phút (tăng từ 2 phút)
+
         // Cleanup
         return () => {
             activities.forEach((activity) => {
                 document.removeEventListener(activity, throttledCheck);
             });
+            clearInterval(backupTimer);
         };
     }, [user, token]);
 

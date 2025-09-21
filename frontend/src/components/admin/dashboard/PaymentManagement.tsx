@@ -12,7 +12,7 @@ import { formatDateVN } from "../../../utils/dateUtils";
 // Interfaces for type safety
 interface PaymentStats {
     todayRevenue: number;
-    monthRevenue: number;
+    weekRevenue: number; // Thay đổi từ monthRevenue thành weekRevenue
     todayTransactions: number;
     successRate: number;
 }
@@ -54,13 +54,14 @@ const PaymentManagement: React.FC = () => {
 
     const [stats, setStats] = useState<PaymentStats>({
         todayRevenue: 0,
-        monthRevenue: 0,
+        weekRevenue: 0,
         todayTransactions: 0,
         successRate: 0,
     });
     const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [transactionsLoading, setTransactionsLoading] = useState(false);
+    const [retryingRequests, setRetryingRequests] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState<string>("");
 
@@ -85,6 +86,48 @@ const PaymentManagement: React.FC = () => {
     const [fromDate, setFromDate] = useState<string>(getDefaultFromDate());
     const [toDate, setToDate] = useState<string>(getDefaultToDate());
 
+    // Helper function for retrying failed requests
+    const retryRequest = async (
+        requestFn: () => Promise<Response>,
+        maxRetries: number = 3,
+        delay: number = 1000
+    ): Promise<Response> => {
+        for (let i = 0; i < maxRetries; i++) {
+            try {
+                const response = await requestFn();
+                if (response.status === 429) {
+                    // Too Many Requests - wait and retry
+                    if (i < maxRetries - 1) {
+                        console.log(
+                            `Rate limited, retrying in ${delay * (i + 1)}ms...`
+                        );
+                        setRetryingRequests(true);
+                        await new Promise((resolve) =>
+                            setTimeout(resolve, delay * (i + 1))
+                        );
+                        continue;
+                    }
+                }
+                setRetryingRequests(false);
+                return response;
+            } catch (error) {
+                if (i === maxRetries - 1) {
+                    setRetryingRequests(false);
+                    throw error;
+                }
+                console.log(
+                    `Request failed, retrying in ${delay * (i + 1)}ms...`
+                );
+                setRetryingRequests(true);
+                await new Promise((resolve) =>
+                    setTimeout(resolve, delay * (i + 1))
+                );
+            }
+        }
+        setRetryingRequests(false);
+        throw new Error("Max retries exceeded");
+    };
+
     // Fetch payment statistics
     const fetchPaymentStats = async () => {
         try {
@@ -99,13 +142,15 @@ const PaymentManagement: React.FC = () => {
                 throw new Error("No authentication token found");
             }
 
-            // Fetch today's stats
-            const todayResponse = await fetch("/api/payments/stats/today", {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-            });
+            // Fetch today's stats with retry
+            const todayResponse = await retryRequest(() =>
+                fetch("/api/payments/stats/today", {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                })
+            );
 
             if (!todayResponse.ok) {
                 throw new Error(
@@ -115,31 +160,32 @@ const PaymentManagement: React.FC = () => {
 
             const todayData = await todayResponse.json();
 
-            // Fetch month's stats
-            const monthResponse = await fetch("/api/payments/stats/month", {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-            });
-
-            if (!monthResponse.ok) {
-                throw new Error(
-                    `Failed to fetch month's stats: ${monthResponse.statusText}`
-                );
-            }
-
-            const monthData = await monthResponse.json();
-
-            // Fetch success rate stats
-            const successRateResponse = await fetch(
-                "/api/payments/stats/success-rate",
-                {
+            // Fetch week's stats (Monday to Sunday) with retry
+            const weekResponse = await retryRequest(() =>
+                fetch("/api/payments/stats/week", {
                     headers: {
                         Authorization: `Bearer ${token}`,
                         "Content-Type": "application/json",
                     },
-                }
+                })
+            );
+
+            if (!weekResponse.ok) {
+                throw new Error(
+                    `Failed to fetch week's stats: ${weekResponse.statusText}`
+                );
+            }
+
+            const weekData = await weekResponse.json();
+
+            // Fetch success rate stats with retry
+            const successRateResponse = await retryRequest(() =>
+                fetch("/api/payments/stats/success-rate", {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                })
             );
 
             if (!successRateResponse.ok) {
@@ -153,7 +199,7 @@ const PaymentManagement: React.FC = () => {
             // Update state with real data
             setStats({
                 todayRevenue: todayData.data.todayRevenue,
-                monthRevenue: monthData.data.monthRevenue,
+                weekRevenue: weekData.data.weekRevenue,
                 todayTransactions: todayData.data.todayTransactions,
                 successRate: successRateData.data.successRate,
             });
@@ -191,14 +237,16 @@ const PaymentManagement: React.FC = () => {
                 queryParams.append("endDate", toDate);
             }
 
-            const response = await fetch(
-                `http://localhost:5002/api/payments/history?${queryParams}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                }
+            const response = await retryRequest(() =>
+                fetch(
+                    `http://localhost:5002/api/payments/history?${queryParams}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            "Content-Type": "application/json",
+                        },
+                    }
+                )
             );
 
             if (!response.ok) {
@@ -427,17 +475,23 @@ const PaymentManagement: React.FC = () => {
                             fetchPaymentStats();
                             fetchTransactions(currentPage);
                         }}
-                        disabled={loading || transactionsLoading}
+                        disabled={
+                            loading || transactionsLoading || retryingRequests
+                        }
                         className="flex items-center gap-2 px-4 py-2 text-gray-700 transition-colors duration-200 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
                     >
                         <RefreshCw
                             className={`h-4 w-4 ${
-                                loading || transactionsLoading
+                                loading ||
+                                transactionsLoading ||
+                                retryingRequests
                                     ? "animate-spin"
                                     : ""
                             }`}
                         />
-                        {loading || transactionsLoading
+                        {retryingRequests
+                            ? "Đang thử lại..."
+                            : loading || transactionsLoading
                             ? "Đang tải..."
                             : "Làm mới"}
                     </button>
@@ -484,13 +538,13 @@ const PaymentManagement: React.FC = () => {
                         </div>
                         <div className="ml-4">
                             <p className="text-sm text-gray-600">
-                                Doanh thu tháng
+                                Doanh thu tuần
                             </p>
                             {loading ? (
                                 <div className="h-8 mt-1 bg-gray-200 rounded animate-pulse"></div>
                             ) : (
                                 <p className="text-2xl font-bold text-gray-900">
-                                    {formatCurrency(stats.monthRevenue)}
+                                    {formatCurrency(stats.weekRevenue)}
                                 </p>
                             )}
                         </div>
@@ -846,4 +900,4 @@ const PaymentManagement: React.FC = () => {
     );
 };
 
-export default PaymentManagement;
+export default React.memo(PaymentManagement);
