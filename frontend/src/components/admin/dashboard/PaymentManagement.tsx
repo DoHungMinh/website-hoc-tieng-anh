@@ -7,6 +7,7 @@ import {
     Calendar,
     RefreshCw,
 } from "lucide-react";
+import { formatDateVN } from "../../../utils/dateUtils";
 
 // Interfaces for type safety
 interface PaymentStats {
@@ -16,6 +17,32 @@ interface PaymentStats {
     successRate: number;
 }
 
+interface Course {
+    _id: string;
+    title: string;
+    type: string;
+    level: string;
+    price: number;
+}
+
+interface User {
+    _id: string;
+    fullName: string;
+    email: string;
+}
+
+interface PaymentTransaction {
+    _id: string;
+    transactionId: string;
+    amount: number;
+    status: string;
+    paymentMethod?: string;
+    courseId?: Course | null;
+    userId?: User | null;
+    createdAt?: string;
+    description?: string;
+}
+
 const PaymentManagement: React.FC = () => {
     const [stats, setStats] = useState<PaymentStats>({
         todayRevenue: 0,
@@ -23,8 +50,17 @@ const PaymentManagement: React.FC = () => {
         todayTransactions: 0,
         successRate: 0,
     });
+    const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
     const [loading, setLoading] = useState(true);
+    const [transactionsLoading, setTransactionsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState<string>("");
+
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalTransactions, setTotalTransactions] = useState(0);
+    const itemsPerPage = 10;
 
     // Date filter states with default values (1 week ago to today)
     const getDefaultFromDate = (): string => {
@@ -121,10 +157,107 @@ const PaymentManagement: React.FC = () => {
         }
     };
 
+    // Fetch payment transactions
+    const fetchTransactions = async (page: number = 1) => {
+        try {
+            setTransactionsLoading(true);
+            const token =
+                localStorage.getItem("adminToken") ||
+                localStorage.getItem("token");
+
+            if (!token) {
+                throw new Error("No authentication token found");
+            }
+
+            // Build query params
+            const queryParams = new URLSearchParams({
+                page: page.toString(),
+                limit: itemsPerPage.toString(),
+            });
+
+            // Add date filter if set
+            if (fromDate) {
+                queryParams.append("startDate", fromDate);
+            }
+            if (toDate) {
+                queryParams.append("endDate", toDate);
+            }
+
+            const response = await fetch(
+                `http://localhost:5002/api/payments/history?${queryParams}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(
+                    `Failed to fetch transactions: ${response.statusText}`
+                );
+            }
+
+            const data = await response.json();
+            console.log("Payment transactions data:", data); // Debug log
+
+            if (data.success) {
+                // Debug: Log transaction status
+                console.log(
+                    "🔍 Transaction statuses from API:",
+                    (data.data.payments || []).map((t: any) => ({
+                        id: t._id,
+                        status: t.status,
+                        transactionId: t.transactionId,
+                    }))
+                );
+
+                // Ensure data integrity with fallbacks
+                const safeTransactions = (data.data.payments || []).map(
+                    (transaction: any) => ({
+                        ...transaction,
+                        transactionId:
+                            transaction.transactionId || `TX${Date.now()}`,
+                        amount: transaction.amount || 0,
+                        status: transaction.status || "unknown",
+                        paymentMethod:
+                            transaction.paymentMethod || "Không xác định",
+                        userId: transaction.userId || {
+                            fullName: "N/A",
+                            email: "N/A",
+                        },
+                        courseId: transaction.courseId || { title: "N/A" },
+                        createdAt:
+                            transaction.createdAt || new Date().toISOString(),
+                    })
+                );
+
+                setTransactions(safeTransactions);
+                setCurrentPage(data.data.pagination?.current || 1);
+                setTotalPages(data.data.pagination?.pages || 1);
+                setTotalTransactions(data.data.pagination?.total || 0);
+            } else {
+                throw new Error(data.message || "Failed to fetch transactions");
+            }
+        } catch (error: any) {
+            console.error("Error fetching transactions:", error);
+            setError(error.message);
+        } finally {
+            setTransactionsLoading(false);
+        }
+    };
+
     // Load data on component mount
     useEffect(() => {
         fetchPaymentStats();
+        fetchTransactions();
     }, []);
+
+    // Refetch transactions when date filter changes
+    useEffect(() => {
+        fetchTransactions(1); // Reset to page 1 when filter changes
+    }, [fromDate, toDate]);
 
     // Format currency for display
     const formatCurrency = (amount: number): string => {
@@ -282,16 +415,23 @@ const PaymentManagement: React.FC = () => {
                 </div>
                 <div className="flex space-x-3">
                     <button
-                        onClick={fetchPaymentStats}
-                        disabled={loading}
+                        onClick={() => {
+                            fetchPaymentStats();
+                            fetchTransactions(currentPage);
+                        }}
+                        disabled={loading || transactionsLoading}
                         className="flex items-center gap-2 px-4 py-2 text-gray-700 transition-colors duration-200 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
                     >
                         <RefreshCw
                             className={`h-4 w-4 ${
-                                loading ? "animate-spin" : ""
+                                loading || transactionsLoading
+                                    ? "animate-spin"
+                                    : ""
                             }`}
                         />
-                        {loading ? "Đang tải..." : "Làm mới"}
+                        {loading || transactionsLoading
+                            ? "Đang tải..."
+                            : "Làm mới"}
                     </button>
                     <button className="flex items-center gap-2 px-4 py-2 text-white transition-colors duration-200 bg-purple-600 rounded-lg hover:bg-purple-700">
                         <Download className="w-4 h-4" />
@@ -397,6 +537,8 @@ const PaymentManagement: React.FC = () => {
                         <Search className="absolute w-4 h-4 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
                         <input
                             type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Tìm kiếm giao dịch..."
                             className="w-full h-10 py-2 pl-10 pr-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                         />
@@ -473,50 +615,224 @@ const PaymentManagement: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {[1, 2, 3, 4, 5].map((item) => (
-                            <tr key={item} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm font-medium text-gray-900">
-                                        TX{String(item).padStart(6, "0")}
+                        {transactionsLoading ? (
+                            // Loading skeleton
+                            Array.from({ length: 5 }).map((_, index) => (
+                                <tr key={index} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : transactions.length === 0 ? (
+                            <tr>
+                                <td
+                                    colSpan={8}
+                                    className="px-6 py-12 text-center"
+                                >
+                                    <div className="text-gray-500">
+                                        <CreditCard className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                                        <p className="text-lg font-medium">
+                                            Không có giao dịch nào
+                                        </p>
+                                        <p className="text-sm">
+                                            Thử thay đổi bộ lọc hoặc khoảng thời
+                                            gian
+                                        </p>
                                     </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm font-medium text-gray-900">
-                                        Nguyễn Văn A{item}
-                                    </div>
-                                    <div className="text-sm text-gray-500">
-                                        user{item}@example.com
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
-                                    Khóa học Tiếng Anh B{item}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm font-medium text-gray-900">
-                                        {(500 + item * 100).toLocaleString()}{" "}
-                                        VNĐ
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
-                                    Thẻ tín dụng
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className="inline-flex px-2 text-xs font-semibold leading-5 text-green-800 bg-green-100 rounded-full">
-                                        Thành công
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                    {new Date().toLocaleDateString("vi-VN")}
-                                </td>
-                                <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
-                                    <button className="text-blue-600 hover:text-blue-900">
-                                        <Eye className="w-4 h-4" />
-                                    </button>
                                 </td>
                             </tr>
-                        ))}
+                        ) : (
+                            transactions
+                                .filter(
+                                    (transaction) =>
+                                        // Simple search filter with safe property access
+                                        searchTerm === "" ||
+                                        transaction.transactionId
+                                            ?.toLowerCase()
+                                            .includes(
+                                                searchTerm.toLowerCase()
+                                            ) ||
+                                        transaction.userId?.fullName
+                                            ?.toLowerCase()
+                                            .includes(
+                                                searchTerm.toLowerCase()
+                                            ) ||
+                                        transaction.userId?.email
+                                            ?.toLowerCase()
+                                            .includes(
+                                                searchTerm.toLowerCase()
+                                            ) ||
+                                        transaction.courseId?.title
+                                            ?.toLowerCase()
+                                            .includes(searchTerm.toLowerCase())
+                                )
+                                .map((transaction) => (
+                                    <tr
+                                        key={transaction._id}
+                                        className="hover:bg-gray-50"
+                                    >
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm font-medium text-gray-900">
+                                                {transaction.transactionId ||
+                                                    "N/A"}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm font-medium text-gray-900">
+                                                {transaction.userId?.fullName ||
+                                                    "N/A"}
+                                            </div>
+                                            <div className="text-sm text-gray-500">
+                                                {transaction.userId?.email ||
+                                                    "N/A"}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
+                                            {transaction.courseId?.title ||
+                                                "N/A"}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm font-medium text-gray-900">
+                                                {transaction.amount?.toLocaleString() ||
+                                                    "0"}{" "}
+                                                VNĐ
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
+                                            {transaction.paymentMethod ||
+                                                "Thẻ tín dụng"}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span
+                                                className={`inline-flex px-2 text-xs font-semibold leading-5 rounded-full ${
+                                                    transaction.status ===
+                                                    "PAID"
+                                                        ? "text-green-800 bg-green-100"
+                                                        : transaction.status ===
+                                                              "PENDING" ||
+                                                          transaction.status ===
+                                                              "PROCESSING"
+                                                        ? "text-yellow-800 bg-yellow-100"
+                                                        : transaction.status ===
+                                                          "CANCELLED"
+                                                        ? "text-gray-800 bg-gray-100"
+                                                        : "text-red-800 bg-red-100"
+                                                }`}
+                                            >
+                                                {transaction.status === "PAID"
+                                                    ? "Thành công"
+                                                    : transaction.status ===
+                                                      "PENDING"
+                                                    ? "Đang xử lý"
+                                                    : transaction.status ===
+                                                      "PROCESSING"
+                                                    ? "Đang xử lý"
+                                                    : transaction.status ===
+                                                      "CANCELLED"
+                                                    ? "Đã hủy"
+                                                    : transaction.status ===
+                                                      "EXPIRED"
+                                                    ? "Hết hạn"
+                                                    : "Thất bại"}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                            {formatDateVN(
+                                                transaction.createdAt
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
+                                            <button className="text-blue-600 hover:text-blue-900">
+                                                <Eye className="w-4 h-4" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))
+                        )}
                     </tbody>
                 </table>
+
+                {/* Pagination */}
+                {!transactionsLoading &&
+                    transactions.length > 0 &&
+                    totalPages > 1 && (
+                        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+                            <div className="text-sm text-gray-500">
+                                Hiển thị {(currentPage - 1) * itemsPerPage + 1}{" "}
+                                đến{" "}
+                                {Math.min(
+                                    currentPage * itemsPerPage,
+                                    totalTransactions
+                                )}{" "}
+                                trong {totalTransactions} giao dịch
+                            </div>
+                            <div className="flex space-x-1">
+                                <button
+                                    onClick={() =>
+                                        fetchTransactions(currentPage - 1)
+                                    }
+                                    disabled={currentPage === 1}
+                                    className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                >
+                                    Trước
+                                </button>
+                                {Array.from(
+                                    { length: Math.min(5, totalPages) },
+                                    (_, i) => {
+                                        const page =
+                                            i + Math.max(1, currentPage - 2);
+                                        if (page > totalPages) return null;
+                                        return (
+                                            <button
+                                                key={page}
+                                                onClick={() =>
+                                                    fetchTransactions(page)
+                                                }
+                                                className={`px-3 py-1 text-sm border rounded ${
+                                                    page === currentPage
+                                                        ? "bg-purple-600 text-white border-purple-600"
+                                                        : "border-gray-300 hover:bg-gray-50"
+                                                }`}
+                                            >
+                                                {page}
+                                            </button>
+                                        );
+                                    }
+                                )}
+                                <button
+                                    onClick={() =>
+                                        fetchTransactions(currentPage + 1)
+                                    }
+                                    disabled={currentPage === totalPages}
+                                    className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                >
+                                    Sau
+                                </button>
+                            </div>
+                        </div>
+                    )}
             </div>
         </div>
     );

@@ -780,10 +780,21 @@ router.get(
             if (status && status !== "all") filter.status = status;
             if (startDate || endDate) {
                 filter.createdAt = {};
-                if (startDate)
-                    filter.createdAt.$gte = new Date(startDate as string);
-                if (endDate)
-                    filter.createdAt.$lte = new Date(endDate as string);
+                if (startDate) {
+                    // User input is in Vietnam timezone - convert to UTC for MongoDB
+                    // startDate = "2025-09-14" means 00:00 14/09/2025 Vietnam time
+                    const start = new Date(
+                        (startDate as string) + "T00:00:00.000+07:00"
+                    );
+                    filter.createdAt.$gte = start;
+                }
+                if (endDate) {
+                    // endDate = "2025-09-21" means 23:59 21/09/2025 Vietnam time
+                    const end = new Date(
+                        (endDate as string) + "T23:59:59.999+07:00"
+                    );
+                    filter.createdAt.$lte = end;
+                }
             }
 
             // Pagination
