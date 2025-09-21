@@ -760,87 +760,244 @@ router.post(
 // =================================================================
 
 // Get payment history for admin
-router.get("/payments/history", authenticateToken, requireAdmin, async (req: Request, res: Response) => {
-    try {
-        const PaymentHistory = require('../../payos/PaymentHistory');
-        const { 
-            status, 
-            startDate, 
-            endDate, 
-            page = 1, 
-            limit = 20 
-        } = req.query;
+router.get(
+    "/payments/history",
+    authenticateToken,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+        try {
+            const PaymentHistory = require("../../payos/PaymentHistory");
+            const {
+                status,
+                startDate,
+                endDate,
+                page = 1,
+                limit = 20,
+            } = req.query;
 
-        // Build filter
-        const filter: any = {};
-        if (status && status !== 'all') filter.status = status;
-        if (startDate || endDate) {
-            filter.createdAt = {};
-            if (startDate) filter.createdAt.$gte = new Date(startDate as string);
-            if (endDate) filter.createdAt.$lte = new Date(endDate as string);
-        }
-
-        // Pagination
-        const skip = (Number(page) - 1) * Number(limit);
-
-        // Get payments with populated data
-        const payments = await PaymentHistory.find(filter)
-            .populate('courseId', 'title type level price')
-            .populate('userId', 'fullName email')
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(Number(limit));
-
-        const total = await PaymentHistory.countDocuments(filter);
-        const stats = await PaymentHistory.getPaymentStats();
-
-        res.json({
-            success: true,
-            data: {
-                payments,
-                pagination: {
-                    current: Number(page),
-                    pages: Math.ceil(total / Number(limit)),
-                    total
-                },
-                statistics: stats
+            // Build filter
+            const filter: any = {};
+            if (status && status !== "all") filter.status = status;
+            if (startDate || endDate) {
+                filter.createdAt = {};
+                if (startDate)
+                    filter.createdAt.$gte = new Date(startDate as string);
+                if (endDate)
+                    filter.createdAt.$lte = new Date(endDate as string);
             }
-        });
 
-    } catch (error: any) {
-        console.error('❌ Get payment history error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi khi lấy lịch sử thanh toán',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+            // Pagination
+            const skip = (Number(page) - 1) * Number(limit);
+
+            // Get payments with populated data
+            const payments = await PaymentHistory.find(filter)
+                .populate("courseId", "title type level price")
+                .populate("userId", "fullName email")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(Number(limit));
+
+            const total = await PaymentHistory.countDocuments(filter);
+            const stats = await PaymentHistory.getPaymentStats();
+
+            res.json({
+                success: true,
+                data: {
+                    payments,
+                    pagination: {
+                        current: Number(page),
+                        pages: Math.ceil(total / Number(limit)),
+                        total,
+                    },
+                    statistics: stats,
+                },
+            });
+        } catch (error: any) {
+            console.error("❌ Get payment history error:", error);
+            res.status(500).json({
+                success: false,
+                message: "Lỗi khi lấy lịch sử thanh toán",
+                error:
+                    process.env.NODE_ENV === "development"
+                        ? error.message
+                        : undefined,
+            });
+        }
     }
-});
+);
 
 // Get payment statistics for admin dashboard
-router.get("/payments/stats", authenticateToken, requireAdmin, async (req: Request, res: Response) => {
-    try {
-        const PaymentHistory = require('../../payos/PaymentHistory');
-        const stats = await PaymentHistory.getPaymentStats();
-        const recentPayments = await PaymentHistory.getRecentPayments(5);
+router.get(
+    "/payments/stats",
+    authenticateToken,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+        try {
+            const PaymentHistory = require("../../payos/PaymentHistory");
+            const stats = await PaymentHistory.getPaymentStats();
+            const recentPayments = await PaymentHistory.getRecentPayments(5);
 
-        res.json({
-            success: true,
-            data: {
-                overall: stats,
-                recent: recentPayments
-            }
-        });
-
-    } catch (error: any) {
-        console.error('❌ Get payment stats error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi khi lấy thống kê thanh toán',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+            res.json({
+                success: true,
+                data: {
+                    overall: stats,
+                    recent: recentPayments,
+                },
+            });
+        } catch (error: any) {
+            console.error("❌ Get payment stats error:", error);
+            res.status(500).json({
+                success: false,
+                message: "Lỗi khi lấy thống kê thanh toán",
+                error:
+                    process.env.NODE_ENV === "development"
+                        ? error.message
+                        : undefined,
+            });
+        }
     }
-});
+);
+
+// Get today's payment statistics
+router.get(
+    "/payments/stats/today",
+    authenticateToken,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+        try {
+            const PaymentHistory = require("../../payos/PaymentHistory");
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            // Get today's payments
+            const todayPayments = await PaymentHistory.find({
+                createdAt: {
+                    $gte: today,
+                    $lt: tomorrow,
+                },
+            });
+
+            const todayRevenue = todayPayments
+                .filter((payment: any) => payment.status === "PAID")
+                .reduce((sum: number, payment: any) => sum + payment.amount, 0);
+
+            const todayTransactions = todayPayments.length;
+
+            res.json({
+                success: true,
+                data: {
+                    todayRevenue,
+                    todayTransactions,
+                },
+            });
+        } catch (error: any) {
+            console.error("❌ Get today stats error:", error);
+            res.status(500).json({
+                success: false,
+                message: "Lỗi khi lấy thống kê hôm nay",
+                error:
+                    process.env.NODE_ENV === "development"
+                        ? error.message
+                        : undefined,
+            });
+        }
+    }
+);
+
+// Get month's payment statistics
+router.get(
+    "/payments/stats/month",
+    authenticateToken,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+        try {
+            const PaymentHistory = require("../../payos/PaymentHistory");
+
+            const now = new Date();
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const endOfMonth = new Date(
+                now.getFullYear(),
+                now.getMonth() + 1,
+                0,
+                23,
+                59,
+                59,
+                999
+            );
+
+            // Get this month's payments
+            const monthPayments = await PaymentHistory.find({
+                createdAt: {
+                    $gte: startOfMonth,
+                    $lte: endOfMonth,
+                },
+            });
+
+            const monthRevenue = monthPayments
+                .filter((payment: any) => payment.status === "PAID")
+                .reduce((sum: number, payment: any) => sum + payment.amount, 0);
+
+            res.json({
+                success: true,
+                data: {
+                    monthRevenue,
+                },
+            });
+        } catch (error: any) {
+            console.error("❌ Get month stats error:", error);
+            res.status(500).json({
+                success: false,
+                message: "Lỗi khi lấy thống kê tháng",
+                error:
+                    process.env.NODE_ENV === "development"
+                        ? error.message
+                        : undefined,
+            });
+        }
+    }
+);
+
+// Get payment success rate statistics
+router.get(
+    "/payments/stats/success-rate",
+    authenticateToken,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+        try {
+            const PaymentHistory = require("../../payos/PaymentHistory");
+
+            const totalPayments = await PaymentHistory.countDocuments();
+            const successfulPayments = await PaymentHistory.countDocuments({
+                status: "PAID",
+            });
+
+            const successRate =
+                totalPayments > 0
+                    ? (successfulPayments / totalPayments) * 100
+                    : 0;
+
+            res.json({
+                success: true,
+                data: {
+                    successRate: Math.round(successRate * 10) / 10, // Round to 1 decimal place
+                },
+            });
+        } catch (error: any) {
+            console.error("❌ Get success rate stats error:", error);
+            res.status(500).json({
+                success: false,
+                message: "Lỗi khi lấy tỷ lệ thành công",
+                error:
+                    process.env.NODE_ENV === "development"
+                        ? error.message
+                        : undefined,
+            });
+        }
+    }
+);
 
 // =================================================================
 // AI COURSE GENERATION ROUTES (/api/ai)
