@@ -267,7 +267,7 @@ const PurchasedCourses: React.FC<PurchasedCoursesProps> = ({ onBack, onCourseSel
               const IconComponent = illustration.icon;
 
               return (
-                <div key={course.id} className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 overflow-hidden group border border-white/20 hover:border-blue-200">
+                <div key={course.id} className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 overflow-hidden group border border-white/20 hover:border-blue-200 flex flex-col h-full">
                   {/* Course Thumbnail */}
                   <div className={`h-52 bg-gradient-to-br ${illustration.gradient} ${illustration.opacity} flex items-center justify-center relative overflow-hidden`}>
                     <IconComponent className="w-20 h-20 text-white/90 group-hover:scale-110 transition-transform duration-300" />
@@ -275,7 +275,7 @@ const PurchasedCourses: React.FC<PurchasedCoursesProps> = ({ onBack, onCourseSel
                   </div>
 
                   {/* Course Info */}
-                  <div className="p-7">
+                  <div className="p-7 flex flex-col flex-grow">
                     <div className="flex items-center gap-3 mb-4">
                       <span className={`text-xs px-3 py-1.5 rounded-full border font-semibold ${getLevelColor(course.level)}`}>
                         {course.level}
@@ -289,7 +289,11 @@ const PurchasedCourses: React.FC<PurchasedCoursesProps> = ({ onBack, onCourseSel
                       {course.title}
                     </h3>
 
-                    <p className="text-slate-600 text-sm mb-5 line-clamp-2 leading-relaxed">
+                    <p className="text-slate-600 text-sm mb-5 leading-relaxed h-10 overflow-hidden" style={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical'
+                    }}>
                       {course.description}
                     </p>
 
@@ -321,7 +325,7 @@ const PurchasedCourses: React.FC<PurchasedCoursesProps> = ({ onBack, onCourseSel
                     {/* Action Button */}
                     <button 
                       onClick={() => onCourseSelect(course.id)}
-                      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 mt-auto"
                     >
                       <Play className="h-5 w-5" />
                       Bắt đầu học
