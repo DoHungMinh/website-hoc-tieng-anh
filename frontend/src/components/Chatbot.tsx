@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MessageCircle, Send, X, Bot, User, Minimize2, TrendingUp, BookOpen } from 'lucide-react';
+import { MessageCircle, Send, X, Bot, User, Minimize2, TrendingUp, BookOpen, Expand, Shrink } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useAuthStore } from '../stores/authStore';
 
@@ -14,6 +14,7 @@ interface Message {
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -251,6 +252,14 @@ const Chatbot = () => {
     }
   };
 
+  // Toggle expand/collapse function
+  const handleToggleExpand = () => {
+    setIsExpanded(!isExpanded);
+    if (isExpanded) {
+      setIsMinimized(false); // Ensure not minimized when expanding
+    }
+  };
+
   return (
     <>
       {/* Chat Button */}
@@ -265,9 +274,16 @@ const Chatbot = () => {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className={`fixed bottom-6 right-6 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 transition-all duration-300 ${
-          isMinimized ? 'h-16' : 'h-96'
-        } w-80 sm:w-96 flex flex-col`}>
+        <div className={`fixed bottom-6 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 transition-all duration-300 ${
+          isMinimized ? 'h-16' : isExpanded ? 'h-[600px]' : 'h-96'
+        } ${
+          isExpanded ? 'w-[720px] right-6' : 'w-80 sm:w-96 right-6'
+        } flex flex-col`} style={
+          isExpanded ? {
+            transform: 'translateX(-336px)',
+            maxWidth: 'calc(100vw - 48px)'
+          } : {}
+        }>
           {/* Header */}
           <div className="bg-gradient-to-r from-green-600 to-lime-600 text-white p-4 rounded-t-2xl flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -292,14 +308,27 @@ const Chatbot = () => {
             </div>
             <div className="flex items-center gap-2">
               <button
+                onClick={handleToggleExpand}
+                className="text-white hover:text-green-200 transition-colors duration-200"
+                title={isExpanded ? "Thu nhỏ về kích thước ban đầu" : "Mở rộng chatbot"}
+              >
+                {isExpanded ? <Shrink className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
+              </button>
+              <button
                 onClick={() => setIsMinimized(!isMinimized)}
                 className="text-white hover:text-green-200 transition-colors duration-200"
+                title={isMinimized ? "Khôi phục" : "Thu gọn"}
               >
                 <Minimize2 className="h-4 w-4" />
               </button>
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={() => {
+                  setIsOpen(false);
+                  setIsMinimized(false);
+                  setIsExpanded(false);
+                }}
                 className="text-white hover:text-green-200 transition-colors duration-200"
+                title="Đóng chatbot"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -362,12 +391,12 @@ const Chatbot = () => {
                         <User className="h-4 w-4 text-lime-700" />
                       )}
                     </div>
-                    <div className={`max-w-[70%] p-3 rounded-2xl ${
+                    <div className={`${isExpanded ? 'max-w-[90%]' : 'max-w-[70%]'} p-3 rounded-2xl ${
                       message.isBot 
                         ? 'bg-gray-100 text-gray-800' 
                         : 'bg-gradient-to-r from-green-600 to-lime-600 text-white'
                     }`}>
-                      <p className="text-sm">{message.text}</p>
+                      <p className={`${isExpanded ? 'text-base' : 'text-sm'} whitespace-pre-wrap`}>{message.text}</p>
                       <p className={`text-xs mt-1 ${message.isBot ? 'text-gray-500' : 'text-green-100'}`}>
                         {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
@@ -401,7 +430,9 @@ const Chatbot = () => {
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Nhập tin nhắn..."
-                    className="flex-1 p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className={`flex-1 p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                      isExpanded ? 'text-base' : 'text-sm'
+                    }`}
                   />
                   <button
                     onClick={handleSend}
