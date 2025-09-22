@@ -5,8 +5,6 @@ import UserManagement from "./dashboard/UserManagement";
 import CourseManagement from "./dashboard/CourseManagement";
 import ExamManagement from "./dashboard/ExamManagement";
 import PaymentManagement from "./dashboard/PaymentManagement";
-import AIManagement from "./dashboard/AIManagement";
-import Settings from "./dashboard/Settings";
 import ErrorBoundary from "../ErrorBoundary";
 
 interface AdminDashboardProps {
@@ -32,10 +30,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                 return <ExamManagement />;
             case "payments":
                 return <PaymentManagement />;
-            case "ai":
-                return <AIManagement />;
-            case "settings":
-                return <Settings />;
             default:
                 return (
                     <ErrorBoundary>

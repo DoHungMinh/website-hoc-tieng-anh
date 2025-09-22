@@ -5,8 +5,6 @@ import {
     BookOpen,
     FileText,
     CreditCard,
-    Bot,
-    Settings,
     LogOut,
     Menu,
     X,
@@ -36,8 +34,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
         { id: "courses", label: "Quản lý khóa học", icon: BookOpen },
         { id: "exams", label: "Quản lý đề thi", icon: FileText },
         { id: "payments", label: "Quản lý thanh toán", icon: CreditCard },
-        { id: "ai", label: "Quản lý AI", icon: Bot },
-        { id: "settings", label: "Cài đặt", icon: Settings },
     ];
 
     const handleLogout = () => {
