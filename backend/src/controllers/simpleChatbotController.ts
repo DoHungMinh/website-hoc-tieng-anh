@@ -47,27 +47,7 @@ export const simpleChatbotController = {
       const mockAnalysis = `
 📊 **PHÂN TÍCH TIẾN ĐỘ HỌC TẬP**
 
-🎯 **Tổng quan:**
-- Level hiện tại: A2-B1
-- Thời gian học: 2 tháng
-- Số bài đã hoàn thành: 15
-
-📈 **Điểm mạnh:**
-✅ Từ vựng: 78% (Tốt)
-✅ Ngữ pháp cơ bản: 82% (Rất tốt)
-
-📉 **Cần cải thiện:**
-⚠️ Nghe: 45% (Cần luyện tập thêm)
-⚠️ Nói: 38% (Ưu tiên cải thiện)
-
-🎯 **Gợi ý:**
-1. Tăng cường luyện nghe 30 phút/ngày
-2. Practice speaking với AI hoặc partner
-3. Focus vào phrasal verbs và idioms
-4. Làm thêm IELTS Listening tests
-
-📅 **Mục tiêu tiếp theo:**
-Đạt level B1 trong 1 tháng tới với focus vào listening & speaking.
+Bạn cần phải đăng nhập và làm bài test đầu vào để tôi có thể phân tích được chính xác tiến độ học tập của bạn 
       `;
 
       return res.json({
@@ -93,30 +73,7 @@ export const simpleChatbotController = {
       const mockRecommendations = `
 🎯 **LỘ TRÌNH HỌC TẬP CÁ NHÂN HÓA**
 
-📚 **Tuần này (25/8 - 31/8):**
-🔹 Thứ 2: IELTS Listening Practice (30 phút)
-🔹 Thứ 4: Grammar Review - Present Perfect (45 phút)  
-🔹 Thứ 6: Vocabulary Building - Daily Life Topics (30 phút)
-🔹 Chủ nhật: Speaking Practice với AI Bot (60 phút)
-
-🎯 **Mục tiêu ngắn hạn (1 tháng):**
-- Tăng điểm listening từ 5.0 lên 6.0
-- Master 200 từ vựng mới về chủ đề Work & Study
-- Hoàn thành 10 bài IELTS Speaking mock tests
-
-🚀 **Hoạt động ưu tiên:**
-1. **Daily**: 15 phút luyện pronunciation
-2. **3x/tuần**: IELTS Listening sections  
-3. **2x/tuần**: Grammar exercises
-4. **Cuối tuần**: Full IELTS Mock test
-
-💡 **Tips đặc biệt:**
-- Sử dụng shadowing technique cho listening
-- Record yourself speaking để self-evaluate
-- Join English conversation groups
-- Watch English movies với subtitles
-
-🎉 **Phần thưởng:** Đạt được target thì được unlock Advanced Course miễn phí!
+Bạn cần phải đăng nhập và làm bài test đầu vào để tôi có thể đưa ra lộ trình học tập của bạn
       `;
 
       return res.json({

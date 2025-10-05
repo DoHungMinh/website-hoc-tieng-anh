@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AIIELTSGeneratorService, IELTSGeneratorConfig } from '../services/aiIELTSGeneratorService';
 
 interface AIIELTSReadingConfig {
   title: string;
@@ -11,8 +12,8 @@ interface AIIELTSReadingConfig {
   description?: string;
 }
 
-// Mock AI service - in production this would call real AI API
-const generateIELTSReadingContent = async (config: AIIELTSReadingConfig) => {
+// Legacy mock AI service - kept as fallback
+const generateIELTSReadingContentMock = async (config: AIIELTSReadingConfig) => {
   // Simulate AI processing delay
   await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 3000));
 
@@ -251,20 +252,50 @@ export const generateIELTSReading = async (req: Request, res: Response) => {
       });
     }
 
-    console.log('Generating IELTS Reading test with config:', config);
+    console.log('🚀 Generating IELTS Reading test with config:', config);
 
-    // Generate IELTS Reading test using AI service
-    const generatedExam = await generateIELTSReadingContent(config);
+    let generatedExam;
 
-    console.log('Generated IELTS Reading test:', generatedExam.title);
+    // Check if OpenAI API key is available
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        console.log('🤖 Using OpenAI API for real content generation');
+        const aiService = new AIIELTSGeneratorService();
+        generatedExam = await aiService.generateIELTSReadingTest(config);
+        console.log('✅ AI-generated IELTS Reading test completed:', generatedExam.title);
+      } catch (aiError) {
+        console.error('❌ AI generation failed, falling back to mock data:', aiError);
+        console.log('🔄 Using mock data generation as fallback');
+        generatedExam = await generateIELTSReadingContentMock(config);
+      }
+    } else {
+      console.warn('⚠️ OpenAI API key not found, using mock data');
+      generatedExam = await generateIELTSReadingContentMock(config);
+    }
+
+    console.log('📝 Generated IELTS Reading test:', generatedExam.title);
+
+    // Check if response already sent (e.g., by timeout middleware)
+    if (res.headersSent) {
+      console.warn('⚠️ Response already sent, skipping json send');
+      return;
+    }
 
     return res.json({
       success: true,
-      exam: generatedExam
+      exam: generatedExam,
+      generatedWith: process.env.OPENAI_API_KEY ? 'ai' : 'mock'
     });
 
   } catch (error) {
-    console.error('Error generating IELTS Reading test:', error);
+    console.error('❌ Error generating IELTS Reading test:', error);
+    
+    // Check if response already sent
+    if (res.headersSent) {
+      console.warn('⚠️ Response already sent, skipping error send');
+      return;
+    }
+    
     return res.status(500).json({
       error: 'Failed to generate IELTS Reading test',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -275,39 +306,73 @@ export const generateIELTSReading = async (req: Request, res: Response) => {
 export const getIELTSTopicSuggestions = async (req: Request, res: Response) => {
   try {
     const { difficulty } = req.query;
+    
+    let suggestions: string[];
 
-    // Return topic suggestions based on difficulty level
-    const suggestions = [
-      'Technology and Innovation',
-      'Environmental Conservation',
-      'Education and Learning Methods',
-      'Health and Medical Research',
-      'Business and Economics',
-      'Scientific Discoveries',
-      'Cultural Heritage and History',
-      'Social Media and Communication',
-      'Urban Planning and Development',
-      'Psychology and Human Behavior',
-      'Art and Creative Expression',
-      'Travel and Cultural Exchange',
-      'Renewable Energy Sources',
-      'Food Security and Agriculture',
-      'Space Exploration and Research'
-    ];
+    // Check if OpenAI API key is available
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        console.log('🤖 Getting AI-powered topic suggestions for difficulty:', difficulty);
+        const aiService = new AIIELTSGeneratorService();
+        suggestions = await aiService.getTopicSuggestions(difficulty as string);
+        console.log('✅ AI topic suggestions retrieved:', suggestions.length);
+      } catch (aiError) {
+        console.error('❌ AI topic suggestions failed, using defaults:', aiError);
+        suggestions = getDefaultTopics();
+      }
+    } else {
+      console.log('⚠️ OpenAI API key not found, using default topics');
+      suggestions = getDefaultTopics();
+    }
+
+    // Check if response already sent
+    if (res.headersSent) {
+      console.warn('⚠️ Response already sent for topic suggestions');
+      return;
+    }
 
     return res.json({
       success: true,
-      suggestions: suggestions
+      suggestions: suggestions,
+      generatedWith: process.env.OPENAI_API_KEY ? 'ai' : 'default'
     });
 
   } catch (error) {
-    console.error('Error getting topic suggestions:', error);
+    console.error('❌ Error getting topic suggestions:', error);
+    
+    // Check if response already sent
+    if (res.headersSent) {
+      console.warn('⚠️ Response already sent, skipping error response');
+      return;
+    }
+    
     return res.status(500).json({
       error: 'Failed to get topic suggestions',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 };
+
+// Helper function for default topics
+function getDefaultTopics(): string[] {
+  return [
+    'Technology and Innovation',
+    'Environmental Conservation',
+    'Education and Learning Methods',
+    'Health and Medical Research',
+    'Business and Economics',
+    'Scientific Discoveries',
+    'Cultural Heritage and History',
+    'Social Media and Communication',
+    'Urban Planning and Development',
+    'Psychology and Human Behavior',
+    'Art and Creative Expression',
+    'Travel and Cultural Exchange',
+    'Renewable Energy Sources',
+    'Food Security and Agriculture',
+    'Space Exploration and Research'
+  ];
+}
 
 export const validateIELTSContent = async (req: Request, res: Response) => {
   try {

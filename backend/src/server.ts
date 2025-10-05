@@ -53,8 +53,25 @@ const io = new Server(server, {
 app.use(helmet());
 app.use(compression());
 
-// Timeout middleware (30 second timeout)
-app.use(timeoutMiddleware(30000));
+// Timeout middleware (30 second timeout) - SKIP for AI generation routes
+app.use((req, res, next) => {
+    // Skip timeout for AI generation endpoints (they need more time)
+    const aiGenerationRoutes = [
+        '/api/ai/generate-ielts-reading',
+        '/api/ai/generate-course',
+        '/api/chatbot'
+    ];
+    
+    const isAIRoute = aiGenerationRoutes.some(route => req.path.includes(route));
+    
+    if (isAIRoute) {
+        console.log(`⏱️ Skipping timeout for AI route: ${req.path}`);
+        return next();
+    }
+    
+    // Apply normal timeout for other routes
+    return timeoutMiddleware(30000)(req, res, next);
+});
 
 // Rate limiting
 const limiter = rateLimit({
