@@ -39,8 +39,18 @@ export const generateCourse = async (req: Request, res: Response) => {
       });
     }
 
+    console.log(`🚀 Starting AI generation: ${config.contentLength} ${config.type} items for topic "${config.topic}"`);
+    
     // Generate course using AI service
     const generatedCourse = await aiCourseGeneratorService.generateCourse(config);
+
+    // Check if response was already sent (safety check)
+    if (res.headersSent) {
+      console.warn('⚠️ Response already sent, skipping success response');
+      return;
+    }
+
+    console.log(`✅ Successfully generated course with ${config.type === 'vocabulary' ? generatedCourse.vocabulary.length : generatedCourse.grammar.length} items`);
 
     return res.json({
       success: true,
@@ -48,7 +58,13 @@ export const generateCourse = async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('Error in generateCourse controller:', error);
+    console.error('❌ Error in generateCourse controller:', error);
+    
+    // Check if response was already sent
+    if (res.headersSent) {
+      console.warn('⚠️ Response already sent, skipping error response');
+      return;
+    }
     
     // Handle specific OpenAI errors
     if (error instanceof Error) {

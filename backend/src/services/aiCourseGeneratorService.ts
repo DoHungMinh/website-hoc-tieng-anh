@@ -62,6 +62,7 @@ class AICourseGeneratorService {
 
   async generateCourse(config: AIGenerationConfig): Promise<GeneratedCourse> {
     console.log('🤖 AI Course Generator - Starting generation with config:', config);
+    console.log(`📊 Requested: ${config.contentLength} ${config.type === 'vocabulary' ? 'vocabulary items' : 'grammar rules'}`);
     
     try {
       // Check if OpenAI is properly configured
@@ -77,7 +78,16 @@ class AICourseGeneratorService {
       }
     } catch (error) {
       console.error('❌ Error generating course with AI:', error);
-      console.log('🔄 Falling back to mock data generation');
+      
+      // If it's a timeout or token limit error, inform the user
+      if (error instanceof Error) {
+        const errorMsg = error.message.toLowerCase();
+        if (errorMsg.includes('timeout') || errorMsg.includes('token')) {
+          console.error('💥 Generation failed due to timeout or token limit. Content too large for AI generation.');
+        }
+      }
+      
+      console.log('🔄 Falling back to mock data generation (this will include all requested items)');
       return this.generateMockCourse(config);
     }
   }
@@ -85,12 +95,18 @@ class AICourseGeneratorService {
   private async generateVocabularyCourse(config: AIGenerationConfig): Promise<GeneratedCourse> {
     const prompt = this.createVocabularyPrompt(config);
     
+    // Calculate required tokens: ~250 tokens per vocabulary item + 500 for metadata
+    // For 30 items: 30 * 250 + 500 = 8000 tokens
+    const estimatedTokens = Math.min(config.contentLength * 250 + 500, 16000);
+    
+    console.log(`🔢 Generating ${config.contentLength} vocabulary items, estimated tokens: ${estimatedTokens}`);
+    
     const completion = await this.openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o-mini", // Fast and cost-effective model
       messages: [
         {
           role: "system",
-          content: "Bạn là một chuyên gia giảng dạy tiếng Anh, chuyên tạo nội dung học tập chất lượng cao. Hãy tạo khóa học từ vựng theo yêu cầu và trả về JSON hợp lệ."
+          content: "Bạn là một chuyên gia giảng dạy tiếng Anh, chuyên tạo nội dung học tập chất lượng cao. Hãy tạo khóa học từ vựng theo yêu cầu và trả về JSON hợp lệ. BẮT BUỘC phải tạo đủ số lượng từ vựng theo yêu cầu."
         },
         {
           role: "user",
@@ -98,7 +114,8 @@ class AICourseGeneratorService {
         }
       ],
       temperature: 0.7,
-      max_tokens: 4000
+      max_tokens: estimatedTokens,
+      response_format: { type: "json_object" } // Force JSON mode
     });
 
     const response = completion.choices[0]?.message?.content;
@@ -107,8 +124,21 @@ class AICourseGeneratorService {
     }
 
     try {
-      const courseData = JSON.parse(response);
-      return this.formatVocabularyCourse(courseData, config);
+      // Clean the response: remove markdown code blocks if present
+      const cleanedResponse = this.cleanJsonResponse(response);
+      
+      const courseData = JSON.parse(cleanedResponse);
+      const formattedCourse = this.formatVocabularyCourse(courseData, config);
+      
+      // Validate that we got the correct number of items
+      const actualCount = formattedCourse.vocabulary.length;
+      console.log(`✅ AI generated ${actualCount}/${config.contentLength} vocabulary items`);
+      
+      if (actualCount < config.contentLength * 0.8) {
+        console.warn(`⚠️ AI generated only ${actualCount} items, expected ${config.contentLength}`);
+      }
+      
+      return formattedCourse;
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError);
       throw new Error('Invalid AI response format');
@@ -118,12 +148,18 @@ class AICourseGeneratorService {
   private async generateGrammarCourse(config: AIGenerationConfig): Promise<GeneratedCourse> {
     const prompt = this.createGrammarPrompt(config);
     
+    // Calculate required tokens: ~300 tokens per grammar rule + 500 for metadata
+    // For 30 rules: 30 * 300 + 500 = 9500 tokens
+    const estimatedTokens = Math.min(config.contentLength * 300 + 500, 16000);
+    
+    console.log(`🔢 Generating ${config.contentLength} grammar rules, estimated tokens: ${estimatedTokens}`);
+    
     const completion = await this.openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o-mini", // Fast and cost-effective model
       messages: [
         {
           role: "system",
-          content: "Bạn là một chuyên gia ngữ pháp tiếng Anh, chuyên tạo nội dung học tập có cấu trúc rõ ràng. Hãy tạo khóa học ngữ pháp theo yêu cầu và trả về JSON hợp lệ."
+          content: "Bạn là một chuyên gia ngữ pháp tiếng Anh, chuyên tạo nội dung học tập có cấu trúc rõ ràng. Hãy tạo khóa học ngữ pháp theo yêu cầu và trả về JSON hợp lệ. BẮT BUỘC phải tạo đủ số lượng quy tắc ngữ pháp theo yêu cầu."
         },
         {
           role: "user",
@@ -131,7 +167,8 @@ class AICourseGeneratorService {
         }
       ],
       temperature: 0.7,
-      max_tokens: 4000
+      max_tokens: estimatedTokens,
+      response_format: { type: "json_object" } // Force JSON mode
     });
 
     const response = completion.choices[0]?.message?.content;
@@ -140,12 +177,103 @@ class AICourseGeneratorService {
     }
 
     try {
-      const courseData = JSON.parse(response);
-      return this.formatGrammarCourse(courseData, config);
+      // Clean the response: remove markdown code blocks if present
+      const cleanedResponse = this.cleanJsonResponse(response);
+      
+      const courseData = JSON.parse(cleanedResponse);
+      const formattedCourse = this.formatGrammarCourse(courseData, config);
+      
+      // Validate that we got the correct number of items
+      const actualCount = formattedCourse.grammar.length;
+      console.log(`✅ AI generated ${actualCount}/${config.contentLength} grammar rules`);
+      
+      if (actualCount < config.contentLength * 0.8) {
+        console.warn(`⚠️ AI generated only ${actualCount} rules, expected ${config.contentLength}`);
+      }
+      
+      return formattedCourse;
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError);
       throw new Error('Invalid AI response format');
     }
+  }
+
+  /**
+   * Clean JSON response from AI - remove markdown code blocks if present
+   * OpenAI sometimes wraps JSON in ```json ... ``` blocks
+   */
+  private cleanJsonResponse(response: string): string {
+    let cleaned = response.trim();
+    
+    // Remove markdown code blocks (```json ... ``` or ``` ... ```)
+    if (cleaned.startsWith('```')) {
+      // Remove opening ```json or ```
+      cleaned = cleaned.replace(/^```(?:json)?\s*\n?/i, '');
+      // Remove closing ```
+      cleaned = cleaned.replace(/\n?```\s*$/i, '');
+    }
+    
+    return cleaned.trim();
+  }
+
+  /**
+   * Get specific instructions based on difficulty level
+   */
+  private getDifficultyInstructions(difficulty: string, type: 'vocabulary' | 'grammar'): string {
+    const instructions = {
+      vocabulary: {
+        basic: `
+- Chọn từ vựng PHỔ BIẾN, thường gặp trong cuộc sống hàng ngày
+- Từ có 1-2 âm tiết, dễ phát âm, dễ nhớ (ví dụ: book, food, happy, work)
+- Nghĩa đơn giản, một từ tiếng Việt tương ứng một nghĩa chính
+- Ví dụ là câu ĐƠN GIẢN, cấu trúc Subject + Verb + Object cơ bản
+- Tránh từ chuyên ngành, từ ghép phức tạp, phrasal verbs
+- Phù hợp cho người MỚI BẮT ĐẦU học tiếng Anh`,
+        
+        intermediate: `
+- Chọn từ vựng TRUNG BÌNH, có thể có nhiều nghĩa hoặc cách dùng
+- Từ có 2-3 âm tiết, bao gồm cả từ ghép (ví dụ: achievement, environmental, relationship)
+- Nghĩa CHI TIẾT hơn, có thể kèm từ đồng nghĩa hoặc trái nghĩa
+- Ví dụ là câu PHỨC TẠP hơn với cấu trúc đa dạng (mệnh đề phụ, liên từ)
+- Có thể bao gồm collocations, phrasal verbs thông dụng
+- Phù hợp cho người có NỀN TẢNG và muốn nâng cao`,
+        
+        advanced: `
+- Chọn từ vựng CHUYÊN SÂU, học thuật, chuyên ngành hoặc formal
+- Từ có 3-4+ âm tiết, từ Latinh, từ học thuật (ví dụ: implementation, sustainability, optimization)
+- Nghĩa RẤT CHI TIẾT với nhiều sắc thái, ngữ cảnh sử dụng cụ thể
+- Ví dụ là câu PHỨC TẠP, academic style, với multiple clauses và advanced structures
+- Bao gồm idioms, collocations chuyên ngành, technical terms
+- Phù hợp cho người THÀNH THẠO hoặc cần tiếng Anh chuyên môn cao`
+      },
+      grammar: {
+        basic: `
+- Chọn QUY TẮC CƠ BẢN, nền tảng của tiếng Anh (Present Simple, Past Simple, các thì đơn giản)
+- Giải thích ĐƠN GIẢN, dễ hiểu, tránh thuật ngữ phức tạp
+- Cấu trúc CỤ THỂ, RÕ RÀNG với công thức đơn giản (S + V + O)
+- Ví dụ là câu NGẮN GỌN, cấu trúc đơn, dễ hiểu ngay
+- Tập trung vào các quy tắc THƯỜNG DÙNG trong giao tiếp hàng ngày
+- Phù hợp cho người MỚI BẮT ĐẦU học ngữ pháp`,
+        
+        intermediate: `
+- Chọn QUY TẮC TRUNG BÌNH phức tạp hơn (Perfect tenses, Passive Voice, Conditionals)
+- Giải thích CHI TIẾT với các trường hợp ngoại lệ và lưu ý đặc biệt
+- Cấu trúc ĐA DẠNG với nhiều biến thể và cách dùng khác nhau
+- Ví dụ PHONG PHÚ, có độ dài trung bình, đa dạng ngữ cảnh
+- Bao gồm so sánh với các cấu trúc tương tự và cách phân biệt
+- Phù hợp cho người có NỀN TẢNG và muốn hoàn thiện`,
+        
+        advanced: `
+- Chọn QUY TẮC NÂNG CAO, tinh tế (Subjunctive, Inversion, Advanced Modals, Cleft Sentences)
+- Giải thích SÂU SẮC với phân tích ngữ pháp học thuật, formal/informal distinctions
+- Cấu trúc PHỨC TẠP với nhiều layers, embedded clauses, advanced syntax
+- Ví dụ là câu DÀI, PHỨC TẠP, academic/formal style, sophisticated structures
+- Bao gồm stylistic variations, register differences, rhetorical effects
+- Phù hợp cho người THÀNH THẠO hoặc học thuật/chuyên nghiệp`
+      }
+    };
+
+    return instructions[type][difficulty as keyof typeof instructions.vocabulary] || instructions[type].basic;
   }
 
   private createVocabularyPrompt(config: AIGenerationConfig): string {
@@ -153,11 +281,16 @@ class AICourseGeneratorService {
 Tạo một khóa học từ vựng tiếng Anh với các thông tin sau:
 - Chủ đề: ${config.topic}
 - Cấp độ: ${config.level}
-- Số lượng từ vựng: ${config.contentLength}
+- Số lượng từ vựng: ${config.contentLength} (BẮT BUỘC - KHÔNG ĐƯỢC THIẾU)
 - Bao gồm phát âm: ${config.includePronunciation ? 'Có' : 'Không'}
 - Bao gồm ví dụ: ${config.includeExamples ? 'Có' : 'Không'}
 - Độ khó: ${config.difficulty}
 ${config.targetAudience ? `- Đối tượng: ${config.targetAudience}` : ''}
+
+YÊU CẦU QUAN TRỌNG:
+- Phải tạo ĐỦ CHÍNH XÁC ${config.contentLength} từ vựng trong mảng "vocabulary"
+- KHÔNG được tạo ít hơn hoặc nhiều hơn số lượng yêu cầu
+- Đếm kỹ để đảm bảo có đúng ${config.contentLength} từ
 
 Trả về JSON với cấu trúc sau:
 {
@@ -181,11 +314,14 @@ Trả về JSON với cấu trúc sau:
   ]
 }
 
-Lưu ý:
+Lưu ý chất lượng:
 - Từ vựng phải phù hợp với cấp độ ${config.level}
 - Nghĩa tiếng Việt phải chính xác và dễ hiểu
 - Ví dụ phải thực tế và có ngữ cảnh rõ ràng
-- Tạo đầy đủ ${config.contentLength} từ vựng
+- Phải tạo đầy đủ ${config.contentLength} từ vựng (kiểm tra lại số lượng)
+
+ĐỘ KHÓ "${config.difficulty.toUpperCase()}" - YÊU CẦU CỤ THỂ:
+${this.getDifficultyInstructions(config.difficulty, 'vocabulary')}
 `;
   }
 
@@ -194,9 +330,14 @@ Lưu ý:
 Tạo một khóa học ngữ pháp tiếng Anh với các thông tin sau:
 - Chủ đề: ${config.topic}
 - Cấp độ: ${config.level}
-- Số lượng quy tắc: ${config.contentLength}
+- Số lượng quy tắc: ${config.contentLength} (BẮT BUỘC - KHÔNG ĐƯỢC THIẾU)
 - Độ khó: ${config.difficulty}
 ${config.targetAudience ? `- Đối tượng: ${config.targetAudience}` : ''}
+
+YÊU CẦU QUAN TRỌNG:
+- Phải tạo ĐỦ CHÍNH XÁC ${config.contentLength} quy tắc ngữ pháp trong mảng "grammar"
+- KHÔNG được tạo ít hơn hoặc nhiều hơn số lượng yêu cầu
+- Đếm kỹ để đảm bảo có đúng ${config.contentLength} quy tắc
 
 Trả về JSON với cấu trúc sau:
 {
@@ -220,11 +361,14 @@ Trả về JSON với cấu trúc sau:
   ]
 }
 
-Lưu ý:
+Lưu ý chất lượng:
 - Ngữ pháp phải phù hợp với cấp độ ${config.level}
 - Giải thích bằng tiếng Việt dễ hiểu
 - Ví dụ phải đa dạng và thực tế
-- Tạo đầy đủ ${config.contentLength} quy tắc ngữ pháp
+- Phải tạo đầy đủ ${config.contentLength} quy tắc ngữ pháp (kiểm tra lại số lượng)
+
+ĐỘ KHÓ "${config.difficulty.toUpperCase()}" - YÊU CẦU CỤ THỂ:
+${this.getDifficultyInstructions(config.difficulty, 'grammar')}
 `;
   }
 
@@ -287,7 +431,8 @@ Lưu ý:
     const baseDescription = `Khóa học ${config.type === 'vocabulary' ? 'từ vựng' : 'ngữ pháp'} về chủ đề ${config.topic} dành cho học viên trình độ ${config.level}`;
 
     if (config.type === 'vocabulary') {
-      const mockVocabulary: VocabularyItem[] = Array.from({ length: Math.min(config.contentLength, 20) }, (_, i) => ({
+      // Generate full requested amount (no limit)
+      const mockVocabulary: VocabularyItem[] = Array.from({ length: config.contentLength }, (_, i) => ({
         id: `vocab-${Date.now()}-${i}`,
         word: `${config.topic.toLowerCase().replace(/\s+/g, '')}-word-${i + 1}`,
         pronunciation: config.includePronunciation ? `/wɜːrd ${i + 1}/` : '',
@@ -322,8 +467,8 @@ Lưu ý:
         ]
       };
     } else {
-      // Generate realistic grammar content based on topic
-      const mockGrammar = this.generateRealisticGrammar(config.topic, config.level, Math.min(config.contentLength, 15));
+      // Generate realistic grammar content based on topic (full requested amount)
+      const mockGrammar = this.generateRealisticGrammar(config.topic, config.level, config.contentLength);
 
       return {
         title: baseTitle,

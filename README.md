@@ -303,7 +303,22 @@ npm test
 npm test
 ```
 
-## 📦 Deployment
+## � Documentation
+
+Comprehensive project documentation is organized in the [`docs/`](docs/) folder:
+
+- **[Setup & Configuration](docs/01-setup/)** - Initial setup, tech stack, admin accounts
+- **[Features](docs/02-features/)** - AI chatbot, IELTS generation, payment system
+- **[Bug Fixes](docs/03-fixes/)** - Issue resolutions and improvements
+- **[Guides](docs/04-guides/)** - How-to guides and workflows
+- **[Analysis](docs/05-analysis/)** - Technical analysis and planning
+- **[Summaries](docs/06-summaries/)** - Project changelogs and reports
+
+📖 See [docs/README.md](docs/README.md) for the complete documentation index.
+
+## �📦 Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
 
 ### Vercel Deployment
 
