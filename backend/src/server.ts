@@ -55,11 +55,12 @@ app.use(compression());
 
 // Timeout middleware (30 second timeout) - SKIP for AI generation routes
 app.use((req, res, next) => {
-    // Skip timeout for AI generation endpoints (they need more time)
+    // Skip timeout cho AI generation routes (bao gồm voice chat)
     const aiGenerationRoutes = [
         '/api/ai/generate-ielts-reading',
         '/api/ai/generate-course',
-        '/api/chatbot'
+        '/api/chatbot',
+        '/api/voice'  // Added voice chat routes
     ];
     
     const isAIRoute = aiGenerationRoutes.some(route => req.path.includes(route));

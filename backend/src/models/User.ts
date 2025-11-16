@@ -25,9 +25,16 @@ export interface IUser extends Document {
       email: boolean;
       push: boolean;
     };
+    voicePreference?: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
   };
   streakCount: number;
   totalStudyHours: number;
+  voiceChat?: {
+    minutesUsedThisMonth: number;
+    totalMinutesUsed: number;
+    lastResetDate: Date;
+    isEnabled: boolean;
+  };
   pendingPayments?: Array<{
     orderCode: number;
     courseId: string;
@@ -128,6 +135,11 @@ const userSchema = new Schema<IUser>({
         type: Boolean,
         default: true
       }
+    },
+    voicePreference: {
+      type: String,
+      enum: ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'],
+      default: 'alloy'
     }
   },
   streakCount: {
@@ -137,6 +149,24 @@ const userSchema = new Schema<IUser>({
   totalStudyHours: {
     type: Number,
     default: 0
+  },
+  voiceChat: {
+    minutesUsedThisMonth: {
+      type: Number,
+      default: 0
+    },
+    totalMinutesUsed: {
+      type: Number,
+      default: 0
+    },
+    lastResetDate: {
+      type: Date,
+      default: Date.now
+    },
+    isEnabled: {
+      type: Boolean,
+      default: true
+    }
   },
   pendingPayments: [{
     orderCode: {

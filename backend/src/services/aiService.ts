@@ -7,8 +7,22 @@ export class AIService {
   private openai: OpenAI;
 
   constructor() {
+    const apiKey = process.env.OPENAI_API_KEY;
+    
+    if (!apiKey) {
+      console.error('❌ OPENAI_API_KEY is not set in environment variables');
+      throw new Error('OpenAI API key is not configured');
+    }
+    
+    if (apiKey === 'sk-your-openai-api-key-here' || apiKey.length < 20) {
+      console.error('❌ OPENAI_API_KEY is invalid or placeholder');
+      throw new Error('OpenAI API key is not properly configured');
+    }
+    
+    console.log('✅ AIService initialized with API key:', apiKey.substring(0, 10) + '...');
+    
     this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+      apiKey: apiKey,
     });
   }
 
@@ -41,11 +55,15 @@ PHONG CÁCH GIAO TIẾP:
 - Sử dụng tiếng Việt chính, tiếng Anh khi cần thiết
 - Cụ thể, có dẫn chứng từ dữ liệu thực tế
 - Không quá dài, dễ hiểu
+- KHI VOICE CHAT: Trả lời ngắn gọn (2-3 câu), tự nhiên như đang nói chuyện
+- KHI TEXT CHAT: Có thể trả lời chi tiết hơn với bullet points
 
 LUÔN ƯU TIÊN:
 - Cá nhân hóa dựa trên level và mục tiêu
 - Dựa trên dữ liệu thực tế, không đoán mò
-- Đưa ra lời khuyên actionable`;
+- Đưa ra lời khuyên actionable
+- Nếu user nói tiếng Anh, trả lời tiếng Anh (voice chat)
+- Nếu user nói tiếng Việt, trả lời tiếng Việt (voice chat)`;
   }
 
   // Analyze user learning data
@@ -146,8 +164,17 @@ LUÔN ƯU TIÊN:
     // Add conversation history (limit to last 10 messages)
     const recentHistory = conversationHistory.slice(-10);
     for (const msg of recentHistory) {
+      // Skip messages without valid role or content
+      if (!msg.role || !msg.content) {
+        console.warn('⚠️ Skipping invalid message in history:', msg);
+        continue;
+      }
+      
+      // Only accept 'user' or 'assistant' roles
+      const validRole = msg.role === 'user' || msg.role === 'assistant' ? msg.role : 'user';
+      
       messages.push({
-        role: msg.role as 'user' | 'assistant',
+        role: validRole as 'user' | 'assistant',
         content: msg.content
       });
     }
@@ -163,6 +190,15 @@ LUÔN ƯU TIÊN:
     messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[]
   ): Promise<string> {
     try {
+      console.log('🤖 Calling OpenAI API with', messages.length, 'messages');
+      
+      // Debug: Log all messages to check for invalid roles
+      messages.forEach((msg, index) => {
+        if (!msg.role || !msg.content) {
+          console.error(`❌ Invalid message at index ${index}:`, msg);
+        }
+      });
+      
       const response = await this.openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages,
@@ -171,9 +207,32 @@ LUÔN ƯU TIÊN:
         top_p: 0.9,
       });
 
-      return response.choices[0]?.message?.content || 'Xin lỗi, tôi không thể tạo phản hồi lúc này.';
-    } catch (error) {
-      console.error('OpenAI API Error:', error);
+      const content = response.choices[0]?.message?.content || 'Xin lỗi, tôi không thể tạo phản hồi lúc này.';
+      console.log('✅ OpenAI API response received, length:', content.length);
+      
+      return content;
+    } catch (error: any) {
+      console.error('❌ OpenAI API Error:', error);
+      
+      // Chi tiết error để debug
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response data:', error.response.data);
+      }
+      
+      if (error.message) {
+        console.error('Error message:', error.message);
+      }
+      
+      // Return user-friendly error
+      if (error.code === 'invalid_api_key') {
+        throw new Error('API key không hợp lệ');
+      } else if (error.code === 'insufficient_quota') {
+        throw new Error('API đã hết quota');
+      } else if (error.message?.includes('network')) {
+        throw new Error('Lỗi kết nối mạng');
+      }
+      
       throw new Error('Không thể kết nối đến AI service');
     }
   }

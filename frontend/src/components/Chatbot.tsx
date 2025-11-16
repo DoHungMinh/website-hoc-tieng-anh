@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MessageCircle, Send, X, Bot, User, Minimize2, TrendingUp, BookOpen, Expand, Shrink } from 'lucide-react';
+import { MessageCircle, Send, X, Bot, User, Minimize2, TrendingUp, BookOpen, Expand, Shrink, Mic, Keyboard } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useAuthStore } from '../stores/authStore';
+import { VoiceChat } from './VoiceChat';
 
 interface Message {
   id: string;
@@ -15,6 +16,7 @@ const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -129,6 +131,37 @@ const Chatbot = () => {
     } finally {
       setIsLoadingHistory(false);
     }
+  };
+
+  // Handle voice chat transcript (user spoke)
+  const handleVoiceTranscript = (transcript: string) => {
+    const userMessage: Message = {
+      id: `user-voice-${Date.now()}`,
+      text: transcript,
+      isBot: false,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, userMessage]);
+  };
+
+  // Handle voice chat AI response
+  const handleVoiceResponse = (response: string) => {
+    const botMessage: Message = {
+      id: `bot-voice-${Date.now()}`,
+      text: response,
+      isBot: true,
+      timestamp: new Date(),
+      type: 'voice'
+    };
+    setMessages(prev => [...prev, botMessage]);
+  };
+
+  // Build conversation history for voice chat
+  const getConversationHistory = () => {
+    return messages.map(msg => ({
+      role: msg.isBot ? 'assistant' : 'user',
+      content: msg.text
+    }));
   };
 
   const handleSend = async () => {
@@ -423,25 +456,72 @@ const Chatbot = () => {
 
               {/* Input */}
               <div className="p-4 border-t border-gray-200">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Nhập tin nhắn..."
-                    className={`flex-1 p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                      isExpanded ? 'text-base' : 'text-sm'
-                    }`}
-                  />
-                  <button
-                    onClick={handleSend}
-                    disabled={!inputText.trim()}
-                    className="bg-gradient-to-r from-green-600 to-lime-600 hover:from-green-700 hover:to-lime-700 disabled:from-gray-400 disabled:to-gray-400 text-white p-3 rounded-xl transition-colors duration-200"
-                  >
-                    <Send className="h-5 w-5" />
-                  </button>
+                {/* Mode Toggle */}
+                <div className="flex justify-center mb-3">
+                  <div className="inline-flex rounded-lg border border-gray-300 p-1">
+                    <button
+                      onClick={() => setIsVoiceMode(false)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                        !isVoiceMode 
+                          ? 'bg-green-500 text-white' 
+                          : 'bg-transparent text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      <Keyboard className="h-4 w-4" />
+                      <span className="text-sm font-medium">Text</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsVoiceMode(true);
+                        // Auto-expand when switching to voice mode for better UX
+                        if (!isExpanded) {
+                          setIsExpanded(true);
+                        }
+                      }}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                        isVoiceMode 
+                          ? 'bg-green-500 text-white' 
+                          : 'bg-transparent text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      <Mic className="h-4 w-4" />
+                      <span className="text-sm font-medium">Voice</span>
+                    </button>
+                  </div>
                 </div>
+
+                {/* Text Mode Input */}
+                {!isVoiceMode && (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Nhập tin nhắn..."
+                      className={`flex-1 p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                        isExpanded ? 'text-base' : 'text-sm'
+                      }`}
+                    />
+                    <button
+                      onClick={handleSend}
+                      disabled={!inputText.trim()}
+                      className="bg-gradient-to-r from-green-600 to-lime-600 hover:from-green-700 hover:to-lime-700 disabled:from-gray-400 disabled:to-gray-400 text-white p-3 rounded-xl transition-colors duration-200"
+                    >
+                      <Send className="h-5 w-5" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Voice Mode Component */}
+                {isVoiceMode && (
+                  <VoiceChat
+                    onTranscriptReceived={handleVoiceTranscript}
+                    onResponseReceived={handleVoiceResponse}
+                    conversationHistory={getConversationHistory()}
+                    className="mt-2"
+                  />
+                )}
               </div>
             </>
           )}
