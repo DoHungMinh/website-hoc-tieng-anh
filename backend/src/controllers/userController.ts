@@ -16,21 +16,28 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
       sortOrder = 'desc'
     } = req.query;
 
-    // Build query
+    // Validate and sanitize pagination inputs
+    const pageNum = Math.max(1, parseInt(page as string) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit as string) || 10)); // Max 100 items per page
+    const skip = (pageNum - 1) * limitNum;
+
+    // Build query with input sanitization
     const query: any = {};
     
-    if (search) {
+    if (search && typeof search === 'string' && search.trim()) {
+      // Escape regex special characters to prevent ReDoS attacks
+      const sanitizedSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       query.$or = [
-        { fullName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
+        { fullName: { $regex: sanitizedSearch, $options: 'i' } },
+        { email: { $regex: sanitizedSearch, $options: 'i' } }
       ];
     }
     
-    if (role && role !== 'all') {
+    if (role && role !== 'all' && ['student', 'admin', 'instructor'].includes(role as string)) {
       query.role = role;
     }
     
-    if (accountStatus && accountStatus !== 'all') {
+    if (accountStatus && accountStatus !== 'all' && ['active', 'disabled'].includes(accountStatus as string)) {
       query.accountStatus = accountStatus;
     }
     
@@ -42,20 +49,22 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
       }
     }
 
-    // Calculate pagination
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
-    const skip = (pageNum - 1) * limitNum;
+    // Validate sortBy to prevent NoSQL injection
+    const allowedSortFields = ['createdAt', 'fullName', 'email', 'lastSeen'];
+    const validSortBy = allowedSortFields.includes(sortBy as string) ? sortBy as string : 'createdAt';
+    const validSortOrder = sortOrder === 'asc' ? 1 : -1;
 
-    // Get users with pagination
+    // Get users with pagination and timeout protection
     const users = await User.find(query)
       .select('-password')
-      .sort({ [sortBy as string]: sortOrder === 'desc' ? -1 : 1 })
+      .sort({ [validSortBy]: validSortOrder })
       .skip(skip)
-      .limit(limitNum);
+      .limit(limitNum)
+      .maxTimeMS(10000) // 10 second timeout to prevent long-running queries
+      .lean(); // Use lean() for better performance
 
-    // Get total count
-    const total = await User.countDocuments(query);
+    // Get total count with timeout
+    const total = await User.countDocuments(query).maxTimeMS(5000);
 
     res.json({
       success: true,
@@ -69,8 +78,26 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
         }
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get users error:', error);
+    
+    // Handle specific MongoDB errors
+    if (error.name === 'MongooseError' && error.message.includes('buffering timed out')) {
+      res.status(504).json({
+        success: false,
+        message: 'Yêu cầu quá lâu, vui lòng thử lại'
+      });
+      return;
+    }
+    
+    if (error.code === 50) { // MongoDB execution timeout
+      res.status(504).json({
+        success: false,
+        message: 'Truy vấn mất quá nhiều thời gian, vui lòng thu hẹp bộ lọc'
+      });
+      return;
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi lấy danh sách người dùng'

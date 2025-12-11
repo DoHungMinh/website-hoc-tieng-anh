@@ -1,0 +1,605 @@
+@startuml English Learning Platform - Class Diagram
+
+' ============ STYLING ============
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam class {
+    BackgroundColor<<Entity>> LightYellow
+    BackgroundColor<<Service>> LightBlue
+    BackgroundColor<<Controller>> LightGreen
+    BorderColor Black
+    ArrowColor Black
+}
+
+' ============ DOMAIN MODELS ============
+
+package "Domain Models" <<Entity>> {
+    
+    class User {
+        - _id: string
+        - email: string
+        - password: string
+        - fullName: string
+        - phone?: string
+        - avatar?: string
+        - bio?: string
+        - birthDate?: string
+        - learningGoal?: string
+        - role: 'user' | 'admin'
+        - level: 'A1'|'A2'|'B1'|'B2'|'C1'|'C2'
+        - isEmailVerified: boolean
+        - accountStatus: 'active' | 'disabled'
+        - isOnline: boolean
+        - lastSeen: Date
+        - learningGoals: string[]
+        - preferences: UserPreferences
+        - streakCount: number
+        - totalStudyHours: number
+        - voiceChat?: VoiceChatUsage
+        - pendingPayments?: PendingPayment[]
+        - createdAt: Date
+        - updatedAt: Date
+        + comparePassword(password: string): Promise<boolean>
+    }
+    
+    class UserPreferences {
+        + language: string
+        + timezone: string
+        + notifications: NotificationSettings
+        + voicePreference?: VoiceOption
+    }
+    
+    class NotificationSettings {
+        + email: boolean
+        + push: boolean
+    }
+    
+    class VoiceChatUsage {
+        + minutesUsedThisMonth: number
+        + totalMinutesUsed: number
+        + lastResetDate: Date
+        + isEnabled: boolean
+    }
+    
+    class PendingPayment {
+        + orderCode: number
+        + courseId: string
+        + amount: number
+        + status: 'pending'|'completed'|'failed'
+        + createdAt: Date
+        + completedAt?: Date
+        + failedReason?: string
+    }
+    
+    class Course {
+        - _id: string
+        - title: string
+        - description: string
+        - type: 'vocabulary' | 'grammar'
+        - level: 'A1'|'A2'|'B1'|'B2'|'C1'|'C2'
+        - duration: string
+        - price: number
+        - originalPrice?: number
+        - instructor: string
+        - status: 'draft'|'active'|'archived'
+        - thumbnail?: string
+        - studentsCount: number
+        - lessonsCount: number
+        - vocabulary?: VocabularyItem[]
+        - grammar?: GrammarItem[]
+        - requirements: string[]
+        - benefits: string[]
+        - curriculum: CurriculumModule[]
+        - createdAt: Date
+        - updatedAt: Date
+    }
+    
+    class VocabularyItem {
+        + id: string
+        + word: string
+        + pronunciation?: string
+        + meaning: string
+        + example?: string
+    }
+    
+    class GrammarItem {
+        + id: string
+        + rule: string
+        + structure?: string
+        + explanation: string
+        + example: string
+    }
+    
+    class CurriculumModule {
+        + module: string
+        + lessons: string[]
+    }
+    
+    class Enrollment {
+        - _id: string
+        - userId: string
+        - courseId: string
+        - status: 'active'|'completed'|'dropped'
+        - progress: number
+        - completedLessons: string[]
+        - lastAccessedAt: Date
+        - enrolledAt: Date
+        - completedAt?: Date
+        - paymentStatus: 'pending'|'paid'|'failed'
+        - paymentInfo?: PaymentInfo
+        - createdAt: Date
+        - updatedAt: Date
+    }
+    
+    class PaymentInfo {
+        + orderCode: number
+        + amount: number
+        + paidAt: Date
+        + transactionId: string
+    }
+    
+    class Progress {
+        - _id: string
+        - userId: string
+        - vocabulary: VocabularyProgress
+        - listening: ListeningProgress
+        - testsCompleted: TestsProgress
+        - studyStreak: StudyStreak
+        - weeklyActivity: WeeklyActivity[]
+        - totalStudyTime: number
+        - level: 'A1'|'A2'|'B1'|'B2'|'C1'|'C2'
+        - achievements: Achievement[]
+        - createdAt: Date
+        - updatedAt: Date
+    }
+    
+    class VocabularyProgress {
+        + learned: number
+        + target: number
+        + recentWords: LearnedWord[]
+    }
+    
+    class LearnedWord {
+        + word: string
+        + meaning: string
+        + example: string
+        + learnedAt: Date
+        + reviewCount: number
+        + masteryLevel: number
+    }
+    
+    class ListeningProgress {
+        + hoursCompleted: number
+        + target: number
+        + recentSessions: ListeningSession[]
+    }
+    
+    class ListeningSession {
+        + title: string
+        + duration: number
+        + difficulty: string
+        + score: number
+        + completedAt: Date
+    }
+    
+    class TestsProgress {
+        + completed: number
+        + target: number
+        + recentTests: TestResult[]
+    }
+    
+    class TestResult {
+        + testName: string
+        + score: number
+        + maxScore: number
+        + percentage: number
+        + completedAt: Date
+    }
+    
+    class StudyStreak {
+        + current: number
+        + target: number
+        + lastStudyDate: Date
+    }
+    
+    class WeeklyActivity {
+        + week: string
+        + hours: number
+        + days: DayActivity[]
+    }
+    
+    class DayActivity {
+        + day: string
+        + hours: number
+        + activities: string[]
+    }
+    
+    class Achievement {
+        + id: string
+        + title: string
+        + description: string
+        + icon: string
+        + earnedAt: Date
+    }
+    
+    class IELTSExam {
+        - _id: string
+        - title: string
+        - type: 'reading' | 'listening'
+        - difficulty: string
+        - duration: number
+        - totalQuestions: number
+        - description: string
+        - status: 'draft' | 'published'
+        - passages?: Passage[]
+        - sections?: Section[]
+        - createdBy: string
+        - createdAt: Date
+        - updatedAt: Date
+    }
+    
+    class Passage {
+        + id: string
+        + title: string
+        + content: string
+        + questions: Question[]
+    }
+    
+    class Section {
+        + id: string
+        + title: string
+        + description: string
+        + audioUrl?: string
+        + audioPublicId?: string
+        + duration: number
+        + questions: Question[]
+    }
+    
+    class Question {
+        + id: string
+        + type: QuestionType
+        + question: string
+        + options?: string[]
+        + correctAnswer: string | number
+        + explanation?: string
+        + audioTimestamp?: number
+    }
+    
+    class IELTSTestResult {
+        - _id: string
+        - userId: string
+        - examId: string
+        - answers: UserAnswer[]
+        - score: Score
+        - status: 'in-progress'|'completed'|'abandoned'
+        - startedAt: Date
+        - completedAt?: Date
+        - timeSpent: number
+        - createdAt: Date
+        - updatedAt: Date
+    }
+    
+    class UserAnswer {
+        + questionId: string
+        + userAnswer: string | number
+        + isCorrect: boolean
+        + timeSpent: number
+    }
+    
+    class Score {
+        + correct: number
+        + total: number
+        + percentage: number
+        + bandScore?: number
+    }
+    
+    class ChatSession {
+        - _id: string
+        - userId: string
+        - messages: ChatMessage[]
+        - context: ChatContext
+        - isActive: boolean
+        - createdAt: Date
+        - updatedAt: Date
+    }
+    
+    class ChatMessage {
+        + role: 'user'|'assistant'|'system'
+        + content: string
+        + timestamp: Date
+        + metadata?: MessageMetadata
+    }
+    
+    class ChatContext {
+        + lastInteraction?: Date
+        + messageCount?: number
+        + currentLevel?: string
+        + recentTopics?: string[]
+    }
+    
+    class MessageMetadata {
+        + type?: string
+        + assessmentId?: string
+        + auto?: boolean
+    }
+    
+    class VoiceChatSession {
+        - _id: string
+        - userId: string
+        - transcript: string
+        - response: string
+        - audioMetadata: AudioMetadata
+        - processingTime: number
+        - cost: number
+        - createdAt: Date
+    }
+    
+    class AudioMetadata {
+        + duration: number
+        + format: string
+        + size: number
+        + voice: VoiceOption
+        + language?: string
+    }
+    
+    class Assessment {
+        - _id: string
+        - userId: string
+        - type: 'initial'|'progress'|'final'
+        - level: string
+        - score: number
+        - strengths: string[]
+        - weaknesses: string[]
+        - recommendations: string[]
+        - status: 'completed'|'in-progress'
+        - completedAt?: Date
+        - createdAt: Date
+        - updatedAt: Date
+    }
+}
+
+' ============ SERVICES ============
+
+package "Services" <<Service>> {
+    
+    class AIService {
+        - openai: OpenAI
+        + analyzeUserProgress(data): Promise<string>
+        + generateAssessmentFeedback(data): Promise<string>
+        + generateLearningRecommendations(data): Promise<string>
+        + generateChatResponse(message, data, history): Promise<string>
+        - getSystemPrompt(): string
+        - buildProgressContext(): string
+        - generateResponse(messages): Promise<string>
+    }
+    
+    class WhisperService {
+        - openai: OpenAI
+        + transcribeAudio(audioPath, language?): Promise<string>
+        + transcribeWithRetry(audioPath, language?, maxRetries?): Promise<string>
+        - cleanupFile(filePath): void
+    }
+    
+    class TTSService {
+        - openai: OpenAI
+        + textToSpeech(text, voice?, speed?): Promise<string>
+        + textToSpeechWithRetry(text, voice?, speed?, maxRetries?): Promise<string>
+        + deleteAudioFile(filePath): Promise<void>
+        - generateUniqueFilename(): string
+    }
+    
+    class VoiceChatService {
+        - whisperService: WhisperService
+        - ttsService: TTSService
+        - aiService: AIService
+        + processVoiceChat(audioPath, user, data, history, voice): Promise<VoiceChatResult>
+    }
+    
+    class VoiceChatResult {
+        + success: boolean
+        + transcript?: string
+        + responseText?: string
+        + audioPath?: string
+        + processingTimeMs: number
+        + metadata?: object
+        + error?: string
+    }
+    
+    class AICourseGeneratorService {
+        - openai: OpenAI
+        + generateCourse(params): Promise<GeneratedCourse>
+        + generateCourseWithRetry(params, maxRetries?): Promise<GeneratedCourse>
+        - buildCoursePrompt(params): string
+        - parseCourseJSON(response): GeneratedCourse
+    }
+    
+    class GeneratedCourse {
+        + title: string
+        + description: string
+        + level: string
+        + duration: string
+        + vocabulary?: VocabularyItem[]
+        + grammar?: GrammarItem[]
+        + requirements: string[]
+        + benefits: string[]
+        + curriculum: CurriculumModule[]
+    }
+    
+    class AIIELTSGeneratorService {
+        - openai: OpenAI
+        + generateIELTSReading(difficulty, topic?): Promise<GeneratedReading>
+        + generateIELTSListening(difficulty, topic?): Promise<GeneratedListening>
+        - buildReadingPrompt(difficulty, topic): string
+        - buildListeningPrompt(difficulty, topic): string
+        - parseIELTSJSON(response): object
+    }
+    
+    class GeneratedReading {
+        + title: string
+        + passages: Passage[]
+        + totalQuestions: number
+        + duration: number
+    }
+    
+    class GeneratedListening {
+        + title: string
+        + sections: Section[]
+        + totalQuestions: number
+        + duration: number
+    }
+    
+    class AnalyticsService {
+        + getUserStats(userId): Promise<UserStats>
+        + getWeeklyRevenue(startDate, endDate): Promise<RevenueData>
+        + getCourseStats(courseId): Promise<CourseStats>
+        + getSystemOverview(): Promise<SystemStats>
+    }
+    
+    class UserStats {
+        + totalStudyTime: number
+        + coursesEnrolled: number
+        + testsCompleted: number
+        + averageScore: number
+        + streak: number
+        + weeklyActivity: WeeklyActivity[]
+    }
+    
+    class RevenueData {
+        + total: number
+        + byDay: DayRevenue[]
+        + transactionCount: number
+    }
+    
+    class DayRevenue {
+        + date: string
+        + amount: number
+        + count: number
+    }
+    
+    class RealtimeService {
+        - io: SocketIO
+        + initialize(server): void
+        + emitUserStatusChange(userId, status): void
+        + emitChatMessage(userId, message): void
+        + emitProgressUpdate(userId, progress): void
+        + broadcastAdminNotification(data): void
+    }
+    
+    class ImageUploadService {
+        - cloudinary: Cloudinary
+        + uploadImage(file, folder?): Promise<UploadResult>
+        + deleteImage(publicId): Promise<void>
+        + updateUserAvatar(userId, file): Promise<string>
+    }
+    
+    class UploadResult {
+        + url: string
+        + publicId: string
+        + format: string
+        + width: number
+        + height: number
+    }
+}
+
+' ============ RELATIONSHIPS ============
+
+' User Relationships
+User "1" -- "0..*" Enrollment : enrolls in
+User "1" -- "0..1" Progress : has
+User "1" -- "0..*" IELTSTestResult : takes
+User "1" -- "0..*" ChatSession : has
+User "1" -- "0..*" VoiceChatSession : creates
+User "1" -- "0..*" Assessment : completes
+User *-- UserPreferences
+User *-- VoiceChatUsage
+User *-- "0..*" PendingPayment
+UserPreferences *-- NotificationSettings
+
+' Course Relationships
+Course "1" -- "0..*" Enrollment : enrolled by
+Course *-- "0..*" VocabularyItem
+Course *-- "0..*" GrammarItem
+Course *-- "0..*" CurriculumModule
+Enrollment *-- PaymentInfo
+
+' Progress Relationships
+Progress *-- VocabularyProgress
+Progress *-- ListeningProgress
+Progress *-- TestsProgress
+Progress *-- StudyStreak
+Progress *-- "0..*" WeeklyActivity
+Progress *-- "0..*" Achievement
+VocabularyProgress *-- "0..*" LearnedWord
+ListeningProgress *-- "0..*" ListeningSession
+TestsProgress *-- "0..*" TestResult
+WeeklyActivity *-- "0..*" DayActivity
+
+' IELTS Relationships
+IELTSExam "1" -- "0..*" IELTSTestResult : generates
+IELTSExam *-- "0..*" Passage
+IELTSExam *-- "0..*" Section
+Passage *-- "1..*" Question
+Section *-- "1..*" Question
+IELTSTestResult *-- "0..*" UserAnswer
+IELTSTestResult *-- Score
+
+' Chat Relationships
+ChatSession *-- "0..*" ChatMessage
+ChatSession *-- ChatContext
+ChatMessage *-- MessageMetadata
+VoiceChatSession *-- AudioMetadata
+
+' Service Dependencies
+VoiceChatService ..> WhisperService : uses
+VoiceChatService ..> TTSService : uses
+VoiceChatService ..> AIService : uses
+VoiceChatService ..> User : processes for
+VoiceChatService ..> VoiceChatSession : creates
+
+AICourseGeneratorService ..> Course : generates
+AIIELTSGeneratorService ..> IELTSExam : generates
+
+AnalyticsService ..> User : analyzes
+AnalyticsService ..> Enrollment : tracks
+AnalyticsService ..> Progress : monitors
+
+RealtimeService ..> User : notifies
+RealtimeService ..> ChatSession : broadcasts
+
+ImageUploadService ..> User : updates avatar
+
+AIService ..> User : analyzes
+AIService ..> Progress : evaluates
+AIService ..> Assessment : generates feedback
+AIService ..> ChatSession : responds to
+
+note right of VoiceChatService
+  Voice Chat Flow:
+  1. Whisper: Audio → Text
+  2. AI: Generate Response
+  3. TTS: Text → Audio
+end note
+
+note right of AIService
+  AI Features:
+  - Progress analysis
+  - Assessment feedback
+  - Learning recommendations
+  - Chatbot responses
+end note
+
+note bottom of User
+  Core Entity
+  Manages authentication,
+  profile, preferences,
+  and learning data
+end note
+
+note bottom of Course
+  Learning Content
+  Supports vocabulary
+  and grammar courses
+  with AI generation
+end note
+
+@enduml

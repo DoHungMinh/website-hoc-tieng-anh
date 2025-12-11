@@ -88,28 +88,35 @@ export const getIELTSExams = async (req: Request, res: Response) => {
 
     console.log('getIELTSExams called with params:', { type, difficulty, status, page, limit, search });
 
-    // Build filter object
+    // Validate and sanitize pagination
+    const pageNum = Math.max(1, parseInt(page as string) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit as string) || 10));
+    const skip = (pageNum - 1) * limitNum;
+
+    // Build filter object with input validation
     const filter: any = {};
     
     if (type && type !== 'all') {
       filter.type = type;
     }
     
-    if (difficulty && difficulty !== 'all') {
-      filter.difficulty = { $regex: difficulty, $options: 'i' };
+    if (difficulty && difficulty !== 'all' && typeof difficulty === 'string') {
+      // Sanitize difficulty input
+      const sanitizedDifficulty = difficulty.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.difficulty = { $regex: sanitizedDifficulty, $options: 'i' };
     }
     
     if (status && status !== 'all') {
       filter.status = status;
     }
     
-    if (search) {
-      filter.title = { $regex: search, $options: 'i' };
+    if (search && typeof search === 'string' && search.trim()) {
+      // Sanitize search input
+      const sanitizedSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.title = { $regex: sanitizedSearch, $options: 'i' };
     }
 
     console.log('Filter object:', filter);
-
-    const skip = (Number(page) - 1) * Number(limit);
     
     const exams = await IELTSExam.find(filter)
       .populate({
@@ -119,10 +126,11 @@ export const getIELTSExams = async (req: Request, res: Response) => {
       })
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(Number(limit))
+      .limit(limitNum)
+      .maxTimeMS(15000) // 15 second timeout
       .lean();
 
-    const total = await IELTSExam.countDocuments(filter);
+    const total = await IELTSExam.countDocuments(filter).maxTimeMS(10000);
     
     console.log(`Found ${exams.length} exams out of ${total} total`);
     
@@ -136,14 +144,24 @@ export const getIELTSExams = async (req: Request, res: Response) => {
       success: true,
       data: validExams,
       pagination: {
-        current: Number(page),
-        total: Math.ceil(total / Number(limit)),
+        current: pageNum,
+        total: Math.ceil(total / limitNum),
         count: total
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching IELTS exams:', error);
     console.error('Error details:', error);
+    
+    // Handle timeout errors
+    if (error.code === 50 || error.message?.includes('timeout')) {
+      res.status(504).json({
+        success: false,
+        message: 'Truy vấn mất quá nhiều thời gian, vui lòng thử lại'
+      });
+      return;
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Lỗi khi lấy danh sách đề thi',

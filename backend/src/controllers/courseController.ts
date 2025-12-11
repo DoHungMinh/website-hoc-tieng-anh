@@ -12,40 +12,67 @@ export const getCourses = async (req: Request, res: Response) => {
     try {
         const { search, type, level, status, page = 1, limit = 10 } = req.query;
 
+        // Validate and sanitize pagination
+        const pageNum = Math.max(1, parseInt(page as string) || 1);
+        const limitNum = Math.min(100, Math.max(1, parseInt(limit as string) || 10));
+        const skip = (pageNum - 1) * limitNum;
+
         const filter: any = {};
 
-        if (search) {
+        if (search && typeof search === 'string' && search.trim()) {
+            // Escape regex special characters
+            const sanitizedSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             filter.$or = [
-                { title: { $regex: search, $options: "i" } },
-                { description: { $regex: search, $options: "i" } },
-                { instructor: { $regex: search, $options: "i" } },
+                { title: { $regex: sanitizedSearch, $options: "i" } },
+                { description: { $regex: sanitizedSearch, $options: "i" } },
+                { instructor: { $regex: sanitizedSearch, $options: "i" } },
             ];
         }
 
-        if (type && type !== "all") filter.type = type;
-        if (level && level !== "all") filter.level = level;
-        if (status && status !== "all") filter.status = status;
+        // Validate enum values
+        const validTypes = ['vocabulary', 'grammar', 'conversation', 'ielts', 'toeic', 'business'];
+        const validLevels = ['beginner', 'elementary', 'intermediate', 'upper-intermediate', 'advanced'];
+        const validStatuses = ['draft', 'active', 'archived'];
 
-        const skip = (Number(page) - 1) * Number(limit);
+        if (type && type !== "all" && validTypes.includes(type as string)) {
+            filter.type = type;
+        }
+        if (level && level !== "all" && validLevels.includes(level as string)) {
+            filter.level = level;
+        }
+        if (status && status !== "all" && validStatuses.includes(status as string)) {
+            filter.status = status;
+        }
 
         const courses = await Course.find(filter)
             .skip(skip)
-            .limit(Number(limit))
-            .sort({ createdAt: -1 });
+            .limit(limitNum)
+            .sort({ createdAt: -1 })
+            .maxTimeMS(10000) // 10 second timeout
+            .lean();
 
-        const total = await Course.countDocuments(filter);
+        const total = await Course.countDocuments(filter).maxTimeMS(5000);
 
         res.json({
             success: true,
             data: courses,
             pagination: {
-                current: Number(page),
-                pages: Math.ceil(total / Number(limit)),
+                current: pageNum,
+                pages: Math.ceil(total / limitNum),
                 total,
             },
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Get courses error:", error);
+        
+        if (error.code === 50 || error.message?.includes('timeout')) {
+            res.status(504).json({
+                success: false,
+                message: "Truy vấn mất quá nhiều thời gian, vui lòng thử lại",
+            });
+            return;
+        }
+        
         res.status(500).json({
             success: false,
             message: "Lỗi khi lấy danh sách khóa học",
@@ -59,19 +86,39 @@ export const getPublicCourses = async (req: Request, res: Response) => {
         const { type, level } = req.query;
 
         const filter: any = { status: "active" };
-        if (type && type !== "all") filter.type = type;
-        if (level && level !== "all") filter.level = level;
+        
+        // Validate enum values
+        const validTypes = ['vocabulary', 'grammar', 'conversation', 'ielts', 'toeic', 'business'];
+        const validLevels = ['beginner', 'elementary', 'intermediate', 'upper-intermediate', 'advanced'];
+        
+        if (type && type !== "all" && validTypes.includes(type as string)) {
+            filter.type = type;
+        }
+        if (level && level !== "all" && validLevels.includes(level as string)) {
+            filter.level = level;
+        }
 
         const courses = await Course.find(filter)
             .select("-vocabulary -grammar") // Exclude detailed content for public view
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .maxTimeMS(10000)
+            .lean();
 
         res.json({
             success: true,
             data: courses,
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Get public courses error:", error);
+        
+        if (error.code === 50 || error.message?.includes('timeout')) {
+            res.status(504).json({
+                success: false,
+                message: "Truy vấn mất quá nhiều thời gian, vui lòng thử lại",
+            });
+            return;
+        }
+        
         res.status(500).json({
             success: false,
             message: "Lỗi khi lấy danh sách khóa học",
