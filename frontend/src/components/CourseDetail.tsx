@@ -12,6 +12,7 @@ import {
     Shield,
     Smartphone,
     Globe,
+    Volume2,
 } from "lucide-react";
 import { useEnrollment } from "../hooks/useEnrollment";
 import { useNotificationStore } from "../stores/notificationStore";
@@ -46,6 +47,7 @@ interface DetailCourse {
         id: string;
         word: string;
         pronunciation?: string;
+        audioUrl?: string;
         meaning: string;
         example?: string;
     }>;
@@ -78,7 +80,35 @@ const CourseDetail: React.FC<CourseDetailProps> = ({
         externalIsPurchased || false
     ); // Use external purchased status
     const [enrolling, setEnrolling] = useState(false);
+    const [playingAudio, setPlayingAudio] = useState<string | null>(null);
     const { addNotification } = useNotificationStore();
+
+    // Function to play audio pronunciation
+    const playAudio = (audioUrl: string, wordId: string) => {
+        const audio = new Audio(audioUrl);
+        setPlayingAudio(wordId);
+        
+        audio.onended = () => {
+            setPlayingAudio(null);
+        };
+        
+        audio.onerror = () => {
+            setPlayingAudio(null);
+            addNotification({
+                type: 'error',
+                message: 'Không thể phát audio. Vui lòng thử lại.',
+            });
+        };
+        
+        audio.play().catch((error) => {
+            console.error('Error playing audio:', error);
+            setPlayingAudio(null);
+            addNotification({
+                type: 'error',
+                message: 'Không thể phát audio. Vui lòng thử lại.',
+            });
+        });
+    };
 
     // PayOS states
     const [paymentData, setPaymentData] = useState<{
@@ -283,7 +313,7 @@ const CourseDetail: React.FC<CourseDetailProps> = ({
             console.log("Handling payment success, token found:", !!token);
 
             const response = await fetch(
-                `${import.meta.env.VITE_API_URL}/courses/payos-payment-success`,
+                `${import.meta.env.VITE_API_URL}/course/payos-payment-success`,
                 {
                     method: "POST",
                     headers: {
@@ -774,19 +804,35 @@ const CourseDetail: React.FC<CourseDetailProps> = ({
                                                         key={vocab.id || index}
                                                         className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                                                     >
-                                                        <div className="flex items-start justify-between mb-2">
-                                                            <h3 className="text-lg font-semibold text-blue-600">
-                                                                {vocab.word}
-                                                            </h3>
-                                                            {vocab.pronunciation && (
-                                                                <span className="text-sm text-gray-500 italic">
-                                                                    /
-                                                                    {
-                                                                        vocab.pronunciation
-                                                                    }
-                                                                    /
-                                                                </span>
-                                                            )}
+                                                        <div className="flex items-start gap-3 mb-2">
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center gap-2 mb-1">
+                                                                    <h3 className="text-lg font-semibold text-blue-600">
+                                                                        {vocab.word}
+                                                                    </h3>
+                                                                    {vocab.audioUrl && (
+                                                                        <button
+                                                                            onClick={() => playAudio(vocab.audioUrl!, vocab.id)}
+                                                                            disabled={playingAudio === vocab.id}
+                                                                            className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 relative group disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                            title="Nghe phát âm"
+                                                                        >
+                                                                            <Volume2 className={`h-4 w-4 text-white ${playingAudio === vocab.id ? 'animate-pulse' : ''}`} />
+                                                                            {playingAudio === vocab.id && (
+                                                                                <>
+                                                                                    <span className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-75"></span>
+                                                                                    <span className="absolute inset-0 rounded-full bg-green-300 animate-pulse opacity-50"></span>
+                                                                                </>
+                                                                            )}
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                                {vocab.pronunciation && (
+                                                                    <span className="text-sm text-gray-500 italic">
+                                                                        /{vocab.pronunciation}/
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                         <p className="text-gray-700 mb-2">
                                                             <span className="font-medium">

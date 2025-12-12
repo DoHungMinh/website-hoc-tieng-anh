@@ -65,7 +65,7 @@ class CourseAPI {
       }
     });
 
-    const response = await fetch(`${API_BASE_URL}/courses?${queryParams}`, {
+    const response = await fetch(`${API_BASE_URL}/course?${queryParams}`, {
       headers: this.getAuthHeaders()
     });
 
@@ -77,7 +77,7 @@ class CourseAPI {
   }
 
   async getCourseById(id: string) {
-    const response = await fetch(`${API_BASE_URL}/courses/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/course/${id}`, {
       headers: this.getAuthHeaders()
     });
 
@@ -89,7 +89,7 @@ class CourseAPI {
   }
 
   async createCourse(courseData: Omit<Course, '_id' | 'createdAt' | 'updatedAt'>) {
-    const response = await fetch(`${API_BASE_URL}/courses`, {
+    const response = await fetch(`${API_BASE_URL}/course`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(courseData)
@@ -103,7 +103,7 @@ class CourseAPI {
   }
 
   async updateCourse(id: string, courseData: Partial<Course>) {
-    const response = await fetch(`${API_BASE_URL}/courses/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/course/${id}`, {
       method: 'PUT',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(courseData)
@@ -117,7 +117,7 @@ class CourseAPI {
   }
 
   async deleteCourse(id: string) {
-    const response = await fetch(`${API_BASE_URL}/courses/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/course/${id}`, {
       method: 'DELETE',
       headers: this.getAuthHeaders()
     });
@@ -130,7 +130,7 @@ class CourseAPI {
   }
 
   async updateCourseStatus(id: string, status: string) {
-    const response = await fetch(`${API_BASE_URL}/courses/${id}/status`, {
+    const response = await fetch(`${API_BASE_URL}/course/${id}/status`, {
       method: 'PATCH',
       headers: this.getAuthHeaders(),
       body: JSON.stringify({ status })
@@ -144,7 +144,7 @@ class CourseAPI {
   }
 
   async getCourseStats() {
-    const response = await fetch(`${API_BASE_URL}/courses/stats`, {
+    const response = await fetch(`${API_BASE_URL}/course/stats`, {
       headers: this.getAuthHeaders()
     });
 
@@ -164,7 +164,7 @@ class CourseAPI {
       }
     });
 
-    const response = await fetch(`${API_BASE_URL}/courses/public?${queryParams}`);
+    const response = await fetch(`${API_BASE_URL}/course/public?${queryParams}`);
 
     if (!response.ok) {
       throw new Error('Failed to fetch public courses');
@@ -174,7 +174,7 @@ class CourseAPI {
   }
 
   async getPublicCourseById(id: string) {
-    const response = await fetch(`${API_BASE_URL}/courses/public/${id}`);
+    const response = await fetch(`${API_BASE_URL}/course/public/${id}`);
 
     if (!response.ok) {
       throw new Error('Failed to fetch course details');

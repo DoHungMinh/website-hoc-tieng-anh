@@ -17,6 +17,7 @@ export interface ICourse extends Document {
     id: string;
     word: string;
     pronunciation?: string;
+    audioUrl?: string;
     meaning: string;
     example?: string;
   }>;
@@ -54,6 +55,7 @@ const CourseSchema = new Schema<ICourse>({
     id: String,
     word: String,
     pronunciation: String,
+    audioUrl: String,
     meaning: String,
     example: String
   }],

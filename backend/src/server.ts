@@ -59,7 +59,9 @@ app.use((req, res, next) => {
     const aiGenerationRoutes = [
         '/api/ai/generate-ielts-reading',
         '/api/ai/generate-course',
-        '/api/chatbot'
+        '/api/chatbot',
+        '/generate-all-audio',
+        '/generate-word-audio'
     ];
     
     const isAIRoute = aiGenerationRoutes.some(route => req.path.includes(route));
@@ -73,11 +75,25 @@ app.use((req, res, next) => {
     return timeoutMiddleware(30000)(req, res, next);
 });
 
-// Rate limiting
+// Rate limiting for general routes
 const limiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || "900000"), // 15 minutes
     max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || "5000"), // Tăng từ 1000 lên 5000
     message: "Too many requests from this IP, please try again later.",
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => {
+        // Skip general limiter for admin routes (they have their own limiter)
+        const adminRoutes = ['/api/ielts', '/api/course', '/api/analytics', '/api/users'];
+        return adminRoutes.some(route => req.path.startsWith(route));
+    },
+});
+
+// Admin rate limiter - cao hơn nhưng vẫn có giới hạn để bảo vệ server
+const adminLimiter = rateLimit({
+    windowMs: 60000, // 1 phút
+    max: 200, // 200 requests/phút cho admin (cao hơn nhiều so với user)
+    message: "Too many admin requests, please slow down.",
     standardHeaders: true,
     legacyHeaders: false,
 });
@@ -163,6 +179,12 @@ app.use("/api/auth", authLimiter);
 // Apply PayOS specific rate limiter
 app.use("/api/payos", payosLimiter);
 
+// Apply admin rate limiter for admin routes
+app.use("/api/ielts", adminLimiter);
+app.use("/api/course", adminLimiter);
+app.use("/api/analytics", adminLimiter);
+app.use("/api/users", adminLimiter);
+
 // Apply general rate limiting to all other routes
 app.use((req, res, next) => {
     if (
@@ -170,7 +192,11 @@ app.use((req, res, next) => {
         req.path.includes("/admin/statistics") ||
         req.path.includes("/auth") ||
         req.path.includes("/payos") ||
-        req.path.includes("/payments")
+        req.path.includes("/payments") ||
+        req.path.includes("/ielts") ||
+        req.path.includes("/course") ||
+        req.path.includes("/analytics") ||
+        req.path.includes("/users")
     ) {
         // Skip general rate limiting for special endpoints
         return next();

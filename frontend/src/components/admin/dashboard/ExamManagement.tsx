@@ -112,12 +112,15 @@ const ExamManagement = () => {
                     : "Lỗi không xác định khi tải danh sách đề thi"
             );
 
-            // Retry logic
-            if (retryCount < 2) {
+            // Retry logic - KHÔNG retry khi gặp lỗi 429 (Too Many Requests)
+            const is429Error = error instanceof Error && error.message.includes('429');
+            if (retryCount < 2 && !is429Error) {
                 setTimeout(() => {
                     setRetryCount((prev) => prev + 1);
                     fetchExams(false);
                 }, 1000 * (retryCount + 1));
+            } else if (is429Error) {
+                console.warn('⚠️ Rate limit exceeded. Please wait before retrying.');
             }
         } finally {
             if (showLoadingState) {

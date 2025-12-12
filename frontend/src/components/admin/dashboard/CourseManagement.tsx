@@ -20,7 +20,9 @@ import {
   FileText,
   CheckCircle,
   Archive,
-  AlertCircle
+  AlertCircle,
+  Volume2,
+  Loader
 } from 'lucide-react';
 import { courseAPI, Course, CourseFilters } from '../../../services/courseAPI';
 import AICourseCreator from './AICourseCreator';
@@ -37,6 +39,8 @@ const CourseManagement: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [playingAudio, setPlayingAudio] = useState<string | null>(null);
+  const [generatingAudio, setGeneratingAudio] = useState<string | null>(null);
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -262,6 +266,111 @@ const CourseManagement: React.FC = () => {
     if (!selectedCourse?.vocabulary) return;
     const updated = selectedCourse.vocabulary.filter((_, i) => i !== index);
     setSelectedCourse({ ...selectedCourse, vocabulary: updated });
+  };
+
+  // Play audio pronunciation
+  const playAudio = (audioUrl: string, wordId: string) => {
+    const audio = new Audio(audioUrl);
+    setPlayingAudio(wordId);
+    
+    audio.onended = () => {
+      setPlayingAudio(null);
+    };
+    
+    audio.onerror = () => {
+      setPlayingAudio(null);
+      alert('Không thể phát audio. Vui lòng thử lại.');
+    };
+    
+    audio.play().catch((error) => {
+      console.error('Error playing audio:', error);
+      setPlayingAudio(null);
+      alert('Không thể phát audio. Vui lòng thử lại.');
+    });
+  };
+
+  // Generate audio for a specific word
+  const generateAudioForWord = async (courseId: string, wordIndex: number) => {
+    if (!selectedCourse?.vocabulary?.[wordIndex]) return;
+    
+    const word = selectedCourse.vocabulary[wordIndex].word;
+    if (!word) {
+      alert('Vui lòng nhập từ vựng trước khi tạo audio');
+      return;
+    }
+
+    setGeneratingAudio(`${courseId}-${wordIndex}`);
+    
+    try {
+      const response = await fetch(`http://localhost:5002/api/course/${courseId}/generate-word-audio`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ wordIndex })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate audio');
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.audioUrl) {
+        // Update the vocabulary item with the new audio URL
+        const updated = [...selectedCourse.vocabulary];
+        updated[wordIndex] = { ...updated[wordIndex], audioUrl: data.audioUrl };
+        setSelectedCourse({ ...selectedCourse, vocabulary: updated });
+        alert(`✅ Đã tạo audio cho từ "${word}"`);
+      }
+    } catch (error) {
+      console.error('Error generating audio:', error);
+      alert('❌ Lỗi khi tạo audio. Vui lòng thử lại.');
+    } finally {
+      setGeneratingAudio(null);
+    }
+  };
+
+  // Generate audio for all words in the course
+  const generateAllAudio = async (courseId: string) => {
+    if (!selectedCourse?.vocabulary?.length) {
+      alert('Không có từ vựng nào để tạo audio');
+      return;
+    }
+
+    const confirmation = confirm(`Bạn có chắc muốn tạo audio cho tất cả ${selectedCourse.vocabulary.length} từ vựng?`);
+    if (!confirmation) return;
+
+    setGeneratingAudio('all');
+
+    try {
+      const response = await fetch(`http://localhost:5002/api/course/${courseId}/generate-all-audio`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate audio');
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.course) {
+        setSelectedCourse(data.course);
+        alert(`✅ Đã tạo audio cho ${data.generatedCount} từ vựng!`);
+        // Refresh the course list
+        fetchCourses();
+      }
+    } catch (error) {
+      console.error('Error generating all audio:', error);
+      alert('❌ Lỗi khi tạo audio. Vui lòng thử lại.');
+    } finally {
+      setGeneratingAudio(null);
+    }
   };
 
   // Add grammar item
@@ -525,13 +634,34 @@ const CourseManagement: React.FC = () => {
                     <p className="text-sm text-gray-600">
                       Danh sách từ vựng ({selectedCourse.vocabulary?.length || 0} từ)
                     </p>
-                    <button
-                      onClick={addVocabularyItem}
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors duration-200"
-                    >
-                      <Plus className="h-4 w-4" />
-                      Thêm từ vựng
-                    </button>
+                    <div className="flex gap-2">
+                      {selectedCourse._id && selectedCourse.vocabulary && selectedCourse.vocabulary.length > 0 && (
+                        <button
+                          onClick={() => generateAllAudio(selectedCourse._id!)}
+                          disabled={generatingAudio === 'all'}
+                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {generatingAudio === 'all' ? (
+                            <>
+                              <Loader className="h-4 w-4 animate-spin" />
+                              Đang tạo audio...
+                            </>
+                          ) : (
+                            <>
+                              <Volume2 className="h-4 w-4" />
+                              Tạo audio tất cả
+                            </>
+                          )}
+                        </button>
+                      )}
+                      <button
+                        onClick={addVocabularyItem}
+                        className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors duration-200"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Thêm từ vựng
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -567,6 +697,65 @@ const CourseManagement: React.FC = () => {
                               className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500"
                               placeholder="/həˈloʊ/"
                             />
+                          </div>
+                        </div>
+                        
+                        {/* Audio Controls */}
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Audio phát âm</label>
+                          <div className="flex gap-2 items-center">
+                            {vocab.audioUrl ? (
+                              <>
+                                <button
+                                  onClick={() => playAudio(vocab.audioUrl!, vocab.id)}
+                                  disabled={playingAudio === vocab.id}
+                                  className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-300 hover:scale-110 relative group disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                                  title="Nghe phát âm"
+                                >
+                                  <Volume2 className={`h-5 w-5 text-white ${playingAudio === vocab.id ? 'animate-pulse' : ''}`} />
+                                  {playingAudio === vocab.id && (
+                                    <>
+                                      <span className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-75"></span>
+                                      <span className="absolute inset-0 rounded-full bg-green-300 animate-pulse opacity-50"></span>
+                                    </>
+                                  )}
+                                </button>
+                                <span className="text-xs text-green-600 font-medium">✓ Đã có audio</span>
+                                {selectedCourse._id && (
+                                  <button
+                                    onClick={() => generateAudioForWord(selectedCourse._id!, index)}
+                                    disabled={generatingAudio === `${selectedCourse._id}-${index}`}
+                                    className="text-xs text-purple-600 hover:text-purple-800 font-medium transition-colors"
+                                  >
+                                    {generatingAudio === `${selectedCourse._id}-${index}` ? 'Đang tạo...' : 'Tạo lại'}
+                                  </button>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                {selectedCourse._id ? (
+                                  <button
+                                    onClick={() => generateAudioForWord(selectedCourse._id!, index)}
+                                    disabled={!vocab.word || generatingAudio === `${selectedCourse._id}-${index}`}
+                                    className="flex items-center gap-1 px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {generatingAudio === `${selectedCourse._id}-${index}` ? (
+                                      <>
+                                        <Loader className="h-4 w-4 animate-spin" />
+                                        Đang tạo...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Volume2 className="h-4 w-4" />
+                                        Tạo audio
+                                      </>
+                                    )}
+                                  </button>
+                                ) : (
+                                  <span className="text-xs text-gray-500">Lưu khóa học trước để tạo audio</span>
+                                )}
+                              </>
+                            )}
                           </div>
                         </div>
                         
@@ -810,7 +999,21 @@ const CourseManagement: React.FC = () => {
                 {selectedCourse.vocabulary?.slice(0, 4).map((vocab) => (
                   <div key={vocab.id} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-semibold text-purple-600">{vocab.word}</h4>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold text-purple-600">{vocab.word}</h4>
+                        {vocab.audioUrl && (
+                          <button
+                            onClick={() => playAudio(vocab.audioUrl!, vocab.id)}
+                            className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-300 hover:scale-110 relative group"
+                            title="Nghe phát âm"
+                          >
+                            <Volume2 className="h-4 w-4 text-white" />
+                            {playingAudio === vocab.id && (
+                              <span className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-75"></span>
+                            )}
+                          </button>
+                        )}
+                      </div>
                       {vocab.pronunciation && (
                         <span className="text-xs text-gray-500">{vocab.pronunciation}</span>
                       )}

@@ -4,6 +4,7 @@ interface VocabularyItem {
   id: string;
   word: string;
   pronunciation?: string;
+  audioUrl?: string;
   meaning: string;
   example: string;
 }
@@ -136,6 +137,25 @@ class AICourseGeneratorService {
       
       if (actualCount < config.contentLength * 0.8) {
         console.warn(`⚠️ AI generated only ${actualCount} items, expected ${config.contentLength}`);
+      }
+      
+      // Generate audio for vocabulary words if pronunciation is included
+      if (config.includePronunciation && formattedCourse.vocabulary.length > 0) {
+        console.log(`🔊 Generating audio for ${formattedCourse.vocabulary.length} vocabulary words...`);
+        
+        for (let i = 0; i < formattedCourse.vocabulary.length; i++) {
+          const vocab = formattedCourse.vocabulary[i];
+          try {
+            const audioUrl = await this.generateAudioForWord(vocab.word);
+            formattedCourse.vocabulary[i].audioUrl = audioUrl;
+            console.log(`✅ [${i + 1}/${formattedCourse.vocabulary.length}] Audio created for "${vocab.word}"`);
+          } catch (error) {
+            console.error(`❌ [${i + 1}/${formattedCourse.vocabulary.length}] Failed to create audio for "${vocab.word}":`, error);
+            // Continue without audio if generation fails for this word
+          }
+        }
+        
+        console.log(`🎉 Audio generation complete!`);
       }
       
       return formattedCourse;
@@ -733,6 +753,72 @@ ${this.getDifficultyInstructions(config.difficulty, 'grammar')}
     };
 
     return levelBasedGrammar[level as keyof typeof levelBasedGrammar] || levelBasedGrammar['A1'];
+  }
+
+  /**
+   * Generate audio pronunciation for a single word using OpenAI TTS
+   * @param word - The word to generate audio for
+   * @returns Promise<string> - URL of the uploaded audio file
+   */
+  async generateAudioForWord(word: string): Promise<string> {
+    try {
+      console.log(`🔊 Generating audio for word: "${word}"`);
+
+      // Check if OpenAI is configured
+      if (!process.env.OPENAI_API_KEY) {
+        throw new Error('OpenAI API key not configured');
+      }
+
+      // Generate audio using OpenAI TTS
+      const mp3Response = await this.openai.audio.speech.create({
+        model: "tts-1", // Fast, cost-effective model
+        voice: "nova", // Clear female voice, good for learning
+        input: word,
+        speed: 0.85 // Slightly slower for clear pronunciation
+      });
+
+      // Convert response to buffer
+      const buffer = Buffer.from(await mp3Response.arrayBuffer());
+
+      // Upload to Cloudinary
+      const audioUrl = await this.uploadAudioToCloudinary(buffer, word);
+
+      console.log(`✅ Audio generated and uploaded: ${audioUrl}`);
+      return audioUrl;
+    } catch (error) {
+      console.error(`❌ Failed to generate audio for "${word}":`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Upload audio buffer to Cloudinary
+   * @param buffer - Audio file buffer
+   * @param word - Word name for file identification
+   * @returns Promise<string> - Secure URL of uploaded file
+   */
+  private async uploadAudioToCloudinary(buffer: Buffer, word: string): Promise<string> {
+    const cloudinary = require('cloudinary').v2;
+
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          resource_type: 'video', // MP3 files are uploaded as 'video' type
+          folder: 'vocabulary-audio',
+          public_id: `word-${word.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
+          format: 'mp3'
+        },
+        (error: any, result: any) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(result.secure_url);
+          }
+        }
+      );
+      
+      uploadStream.end(buffer);
+    });
   }
 }
 

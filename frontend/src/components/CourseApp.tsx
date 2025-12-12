@@ -36,6 +36,7 @@ type DetailCourse = {
     id: string;
     word: string;
     pronunciation?: string;
+    audioUrl?: string;
     meaning: string;
     example?: string;
   }>;

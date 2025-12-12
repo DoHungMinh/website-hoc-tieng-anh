@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Course, { ICourse } from "../models/Course";
 import Enrollment from "../models/Enrollment";
 import { User } from "../models/User";
+import { aiCourseGeneratorService } from "../services/aiCourseGeneratorService";
 
 // Import PayOS service
 const payOSService = require("../../payos/payos-service");
@@ -646,6 +647,178 @@ export const handlePayOSPaymentSuccess = async (
                 process.env.NODE_ENV === "development"
                     ? error.message
                     : undefined,
+        });
+    }
+};
+
+// Generate audio for a specific word in a course
+export const generateWordAudio = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params; // course ID
+        const { wordIndex } = req.body;
+
+        if (wordIndex === undefined || wordIndex < 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Word index is required",
+            });
+        }
+
+        const course = await Course.findById(id);
+        if (!course) {
+            return res.status(404).json({
+                success: false,
+                message: "Khóa học không tồn tại",
+            });
+        }
+
+        if (course.type !== 'vocabulary') {
+            return res.status(400).json({
+                success: false,
+                message: "Chỉ có thể tạo audio cho khóa học từ vựng",
+            });
+        }
+
+        if (!course.vocabulary || wordIndex >= course.vocabulary.length) {
+            return res.status(400).json({
+                success: false,
+                message: "Word index không hợp lệ",
+            });
+        }
+
+        const word = course.vocabulary[wordIndex].word;
+        if (!word) {
+            return res.status(400).json({
+                success: false,
+                message: "Từ vựng không có nội dung",
+            });
+        }
+
+        console.log(`🔊 Generating audio for word "${word}" in course "${course.title}"`);
+
+        // Generate audio
+        const audioUrl = await aiCourseGeneratorService.generateAudioForWord(word);
+
+        // Update course with new audio URL
+        course.vocabulary[wordIndex].audioUrl = audioUrl;
+        await course.save();
+
+        // Kiểm tra xem response đã được gửi chưa
+        if (res.headersSent) {
+            console.log('⚠️ Response already sent (timeout), skipping final response');
+            return;
+        }
+
+        return res.json({
+            success: true,
+            audioUrl,
+            message: `Đã tạo audio cho từ "${word}"`,
+        });
+    } catch (error: any) {
+        console.error("❌ Error generating word audio:", error);
+        
+        // Kiểm tra xem response đã được gửi chưa
+        if (res.headersSent) {
+            console.log('⚠️ Response already sent, skipping error response');
+            return;
+        }
+        
+        return res.status(500).json({
+            success: false,
+            message: "Lỗi khi tạo audio",
+            error: process.env.NODE_ENV === "development" ? error.message : undefined,
+        });
+    }
+};
+
+// Generate audio for all words in a vocabulary course
+export const generateAllAudio = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params; // course ID
+
+        const course = await Course.findById(id);
+        if (!course) {
+            return res.status(404).json({
+                success: false,
+                message: "Khóa học không tồn tại",
+            });
+        }
+
+        if (course.type !== 'vocabulary') {
+            return res.status(400).json({
+                success: false,
+                message: "Chỉ có thể tạo audio cho khóa học từ vựng",
+            });
+        }
+
+        if (!course.vocabulary || course.vocabulary.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Khóa học không có từ vựng nào",
+            });
+        }
+
+        console.log(`🔊 Generating audio for all ${course.vocabulary.length} words in course "${course.title}"`);
+
+        let successCount = 0;
+        let failCount = 0;
+
+        // Generate audio for each word
+        for (let i = 0; i < course.vocabulary.length; i++) {
+            const vocab = course.vocabulary[i];
+            
+            // Skip if already has audio
+            if (vocab.audioUrl) {
+                console.log(`⏭️ [${i + 1}/${course.vocabulary.length}] Skipping "${vocab.word}" (already has audio)`);
+                continue;
+            }
+
+            if (!vocab.word) {
+                console.log(`⏭️ [${i + 1}/${course.vocabulary.length}] Skipping empty word`);
+                continue;
+            }
+
+            try {
+                const audioUrl = await aiCourseGeneratorService.generateAudioForWord(vocab.word);
+                course.vocabulary[i].audioUrl = audioUrl;
+                successCount++;
+                console.log(`✅ [${i + 1}/${course.vocabulary.length}] Generated audio for "${vocab.word}"`);
+            } catch (error) {
+                failCount++;
+                console.error(`❌ [${i + 1}/${course.vocabulary.length}] Failed to generate audio for "${vocab.word}":`, error);
+            }
+        }
+
+        // Save updated course
+        await course.save();
+
+        // Kiểm tra xem response đã được gửi chưa (do timeout)
+        if (res.headersSent) {
+            console.log('⚠️ Response already sent (timeout), skipping final response');
+            return;
+        }
+
+        return res.json({
+            success: true,
+            course,
+            generatedCount: successCount,
+            failedCount: failCount,
+            totalWords: course.vocabulary.length,
+            message: `Đã tạo audio cho ${successCount}/${course.vocabulary.length} từ vựng`,
+        });
+    } catch (error: any) {
+        console.error("❌ Error generating all audio:", error);
+        
+        // Kiểm tra xem response đã được gửi chưa
+        if (res.headersSent) {
+            console.log('⚠️ Response already sent, skipping error response');
+            return;
+        }
+        
+        return res.status(500).json({
+            success: false,
+            message: "Lỗi khi tạo audio",
+            error: process.env.NODE_ENV === "development" ? error.message : undefined,
         });
     }
 };

@@ -69,7 +69,7 @@ export const useEnrollment = () => {
       setError(null);
 
       console.log('🔄 Fetching fresh enrollment data');
-      const response = await fetch(`${API_BASE}/courses/enrollments`, {
+      const response = await fetch(`${API_BASE}/course/enrollments`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -109,7 +109,7 @@ export const useEnrollment = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${API_BASE}/courses/${courseId}/enroll`, {
+      const response = await fetch(`${API_BASE}/course/${courseId}/enroll`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

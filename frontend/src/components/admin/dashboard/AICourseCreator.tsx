@@ -374,18 +374,37 @@ const AICourseCreator: React.FC<AICourseCreatorProps> = ({ onCourseGenerated }) 
                 <h4 className="font-medium text-gray-900">Tùy chọn nâng cao</h4>
                 
                 {config.type === 'vocabulary' && (
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <label className="font-medium text-gray-900">Bao gồm phát âm</label>
-                      <p className="text-sm text-gray-600">Thêm ký hiệu phiên âm IPA</p>
+                  <>
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <label className="font-medium text-gray-900">Bao gồm phát âm</label>
+                        <p className="text-sm text-gray-600">Thêm ký hiệu phiên âm IPA</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={config.includePronunciation}
+                        onChange={(e) => setConfig({ ...config, includePronunciation: e.target.checked })}
+                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                      />
                     </div>
-                    <input
-                      type="checkbox"
-                      checked={config.includePronunciation}
-                      onChange={(e) => setConfig({ ...config, includePronunciation: e.target.checked })}
-                      className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                    />
-                  </div>
+                    
+                    <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-lime-50 border border-green-200 rounded-lg">
+                      <div>
+                        <label className="font-medium text-gray-900 flex items-center gap-2">
+                          🔊 Tạo audio phát âm tự động
+                          <span className="px-2 py-0.5 text-xs bg-green-600 text-white rounded-full">Mới</span>
+                        </label>
+                        <p className="text-sm text-green-700">AI sẽ tạo audio phát âm chuẩn cho từng từ vựng (OpenAI TTS)</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={config.includePronunciation}
+                        disabled={!config.includePronunciation}
+                        onChange={(e) => setConfig({ ...config, includePronunciation: e.target.checked })}
+                        className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded disabled:opacity-50"
+                      />
+                    </div>
+                  </>
                 )}
 
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
