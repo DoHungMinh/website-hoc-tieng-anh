@@ -6,8 +6,10 @@ import {
     CreditCard,
     Calendar,
     RefreshCw,
+    FileText,
 } from "lucide-react";
 import { formatDateVN } from "../../../utils/dateUtils";
+import { generateMonthlyPaymentReport } from "../../../utils/pdfGenerator";
 
 // Interfaces for type safety
 interface PaymentStats {
@@ -85,6 +87,18 @@ const PaymentManagement: React.FC = () => {
 
     const [fromDate, setFromDate] = useState<string>(getDefaultFromDate());
     const [toDate, setToDate] = useState<string>(getDefaultToDate());
+    
+    // PDF Export states
+    const [isExporting, setIsExporting] = useState(false);
+    const [showExportModal, setShowExportModal] = useState(false);
+    const [exportMonth, setExportMonth] = useState(() => {
+        const now = new Date();
+        return now.getMonth() + 1; // 1-12
+    });
+    const [exportYear, setExportYear] = useState(() => {
+        const now = new Date();
+        return now.getFullYear();
+    });
 
     // Helper function for retrying failed requests
     const retryRequest = async (
@@ -304,6 +318,65 @@ const PaymentManagement: React.FC = () => {
         }
     };
 
+    // Export monthly payment report to PDF
+    const handleExportPDF = async () => {
+        try {
+            setIsExporting(true);
+            setError(null);
+
+            const token =
+                localStorage.getItem("adminToken") ||
+                localStorage.getItem("token");
+
+            if (!token) {
+                throw new Error("No authentication token found");
+            }
+
+            console.log(`📥 Fetching monthly report data for ${exportMonth}/${exportYear}...`);
+
+            // Gọi API lấy dữ liệu theo tháng
+            const response = await fetch(
+                `/api/payments/report/monthly?month=${exportMonth}&year=${exportYear}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch report data: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+
+            if (!result.success || !result.data) {
+                throw new Error(result.message || "Failed to fetch report data");
+            }
+
+            console.log(`✅ Got ${result.data.payments.length} transactions for report`);
+
+            // Generate PDF
+            const fileName = generateMonthlyPaymentReport(result.data);
+            
+            console.log(`✅ PDF exported successfully: ${fileName}`);
+            
+            // Đóng modal
+            setShowExportModal(false);
+            
+            // Hiển thị thông báo thành công
+            alert(`✅ Đã xuất báo cáo thành công!\nFile: ${fileName}`);
+
+        } catch (error: any) {
+            console.error("❌ Export PDF error:", error);
+            setError(error.message || "Lỗi khi xuất báo cáo PDF");
+            alert(`❌ Lỗi: ${error.message || "Không thể xuất báo cáo"}`);
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     // Load data on component mount
     useEffect(() => {
         fetchPaymentStats();
@@ -495,9 +568,11 @@ const PaymentManagement: React.FC = () => {
                             ? "Đang tải..."
                             : "Làm mới"}
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 text-white transition-colors duration-200 bg-purple-600 rounded-lg hover:bg-purple-700">
-                        <Download className="w-4 h-4" />
-                        Xuất báo cáo
+                    <button className="flex items-center gap-2 px-4 py-2 text-white transition-colors duration-200 bg-purple-600 rounded-lg hover:bg-purple-700"
+                        onClick={() => setShowExportModal(true)}
+                    >
+                        <FileText className="w-4 h-4" />
+                        Xuất báo cáo PDF
                     </button>
                 </div>
             </div>
@@ -896,6 +971,112 @@ const PaymentManagement: React.FC = () => {
                         </div>
                     )}
             </div>
+
+            {/* Export Modal */}
+            {showExportModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="w-full max-w-md p-6 bg-white rounded-xl shadow-2xl">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                <FileText className="w-6 h-6 text-purple-600" />
+                                Xuất Báo Cáo PDF
+                            </h3>
+                            <button
+                                onClick={() => setShowExportModal(false)}
+                                disabled={isExporting}
+                                className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div className="space-y-4 mb-6">
+                            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <p className="text-sm text-blue-800">
+                                    📊 Báo cáo sẽ bao gồm tất cả giao dịch từ ngày 1 đến hết tháng đã chọn
+                                </p>
+                            </div>
+
+                            {/* Month Selector */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Chọn tháng
+                                </label>
+                                <select
+                                    value={exportMonth}
+                                    onChange={(e) => setExportMonth(parseInt(e.target.value))}
+                                    disabled={isExporting}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                >
+                                    {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                                        <option key={month} value={month}>
+                                            Tháng {month}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Year Selector */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Chọn năm
+                                </label>
+                                <select
+                                    value={exportYear}
+                                    onChange={(e) => setExportYear(parseInt(e.target.value))}
+                                    disabled={isExporting}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                >
+                                    {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                                        <option key={year} value={year}>
+                                            Năm {year}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Preview Info */}
+                            <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <p className="text-sm text-gray-600">
+                                    <span className="font-medium">Kỳ báo cáo:</span>
+                                    <br />
+                                    01/{exportMonth.toString().padStart(2, '0')}/{exportYear} - {new Date(exportYear, exportMonth, 0).getDate()}/{exportMonth.toString().padStart(2, '0')}/{exportYear}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowExportModal(false)}
+                                disabled={isExporting}
+                                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                onClick={handleExportPDF}
+                                disabled={isExporting}
+                                className="flex-1 px-4 py-2 text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                {isExporting ? (
+                                    <>
+                                        <RefreshCw className="w-4 h-4 animate-spin" />
+                                        Đang xuất...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Download className="w-4 h-4" />
+                                        Xuất PDF
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

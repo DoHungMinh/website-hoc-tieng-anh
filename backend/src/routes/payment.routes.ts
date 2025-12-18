@@ -395,4 +395,81 @@ router.get(
     }
 );
 
+// Get monthly payment report data (for PDF export)
+router.get(
+    "/report/monthly",
+    authenticateToken,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+        try {
+            const PaymentHistory = require("../../payos/PaymentHistory");
+            const { month, year } = req.query;
+
+            // Nếu không truyền month/year thì lấy tháng hiện tại
+            const now = new Date();
+            const targetMonth = month ? parseInt(month as string) : now.getMonth() + 1;
+            const targetYear = year ? parseInt(year as string) : now.getFullYear();
+
+            console.log(`📊 Generating report for: ${targetMonth}/${targetYear}`);
+
+            // Tính ngày đầu và cuối tháng (theo giờ Việt Nam)
+            const startOfMonth = new Date(targetYear, targetMonth - 1, 1, 0, 0, 0);
+            const endOfMonth = new Date(targetYear, targetMonth, 0, 23, 59, 59);
+
+            console.log(`📅 Month range (Vietnam time): ${startOfMonth.toLocaleString('vi-VN')} → ${endOfMonth.toLocaleString('vi-VN')}`);
+
+            // Lấy tất cả giao dịch trong tháng
+            const payments = await PaymentHistory.find({
+                createdAt: {
+                    $gte: startOfMonth,
+                    $lte: endOfMonth,
+                },
+            })
+                .populate("courseId", "title type level price")
+                .populate("userId", "fullName email phone")
+                .sort({ createdAt: 1 })
+                .lean();
+
+            console.log(`💳 Found ${payments.length} payments in month ${targetMonth}/${targetYear}`);
+
+            // Tính toán thống kê
+            const totalRevenue = payments
+                .filter((p: any) => p.status === "PAID")
+                .reduce((sum: number, p: any) => sum + p.amount, 0);
+
+            const stats = {
+                totalTransactions: payments.length,
+                successfulTransactions: payments.filter((p: any) => p.status === "PAID").length,
+                failedTransactions: payments.filter((p: any) => p.status === "FAILED" || p.status === "CANCELLED").length,
+                pendingTransactions: payments.filter((p: any) => p.status === "PENDING" || p.status === "PROCESSING").length,
+                totalRevenue,
+                averageTransaction: payments.length > 0 ? totalRevenue / payments.filter((p: any) => p.status === "PAID").length : 0,
+            };
+
+            res.json({
+                success: true,
+                data: {
+                    month: targetMonth,
+                    year: targetYear,
+                    monthName: new Date(targetYear, targetMonth - 1).toLocaleString('vi-VN', { month: 'long' }),
+                    startDate: startOfMonth.toISOString(),
+                    endDate: endOfMonth.toISOString(),
+                    payments,
+                    stats,
+                },
+            });
+        } catch (error: any) {
+            console.error("❌ Get monthly report error:", error);
+            res.status(500).json({
+                success: false,
+                message: "Lỗi khi tạo báo cáo tháng",
+                error:
+                    process.env.NODE_ENV === "development"
+                        ? error.message
+                        : undefined,
+            });
+        }
+    }
+);
+
 export default router;
