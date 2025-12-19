@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { PlayCircle, CheckCircle, Star, Clock } from 'lucide-react';
-import IELTSCenter from './ielts/IELTSCenter';
+import VideoListeningLibrary from './video/VideoListeningLibrary';
 import RecentTestHistory from './ielts/RecentTestHistory';
 import YouTubePlayer from './YouTubePlayer';
 
@@ -22,7 +22,7 @@ interface PracticeItem {
 }
 
 const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
-  const [showIELTS, setShowIELTS] = useState(false);
+  const [showVideoListening, setShowVideoListening] = useState(false);
   const [youtubePlayer, setYoutubePlayer] = useState<{
     isOpen: boolean;
     playlistId: string;
@@ -33,18 +33,18 @@ const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
     title: ''
   });
 
-  if (showIELTS) {
-    return <IELTSCenter />;
+  if (showVideoListening) {
+    return <VideoListeningLibrary onBack={() => setShowVideoListening(false)} />;
   }
   const practiceItems: PracticeItem[] = [
     {
-      title: 'IELTS Practice Center',
+      title: 'VIDEO LISTENING EXERCISE',
       level: 'All Levels',
       duration: 'Flexible',
       rating: 4.9,
       image: 'https://images.pexels.com/photos/3184338/pexels-photo-3184338.jpeg?auto=compress&cs=tinysrgb&w=400',
       isIELTS: true,
-      description: 'Luyện thi IELTS Reading & Listening với bộ đề thực tế và AI hỗ trợ'
+      description: 'Luyện nghe tiếng Anh qua video YouTube với bài tập điền từ vào chỗ trống - Miễn phí & hiệu quả'
     },
     {
       title: 'Bài tập từ vựng cơ bản',
@@ -150,7 +150,7 @@ const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
                 <button 
                   onClick={() => {
                     if (item.isIELTS) {
-                      setShowIELTS(true);
+                      setShowVideoListening(true);
                     } else if (item.courseType === 'vocabulary') {
                       onNavigate?.('courses');
                     } else if (item.youtubePlaylistId) {
@@ -170,7 +170,7 @@ const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
                   }`}
                 >
                   <CheckCircle className="h-5 w-5" />
-                  {item.isIELTS ? 'Vào IELTS Center' : 'Tiếp tục học'}
+                  {item.isIELTS ? 'Vào Video Listening' : 'Tiếp tục học'}
                 </button>
               </div>
             </div>
@@ -182,7 +182,7 @@ const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
           <div className="xl:col-span-1">
             <div className="sticky top-8">
               <RecentTestHistory 
-                onViewAll={() => setShowIELTS(true)}
+                onViewAll={() => setShowVideoListening(true)}
               />
             </div>
           </div>
