@@ -1,4 +1,4 @@
-import { API_BASE_URL, STORAGE_KEYS } from '../utils/constants';
+import { API_BASE_URL, STORAGE_KEYS } from '@/utils/constants';
 
 export type VoiceOption = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
 

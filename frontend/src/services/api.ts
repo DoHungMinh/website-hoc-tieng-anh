@@ -1,5 +1,5 @@
-import { API_BASE_URL, API_ENDPOINTS, STORAGE_KEYS } from '../utils/constants';
-import { Toast } from '../utils/toast';
+import { API_BASE_URL, API_ENDPOINTS, STORAGE_KEYS } from '@/utils/constants';
+import { Toast } from '@/utils/toast';
 
 // Types for API responses
 interface ApiResponse<T = unknown> {

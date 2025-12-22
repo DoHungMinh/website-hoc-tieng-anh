@@ -14,9 +14,9 @@ import {
     Globe,
     Volume2,
 } from "lucide-react";
-import { useEnrollment } from "../hooks/useEnrollment";
-import { useNotificationStore } from "../stores/notificationStore";
-import { STORAGE_KEYS } from "../utils/constants";
+import { useEnrollment } from "@/hooks/useEnrollment";
+import { useNotificationStore } from "@/stores/notificationStore";
+import { STORAGE_KEYS } from "@/utils/constants";
 
 interface DetailCourse {
     id: string;

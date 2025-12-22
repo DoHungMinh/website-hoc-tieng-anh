@@ -15,7 +15,7 @@ import {
 import CreateIELTSExam from "./CreateIELTSExam";
 import EditIELTSExam from "./EditIELTSExam";
 import AIIELTSReadingCreator from "./AIIELTSReadingCreator";
-import { AIGeneratedIELTSReading } from "../../../services/aiIELTSService";
+import { AIGeneratedIELTSReading } from "@/services/aiIELTSService";
 
 interface Exam {
     _id: string;

@@ -8,8 +8,8 @@ import {
     RefreshCw,
     FileText,
 } from "lucide-react";
-import { formatDateVN } from "../../../utils/dateUtils";
-import { generateMonthlyPaymentReport } from "../../../utils/pdfGenerator";
+import { formatDateVN } from "@/utils/dateUtils";
+import { generateMonthlyPaymentReport } from "@/utils/pdfGenerator";
 
 // Interfaces for type safety
 interface PaymentStats {

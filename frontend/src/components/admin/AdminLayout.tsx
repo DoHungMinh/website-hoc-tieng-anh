@@ -10,7 +10,7 @@ import {
     X,
     Shield,
 } from "lucide-react";
-import { useAuthStore } from "../../stores/authStore";
+import { useAuthStore } from "@/stores/authStore";
 
 interface AdminLayoutProps {
     children: React.ReactNode;

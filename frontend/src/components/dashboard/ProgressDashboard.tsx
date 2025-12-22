@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { TrendingUp, Calendar, Award, Target, Trophy, Medal, Star, BookOpen, User } from 'lucide-react';
-import { Progress as ProgressData } from '../../types';
+import { Progress as ProgressData } from '@/types';
 
 interface ProgressDashboardProps {
   onNavigate?: (page: string) => void;

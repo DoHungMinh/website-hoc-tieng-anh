@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, Send, X, Bot, User, Minimize2, TrendingUp, BookOpen, Expand, Shrink, Mic, Keyboard } from 'lucide-react';
-import { apiService } from '../services/api';
-import { useAuthStore } from '../stores/authStore';
+import { apiService } from '@/services/api';
+import { useAuthStore } from '@/stores/authStore';
 import { VoiceChat } from './VoiceChat';
 
 interface Message {

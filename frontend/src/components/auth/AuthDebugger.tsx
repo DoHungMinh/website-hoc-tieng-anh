@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useAuthStore } from '../stores/authStore';
-import { STORAGE_KEYS } from '../utils/constants';
+import { useAuthStore } from '@/stores/authStore';
+import { STORAGE_KEYS } from '@/utils/constants';
 
 export const AuthDebugger: React.FC = () => {
   const { user, logout } = useAuthStore();

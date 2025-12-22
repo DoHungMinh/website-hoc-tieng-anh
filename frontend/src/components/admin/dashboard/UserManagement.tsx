@@ -12,7 +12,7 @@ import {
   Globe,
   RefreshCw
 } from 'lucide-react';
-import AvatarDisplay from '../../AvatarDisplay';
+import AvatarDisplay from '@/components/common/AvatarDisplay';
 
 interface User {
   _id: string;

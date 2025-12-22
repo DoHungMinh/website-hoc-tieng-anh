@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import CoursesPage from './CoursesPage';
 import CourseDetail from './CourseDetail';
-import PurchasedCourses from './PurchasedCourses';
-import { courseAPI, Course } from '../services/courseAPI';
-import { useAuthStore } from '../stores/authStore';
-import { useEnrollment } from '../hooks/useEnrollment';
+import PurchasedCourses from '../dashboard/PurchasedCourses';
+import { courseAPI, Course } from '@/services/courseAPI';
+import { useAuthStore } from '@/stores/authStore';
+import { useEnrollment } from '@/hooks/useEnrollment';
 
 // Import DetailCourse type từ CourseDetail
 type DetailCourse = {
@@ -67,8 +67,8 @@ const CourseApp: React.FC<CourseAppProps> = ({ onBack, onAuthRequired }) => {
 
   // Check if a course is purchased by checking enrollments
   const isCourseEnrolled = (courseId: string): boolean => {
-    return enrollments?.some(enrollment => 
-      enrollment?.courseId && 
+    return enrollments?.some(enrollment =>
+      enrollment?.courseId &&
       enrollment.courseId._id === courseId
     ) || false;
   };
@@ -111,7 +111,7 @@ const CourseApp: React.FC<CourseAppProps> = ({ onBack, onAuthRequired }) => {
     try {
       console.log('🎯 handlePurchasedCourseSelect called with courseId:', courseId);
       console.log('📋 Current enrollments:', enrollments);
-      
+
       // Check if course is in cache first
       if (courseCache.has(courseId)) {
         console.log('📋 Using cached course data for:', courseId);
@@ -126,8 +126,8 @@ const CourseApp: React.FC<CourseAppProps> = ({ onBack, onAuthRequired }) => {
       }
 
       // Check if we have course data from enrollments first
-      const enrollment = enrollments?.find(e => 
-        e.courseId && 
+      const enrollment = enrollments?.find(e =>
+        e.courseId &&
         e.courseId._id === courseId
       );
       if (enrollment && enrollment.courseId) {
@@ -142,10 +142,10 @@ const CourseApp: React.FC<CourseAppProps> = ({ onBack, onAuthRequired }) => {
               ...response.data,
               isPurchased: true // Ensure full content access
             } as Course & { isPurchased: boolean };
-            
+
             // Cache the course data
             setCourseCache(prev => new Map(prev.set(courseId, courseData)));
-            
+
             setSelectedCourse(courseData);
             setPurchasedCourses(prev => new Set([...prev, courseId])); // Mark as purchased
             setCourseSource('purchased'); // Mark as accessed from purchased courses
@@ -167,7 +167,7 @@ const CourseApp: React.FC<CourseAppProps> = ({ onBack, onAuthRequired }) => {
             rating: 4.8,
             reviews: []
           } as Course & { isPurchased: boolean };
-          
+
           setCourseCache(prev => new Map(prev.set(courseId, courseData)));
           setSelectedCourse(courseData);
           setPurchasedCourses(prev => new Set([...prev, courseId])); // Mark as purchased
@@ -185,10 +185,10 @@ const CourseApp: React.FC<CourseAppProps> = ({ onBack, onAuthRequired }) => {
           ...response.data,
           isPurchased: true // Ensure full content access
         } as Course & { isPurchased: boolean };
-        
+
         // Cache the course data
         setCourseCache(prev => new Map(prev.set(courseId, courseData)));
-        
+
         setSelectedCourse(courseData);
         setPurchasedCourses(prev => new Set([...prev, courseId])); // Mark as purchased
         setCourseSource('purchased'); // Mark as accessed from purchased courses
@@ -228,7 +228,7 @@ const CourseApp: React.FC<CourseAppProps> = ({ onBack, onAuthRequired }) => {
         'Bạn cần đăng nhập để mua khóa học.\n\n' +
         'Nhấn OK để chuyển đến trang đăng nhập, hoặc Cancel để tiếp tục xem khóa học.'
       );
-      
+
       if (confirmLogin && onAuthRequired) {
         onAuthRequired();
       }
@@ -247,16 +247,16 @@ const CourseApp: React.FC<CourseAppProps> = ({ onBack, onAuthRequired }) => {
       `Sau khi mua thành công, bạn sẽ có thể truy cập toàn bộ nội dung khóa học.\n\n` +
       `(Nhấn OK để tiếp tục đến trang thanh toán)`
     );
-    
+
     if (confirmPurchase) {
       try {
         // In a real app, this would redirect to payment gateway
         // For now, simulate successful payment and enrollment
         setPurchasedCourses(prev => new Set(prev).add(courseId));
-        
+
         // Refresh enrollments to get the latest data
         await fetchEnrollments();
-        
+
         alert('🎉 Chúc mừng! Bạn đã mua khóa học thành công!\n\nBây giờ bạn có thể truy cập toàn bộ nội dung khóa học.');
       } catch (error) {
         console.error('Enrollment error:', error);
@@ -355,7 +355,7 @@ const CourseApp: React.FC<CourseAppProps> = ({ onBack, onAuthRequired }) => {
     ];
   };
 
-  const generateCurriculum = (level: string, type: string): Array<{module: string; lessons: string[]}> => {
+  const generateCurriculum = (level: string, type: string): Array<{ module: string; lessons: string[] }> => {
     const curriculumTemplates = {
       vocabulary: {
         'A1': [
@@ -469,7 +469,7 @@ const CourseApp: React.FC<CourseAppProps> = ({ onBack, onAuthRequired }) => {
     console.log('🔄 Converting API course to DetailCourse:', apiCourse);
     console.log('🔤 API Course vocabulary:', apiCourse.vocabulary);
     console.log('📝 API Course grammar:', apiCourse.grammar);
-    
+
     const detailCourse = {
       id: apiCourse._id!,
       title: apiCourse.title,
@@ -495,17 +495,17 @@ const CourseApp: React.FC<CourseAppProps> = ({ onBack, onAuthRequired }) => {
       vocabulary: apiCourse.vocabulary || [],
       grammar: apiCourse.grammar || []
     };
-    
+
     console.log('✅ Converted DetailCourse vocabulary:', detailCourse.vocabulary);
     console.log('✅ Converted DetailCourse grammar:', detailCourse.grammar);
-    
+
     return detailCourse;
   };
 
   // Main courses page
   if (currentView === 'main') {
     return (
-      <CoursesPage 
+      <CoursesPage
         onCourseTypeSelect={handleCourseTypeSelect}
         onBack={handleBack}
         purchasedCourseIds={getPurchasedCourseIds()}
@@ -516,7 +516,7 @@ const CourseApp: React.FC<CourseAppProps> = ({ onBack, onAuthRequired }) => {
   // Course list by type
   if (currentView === 'vocabulary' || currentView === 'grammar') {
     return (
-      <CoursesPage 
+      <CoursesPage
         selectedType={currentView}
         onCourseTypeSelect={handleCourseTypeSelect}
         onCourseSelect={handleCourseSelect}
@@ -529,7 +529,7 @@ const CourseApp: React.FC<CourseAppProps> = ({ onBack, onAuthRequired }) => {
   // Purchased courses page
   if (currentView === 'purchased') {
     return (
-      <PurchasedCourses 
+      <PurchasedCourses
         onBack={handleBack}
         onCourseSelect={handlePurchasedCourseSelect}
       />
@@ -541,9 +541,9 @@ const CourseApp: React.FC<CourseAppProps> = ({ onBack, onAuthRequired }) => {
     // Check if this course was accessed from purchased courses OR is enrolled
     const courseId = selectedCourse._id || '';
     const isPurchasedCourse = purchasedCourses.has(courseId) || isCourseEnrolled(courseId);
-    
+
     return (
-      <CourseDetail 
+      <CourseDetail
         course={convertToDetailCourse(selectedCourse)}
         onBack={handleBack}
         onEnroll={handleEnroll}

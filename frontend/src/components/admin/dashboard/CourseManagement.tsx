@@ -24,7 +24,7 @@ import {
   Volume2,
   Loader
 } from 'lucide-react';
-import { courseAPI, Course, CourseFilters } from '../../../services/courseAPI';
+import { courseAPI, Course, CourseFilters } from '@/services/courseAPI';
 import AICourseCreator from './AICourseCreator';
 
 const CourseManagement: React.FC = () => {

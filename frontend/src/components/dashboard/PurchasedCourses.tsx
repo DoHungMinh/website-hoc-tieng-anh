@@ -8,7 +8,7 @@ import {
   GraduationCap,
   ChevronLeft
 } from 'lucide-react';
-import { useEnrollment } from '../hooks/useEnrollment';
+import { useEnrollment } from '@/hooks/useEnrollment';
 
 interface PurchasedCourse {
   id: string;

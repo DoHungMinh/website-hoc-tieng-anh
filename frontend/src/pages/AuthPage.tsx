@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import Login from '../components/Login';
-import Register from '../components/Register';
+import Login from '../components/auth/Login';
+import Register from '../components/auth/Register';
 
 interface AuthPageProps {
   onClose?: () => void;
@@ -19,13 +19,13 @@ const AuthPage: React.FC<AuthPageProps> = ({ onClose }) => {
   return (
     <>
       {isLogin ? (
-        <Login 
-          onSwitchToRegister={() => setIsLogin(false)} 
+        <Login
+          onSwitchToRegister={() => setIsLogin(false)}
           onLoginSuccess={handleSuccess}
         />
       ) : (
-        <Register 
-          onSwitchToLogin={() => setIsLogin(true)} 
+        <Register
+          onSwitchToLogin={() => setIsLogin(true)}
           onRegisterSuccess={handleSuccess}
         />
       )}

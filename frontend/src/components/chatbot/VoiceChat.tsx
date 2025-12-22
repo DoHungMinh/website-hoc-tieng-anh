@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Mic, MicOff, Loader2, Volume2, AlertCircle, Play, Pause } from 'lucide-react';
-import { useAudioRecorder } from '../hooks/useAudioRecorder';
-import { useAudioPlayer } from '../hooks/useAudioPlayer';
+import { useAudioRecorder } from '@/hooks/useAudioRecorder';
+import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { VoiceVisualizer } from './VoiceVisualizer';
-import { voiceChatAPI } from '../services/voiceChatAPI';
-import type { VoiceOption } from '../services/voiceChatAPI';
+import { voiceChatAPI } from '@/services/voiceChatAPI';
+import type { VoiceOption } from '@/services/voiceChatAPI';
 
 interface VoiceChatProps {
   onTranscriptReceived?: (text: string) => void;

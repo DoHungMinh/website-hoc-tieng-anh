@@ -115,7 +115,7 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
                 <Play className="h-6 w-6 text-white" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Tổng số video</p>
+                <p className="text-sm font-medium text-gray-600">Tổng số video</p>
                 <p className="text-2xl font-bold text-gray-900">{videoExercises.length}</p>
               </div>
             </div>
@@ -167,7 +167,7 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
-                
+
                 {/* Play Button Overlay */}
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                   <div className="bg-white/30 backdrop-blur-md rounded-full p-4 group-hover:bg-white/40 transition-all duration-300 group-hover:scale-110">
@@ -209,7 +209,7 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
                 </div>
 
                 {/* Start Button */}
-                <button 
+                <button
                   className="w-full bg-gradient-to-r from-green-600 to-lime-600 hover:from-green-700 hover:to-lime-700 text-white py-3 rounded-xl font-medium transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
                 >
                   <Play className="h-5 w-5" />

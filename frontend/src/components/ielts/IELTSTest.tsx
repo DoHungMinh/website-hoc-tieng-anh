@@ -17,8 +17,8 @@ import {
     calculateSimpleScore,
     getBandScoreColor,
     getBandScoreBackground,
-} from "../../utils/ieltsScoring";
-import { progressService } from "../../services/progressService";
+} from "@/utils/ieltsScoring";
+import { progressService } from "@/services/progressService";
 
 interface Question {
     id: string;

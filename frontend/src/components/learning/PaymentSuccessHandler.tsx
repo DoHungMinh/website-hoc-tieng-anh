@@ -1,6 +1,6 @@
 import React from 'react';
-import PurchasedCourses from './PurchasedCourses';
-import Header from './Header';
+import PurchasedCourses from '../dashboard/PurchasedCourses';
+import Header from '../layout/Header';
 
 const PaymentSuccessHandler: React.FC = () => {
   const handleNavigateToCourses = () => {
@@ -19,17 +19,17 @@ const PaymentSuccessHandler: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header 
-        onAuthClick={() => {}} 
+      <Header
+        onAuthClick={() => { }}
         onNavigate={(page) => {
           if (page === 'courses') {
             handleNavigateToCourses();
           } else if (page === 'home') {
             handleNavigateToHome();
           }
-        }} 
+        }}
       />
-      
+
       <div className="pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Success message */}
@@ -49,7 +49,7 @@ const PaymentSuccessHandler: React.FC = () => {
                 </p>
               </div>
             </div>
-            
+
             <div className="mt-4 flex flex-col sm:flex-row gap-3">
               <button
                 onClick={handleNavigateToHome}
@@ -66,9 +66,16 @@ const PaymentSuccessHandler: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         {/* Purchased Courses Component */}
-        <PurchasedCourses onBack={handleNavigateToHome} />
+        <PurchasedCourses
+          onBack={handleNavigateToHome}
+          onCourseSelect={(id) => {
+            console.log('Course selected from success page:', id);
+            window.location.href = '/';
+            // In a real app we might navigate to course detail directly
+          }}
+        />
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import React from 'react';
 import { BookOpen, Clock, X } from 'lucide-react';
-import { useNotificationStore } from '../stores/notificationStore';
+import { useNotificationStore } from '@/stores/notificationStore';
 
 interface NotificationDropdownProps {
   isOpen: boolean;

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, CheckCircle, XCircle, Volume2, RotateCcw } from 'lucide-react';
-import { parseSRT } from '../../utils/srtParser';
+import { parseSRT } from '@/utils/srtParser';
 import { windAndSunSRT } from '../../data/srtData';
 
 // Declare YouTube IFrame API types

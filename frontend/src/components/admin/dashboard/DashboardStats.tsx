@@ -7,7 +7,7 @@ import {
     Clock,
     Calendar,
 } from "lucide-react";
-import { API_BASE_URL, API_ENDPOINTS } from "../../../utils/constants";
+import { API_BASE_URL, API_ENDPOINTS } from "@/utils/constants";
 import {
     Chart as ChartJS,
     CategoryScale,

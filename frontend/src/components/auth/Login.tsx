@@ -1,27 +1,23 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Mail, Lock, User, BookOpen, ArrowRight, Phone, ArrowLeft } from 'lucide-react';
-import { authAPI } from '../services/auth';
-import { useAuthStore } from '../stores/authStore';
+import { Eye, EyeOff, Mail, Lock, BookOpen, ArrowRight, ArrowLeft } from 'lucide-react';
+import { authAPI } from '@/services/auth';
+import { STORAGE_KEYS } from '@/utils/constants';
+import { useAuthStore } from '@/stores/authStore';
 
-interface RegisterProps {
-  onSwitchToLogin: () => void;
-  onRegisterSuccess?: () => void;
+interface LoginProps {
+  onSwitchToRegister: () => void;
+  onLoginSuccess?: () => void;
   onBackToHome?: () => void;
 }
 
-const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterSuccess, onBackToHome }) => {
+const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onLoginSuccess, onBackToHome }) => {
   const [formData, setFormData] = useState({
-    fullName: '',
     email: '',
-    phone: '',
-    password: '',
-    confirmPassword: ''
+    password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
-  const [acceptTerms, setAcceptTerms] = useState(false);
   
   const { setUser } = useAuthStore();
 
@@ -43,38 +39,16 @@ const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterSuccess,
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
 
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Họ và tên là bắt buộc';
-    } else if (formData.fullName.trim().length < 2) {
-      newErrors.fullName = 'Họ và tên phải có ít nhất 2 ký tự';
-    }
-
     if (!formData.email) {
       newErrors.email = 'Email là bắt buộc';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email không hợp lệ';
     }
 
-    if (!formData.phone) {
-      newErrors.phone = 'Số điện thoại là bắt buộc';
-    } else if (!/^[0-9]{10,11}$/.test(formData.phone.replace(/\s/g, ''))) {
-      newErrors.phone = 'Số điện thoại không hợp lệ';
-    }
-
     if (!formData.password) {
       newErrors.password = 'Mật khẩu là bắt buộc';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
-    }
-
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Xác nhận mật khẩu là bắt buộc';
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp';
-    }
-
-    if (!acceptTerms) {
-      newErrors.terms = 'Bạn phải đồng ý với điều khoản sử dụng';
     }
 
     setErrors(newErrors);
@@ -90,32 +64,28 @@ const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterSuccess,
     setErrors({});
     
     try {
-      // Prepare registration data
-      const registerData = {
-        fullName: formData.fullName,
-        email: formData.email,
-        phone: formData.phone,
-        password: formData.password
-      };
-      
-      const response = await authAPI.register(registerData);
+      const response = await authAPI.login(formData);
       
       if (response.success && response.user && response.token) {
         // Save user to store
         setUser(response.user, response.token);
+        // Also persist token under unified key for ApiService immediate usage
+        localStorage.setItem(STORAGE_KEYS.TOKEN, response.token);
+        // Also set token for admin components
+        localStorage.setItem('token', response.token);
         
         // Show success message (optional)
-        console.log('Registration successful:', response.message);
+        console.log('Login successful:', response.message);
         
         // Call success callback if provided
-        if (onRegisterSuccess) {
-          onRegisterSuccess();
+        if (onLoginSuccess) {
+          onLoginSuccess();
         }
       } else {
-        setErrors({ general: response.message || 'Đăng ký thất bại' });
+        setErrors({ general: response.message || 'Đăng nhập thất bại' });
       }
     } catch (error: unknown) {
-      console.error('Registration error:', error);
+      console.error('Login error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Lỗi kết nối. Vui lòng thử lại.';
       setErrors({ general: errorMessage });
     } finally {
@@ -139,11 +109,11 @@ const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterSuccess,
             <BookOpen className="h-10 w-10 text-white" />
             <span className="font-bold text-3xl text-white">EnglishPro</span>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Tạo tài khoản mới</h1>
-          <p className="text-green-100">Bắt đầu hành trình học tiếng Anh của bạn</p>
+          <h1 className="text-2xl font-bold text-white mb-2">Chào mừng trở lại!</h1>
+          <p className="text-green-100">Đăng nhập để tiếp tục hành trình học tiếng Anh</p>
         </div>
 
-        {/* Registration Form */}
+        {/* Login Form */}
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 shadow-2xl">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* General Error Message */}
@@ -152,32 +122,6 @@ const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterSuccess,
                 <p className="text-red-200 text-sm">{errors.general}</p>
               </div>
             )}
-
-            {/* Full Name Field */}
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-white mb-2">
-                Họ và tên
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-green-200" />
-                </div>
-                <input
-                  type="text"
-                  id="fullName"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  className={`w-full pl-10 pr-4 py-3 bg-white/20 border ${
-                    errors.fullName ? 'border-red-400' : 'border-white/30'
-                  } rounded-xl text-white placeholder-green-200 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all duration-200`}
-                  placeholder="Nhập họ và tên của bạn"
-                />
-              </div>
-              {errors.fullName && (
-                <p className="mt-1 text-sm text-red-300">{errors.fullName}</p>
-              )}
-            </div>
 
             {/* Email Field */}
             <div>
@@ -205,32 +149,6 @@ const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterSuccess,
               )}
             </div>
 
-            {/* Phone Field */}
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-white mb-2">
-                Số điện thoại
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Phone className="h-5 w-5 text-green-200" />
-                </div>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className={`w-full pl-10 pr-4 py-3 bg-white/20 border ${
-                    errors.phone ? 'border-red-400' : 'border-white/30'
-                  } rounded-xl text-white placeholder-green-200 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all duration-200`}
-                  placeholder="Nhập số điện thoại"
-                />
-              </div>
-              {errors.phone && (
-                <p className="mt-1 text-sm text-red-300">{errors.phone}</p>
-              )}
-            </div>
-
             {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
@@ -249,7 +167,7 @@ const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterSuccess,
                   className={`w-full pl-10 pr-12 py-3 bg-white/20 border ${
                     errors.password ? 'border-red-400' : 'border-white/30'
                   } rounded-xl text-white placeholder-green-200 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all duration-200`}
-                  placeholder="Tạo mật khẩu"
+                  placeholder="Nhập mật khẩu"
                 />
                 <button
                   type="button"
@@ -264,63 +182,18 @@ const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterSuccess,
               )}
             </div>
 
-            {/* Confirm Password Field */}
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-white mb-2">
-                Xác nhận mật khẩu
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-green-200" />
-                </div>
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  className={`w-full pl-10 pr-12 py-3 bg-white/20 border ${
-                    errors.confirmPassword ? 'border-red-400' : 'border-white/30'
-                  } rounded-xl text-white placeholder-green-200 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all duration-200`}
-                  placeholder="Nhập lại mật khẩu"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-green-200 hover:text-white transition-colors duration-200"
-                >
-                  {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
-              {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-300">{errors.confirmPassword}</p>
-              )}
-            </div>
-
-            {/* Terms and Conditions */}
-            <div>
-              <label className="flex items-start gap-3">
+            {/* Remember Me & Forgot Password */}
+            <div className="flex items-center justify-between">
+              <label className="flex items-center">
                 <input
                   type="checkbox"
-                  checked={acceptTerms}
-                  onChange={(e) => setAcceptTerms(e.target.checked)}
-                  className="w-4 h-4 text-lime-500 bg-white/20 border-white/30 rounded focus:ring-lime-400 focus:ring-2 mt-1"
+                  className="w-4 h-4 text-lime-500 bg-white/20 border-white/30 rounded focus:ring-lime-400 focus:ring-2"
                 />
-                <span className="text-sm text-green-100 leading-relaxed">
-                  Tôi đồng ý với{' '}
-                  <a href="#" className="text-lime-300 hover:text-lime-200 underline">
-                    Điều khoản sử dụng
-                  </a>{' '}
-                  và{' '}
-                  <a href="#" className="text-lime-300 hover:text-lime-200 underline">
-                    Chính sách bảo mật
-                  </a>{' '}
-                  của EnglishPro
-                </span>
+                <span className="ml-2 text-sm text-green-100">Ghi nhớ đăng nhập</span>
               </label>
-              {errors.terms && (
-                <p className="mt-1 text-sm text-red-300">{errors.terms}</p>
-              )}
+              <a href="#" className="text-sm text-lime-300 hover:text-lime-200 transition-colors duration-200">
+                Quên mật khẩu?
+              </a>
             </div>
 
             {/* Submit Button */}
@@ -333,34 +206,34 @@ const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterSuccess,
                 <div className="w-6 h-6 border-2 border-green-900 border-t-transparent rounded-full animate-spin"></div>
               ) : (
                 <>
-                  Tạo tài khoản
+                  Đăng nhập
                   <ArrowRight className="h-5 w-5" />
                 </>
               )}
             </button>
           </form>
 
-          {/* Switch to Login */}
+          {/* Switch to Register */}
           <div className="mt-8 text-center">
             <p className="text-green-100">
-              Bạn đã có tài khoản?{' '}
+              Bạn chưa có tài khoản?{' '}
               <button
-                onClick={onSwitchToLogin}
+                onClick={onSwitchToRegister}
                 className="text-lime-300 hover:text-lime-200 font-semibold transition-colors duration-200 underline decoration-2 underline-offset-2"
               >
-                Đăng nhập ngay
+                Hãy đăng ký
               </button>
             </p>
           </div>
 
-          {/* Social Registration */}
+          {/* Social Login */}
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-white/20"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-transparent text-green-100">Hoặc đăng ký với</span>
+                <span className="px-2 bg-transparent text-green-100">Hoặc đăng nhập với</span>
               </div>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3">
@@ -399,4 +272,4 @@ const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterSuccess,
   );
 };
 
-export default Register;
+export default Login;

@@ -1,4 +1,4 @@
-import { API_BASE_URL, API_ENDPOINTS } from "../utils/constants";
+import { API_BASE_URL, API_ENDPOINTS } from "@/utils/constants";
 
 interface UserProgressStats {
     weeklyActivity: Array<{

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useAuthStore } from "../stores/authStore";
+import { useAuthStore } from "@/stores/authStore";
 
 export const useActivityHeartbeat = () => {
     const { user, token } = useAuthStore();

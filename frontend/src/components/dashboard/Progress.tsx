@@ -1,10 +1,10 @@
 import { TrendingUp, Target, Medal, Clock } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useAuthStore } from "../stores/authStore";
+import { useAuthStore } from "@/stores/authStore";
 import {
     progressService,
     UserProgressStats,
-} from "../services/progressService";
+} from "@/services/progressService";
 
 const Progress = () => {
     const { isAuthenticated } = useAuthStore();

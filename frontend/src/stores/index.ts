@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { User, Progress, ChatMessage } from '../types';
-import { apiService } from '../services/api';
+import { User, Progress, ChatMessage } from '@/types';
+import { apiService } from '@/services/api';
 
 interface AuthStore {
   user: User | null;

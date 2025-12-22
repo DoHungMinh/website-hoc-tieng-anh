@@ -14,7 +14,7 @@ import {
   Users,
   MessageSquare
 } from 'lucide-react';
-import { aiIELTSService, AIGeneratedIELTSReading } from '../../../services/aiIELTSService';
+import { aiIELTSService, AIGeneratedIELTSReading } from '@/services/aiIELTSService';
 
 interface IELTSReadingConfig {
   title: string;

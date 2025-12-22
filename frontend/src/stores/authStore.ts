@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { STORAGE_KEYS, API_BASE_URL } from '../utils/constants';
+import { STORAGE_KEYS, API_BASE_URL } from '@/utils/constants';
 
 interface User {
   id: string;

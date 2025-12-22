@@ -1,235 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  BookOpen, 
-  Target, 
-  Play, 
-  Clock, 
-  Users, 
-  Star, 
+import {
+  BookOpen,
+  Target,
+  Play,
+  Clock,
+  Users,
   ChevronRight,
   Award,
   Brain,
   MessageSquare,
   CheckCircle,
-  ArrowRight,
-  Lightbulb,
-  Globe,
-  PenTool,
-  FileText,
-  Briefcase,
-  GraduationCap,
-  Zap,
-  Home
+  Home,
+  GraduationCap
 } from 'lucide-react';
-import { courseAPI, Course as APICourse } from '../services/courseAPI';
-import PurchasedCourses from './PurchasedCourses';
+import { courseAPI, Course as APICourse } from '@/services/courseAPI';
+import PurchasedCourses from '../dashboard/PurchasedCourses';
 
-interface Course {
-  id: string;
-  title: string;
-  level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
-  price: number;
-  originalPrice?: number;
-  duration: string;
-  lessonsCount: number;
-  studentsCount: number;
-  rating: number;
-  description: string;
-  features: string[];
-  isPopular?: boolean;
-  thumbnail: string;
-}
 
-const vocabularyCourses: Course[] = [
-  {
-    id: 'vocab-a1',
-    title: 'Từ vựng cơ bản hàng ngày',
-    level: 'A1',
-    price: 299000,
-    originalPrice: 399000,
-    duration: '4 tuần',
-    lessonsCount: 20,
-    studentsCount: 1250,
-    rating: 4.8,
-    description: 'Học 500+ từ vựng thiết yếu cho cuộc sống hàng ngày với phương pháp ghi nhớ thông minh',
-    features: ['Học từ theo chủ đề', 'Flashcard thông minh', 'Game ôn tập', 'Phát âm chuẩn'],
-    thumbnail: '/api/placeholder/300/200'
-  },
-  {
-    id: 'vocab-a2',
-    title: 'Từ vựng giao tiếp cơ bản',
-    level: 'A2',
-    price: 399000,
-    originalPrice: 499000,
-    duration: '6 tuần',
-    lessonsCount: 30,
-    studentsCount: 980,
-    rating: 4.7,
-    description: 'Mở rộng vốn từ vựng với 800+ từ mới cho giao tiếp và công việc cơ bản',
-    features: ['Từ vựng theo tình huống', 'Thực hành hội thoại', 'Quiz tương tác', 'Theo dõi tiến độ'],
-    isPopular: true,
-    thumbnail: '/api/placeholder/300/200'
-  },
-  {
-    id: 'vocab-b1',
-    title: 'Từ vựng trung cấp',
-    level: 'B1',
-    price: 599000,
-    originalPrice: 799000,
-    duration: '8 tuần',
-    lessonsCount: 40,
-    studentsCount: 756,
-    rating: 4.9,
-    description: 'Nâng cao vốn từ với 1200+ từ vựng chuyên sâu cho công việc và học tập',
-    features: ['Từ vựng chuyên ngành', 'Collocations', 'Idioms phổ biến', 'Writing exercises'],
-    thumbnail: '/api/placeholder/300/200'
-  },
-  {
-    id: 'vocab-b2',
-    title: 'Từ vựng nâng cao',
-    level: 'B2',
-    price: 799000,
-    originalPrice: 999000,
-    duration: '10 tuần',
-    lessonsCount: 50,
-    studentsCount: 523,
-    rating: 4.8,
-    description: 'Làm chủ 1500+ từ vựng phức tạp cho IELTS, công việc và học thuật',
-    features: ['Academic vocabulary', 'Business English', 'Advanced collocations', 'Critical thinking'],
-    thumbnail: '/api/placeholder/300/200'
-  },
-  {
-    id: 'vocab-c1',
-    title: 'Từ vựng chuyên gia',
-    level: 'C1',
-    price: 999000,
-    originalPrice: 1299000,
-    duration: '12 tuần',
-    lessonsCount: 60,
-    studentsCount: 342,
-    rating: 4.9,
-    description: 'Thành thạo 2000+ từ vựng chuyên nghiệp và học thuật cao cấp',
-    features: ['Research vocabulary', 'Professional terms', 'Nuanced expressions', 'Advanced writing'],
-    thumbnail: '/api/placeholder/300/200'
-  },
-  {
-    id: 'vocab-c2',
-    title: 'Từ vựng bậc thầy',
-    level: 'C2',
-    price: 1299000,
-    originalPrice: 1599000,
-    duration: '16 tuần',
-    lessonsCount: 80,
-    studentsCount: 189,
-    rating: 5.0,
-    description: 'Đạt trình độ native với 3000+ từ vựng tinh tế và sophisticated expressions',
-    features: ['Literary vocabulary', 'Sophisticated expressions', 'Cultural nuances', 'Masterclass content'],
-    thumbnail: '/api/placeholder/300/200'
-  },
-  {
-    id: 'vocab-idioms',
-    title: 'Thành ngữ tiếng Anh thông dụng',
-    level: 'B1',
-    price: 449000,
-    originalPrice: 599000,
-    duration: '6 tuần',
-    lessonsCount: 36,
-    studentsCount: 834,
-    rating: 4.9,
-    description: 'Học 300+ thành ngữ tiếng Anh phổ biến với ý nghĩa, cách dùng và ví dụ thực tế',
-    features: ['300+ idioms phổ biến', 'Ví dụ trong ngữ cảnh', 'Audio pronunciation', 'Practice exercises'],
-    isPopular: true,
-    thumbnail: '/api/placeholder/300/200'
-  }
-];
 
-const grammarCourses: Course[] = [
-  {
-    id: 'grammar-a1',
-    title: 'Ngữ pháp cơ bản',
-    level: 'A1',
-    price: 249000,
-    originalPrice: 349000,
-    duration: '3 tuần',
-    lessonsCount: 15,
-    studentsCount: 1543,
-    rating: 4.7,
-    description: 'Nắm vững các cấu trúc ngữ pháp cơ bản nhất với bài tập tương tác',
-    features: ['Present tenses', 'Basic sentence structure', 'Interactive exercises', 'Instant feedback'],
-    thumbnail: '/api/placeholder/300/200'
-  },
-  {
-    id: 'grammar-a2',
-    title: 'Ngữ pháp thiết yếu',
-    level: 'A2',
-    price: 349000,
-    originalPrice: 449000,
-    duration: '5 tuần',
-    lessonsCount: 25,
-    studentsCount: 1234,
-    rating: 4.8,
-    description: 'Mở rộng kiến thức ngữ pháp với các thì và cấu trúc phức tạp hơn',
-    features: ['Past & Future tenses', 'Conditional sentences', 'Modal verbs', 'Error correction'],
-    isPopular: true,
-    thumbnail: '/api/placeholder/300/200'
-  },
-  {
-    id: 'grammar-b1',
-    title: 'Ngữ pháp trung cấp',
-    level: 'B1',
-    price: 549000,
-    originalPrice: 699000,
-    duration: '7 tuần',
-    lessonsCount: 35,
-    studentsCount: 892,
-    rating: 4.9,
-    description: 'Thành thạo các cấu trúc ngữ pháp phức tạp cho giao tiếp và viết',
-    features: ['Complex sentences', 'Passive voice', 'Reported speech', 'Advanced conditionals'],
-    thumbnail: '/api/placeholder/300/200'
-  },
-  {
-    id: 'grammar-b2',
-    title: 'Ngữ pháp nâng cao',
-    level: 'B2',
-    price: 749000,
-    originalPrice: 949000,
-    duration: '9 tuần',
-    lessonsCount: 45,
-    studentsCount: 567,
-    rating: 4.8,
-    description: 'Hoàn thiện ngữ pháp với các cấu trúc sophisticated cho IELTS và công việc',
-    features: ['Subjunctive mood', 'Complex conditionals', 'Advanced linking', 'Style variation'],
-    thumbnail: '/api/placeholder/300/200'
-  },
-  {
-    id: 'grammar-c1',
-    title: 'Ngữ pháp chuyên gia',
-    level: 'C1',
-    price: 949000,
-    originalPrice: 1199000,
-    duration: '11 tuần',
-    lessonsCount: 55,
-    studentsCount: 298,
-    rating: 4.9,
-    description: 'Làm chủ hoàn toàn ngữ pháp tiếng Anh ở trình độ chuyên nghiệp',
-    features: ['Formal register', 'Academic writing', 'Stylistic devices', 'Error analysis'],
-    thumbnail: '/api/placeholder/300/200'
-  },
-  {
-    id: 'grammar-c2',
-    title: 'Ngữ pháp bậc thầy',
-    level: 'C2',
-    price: 1199000,
-    originalPrice: 1499000,
-    duration: '15 tuần',
-    lessonsCount: 75,
-    studentsCount: 156,
-    rating: 5.0,
-    description: 'Đạt trình độ native với các cấu trúc ngữ pháp tinh tế nhất',
-    features: ['Nuanced structures', 'Literary devices', 'Regional variations', 'Expert analysis'],
-    thumbnail: '/api/placeholder/300/200'
-  }
-];
+
 
 type CourseType = 'vocabulary' | 'grammar' | 'purchased';
 
@@ -241,9 +30,9 @@ interface CoursesPageProps {
   purchasedCourseIds?: string[]; // Danh sách ID các khóa học đã mua
 }
 
-const CoursesPage: React.FC<CoursesPageProps> = ({ 
-  selectedType, 
-  onCourseTypeSelect, 
+const CoursesPage: React.FC<CoursesPageProps> = ({
+  selectedType,
+  onCourseTypeSelect,
   onCourseSelect,
   onBack,
   purchasedCourseIds = [] // Mặc định là array rỗng
@@ -256,13 +45,13 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
   useEffect(() => {
     const loadCourses = async () => {
       if (!activeType) return;
-      
+
       setLoading(true);
       try {
         const response = await courseAPI.getPublicCourses({
           type: activeType
         });
-        
+
         if (response.success) {
           setCourses(response.data);
         }
@@ -276,185 +65,15 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
     loadCourses();
   }, [activeType]);
 
-  const getLevelColor = (level: string) => {
-    const colors = {
-      'A1': 'bg-green-100 text-green-800 border-green-200',
-      'A2': 'bg-blue-100 text-blue-800 border-blue-200',
-      'B1': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      'B2': 'bg-orange-100 text-orange-800 border-orange-200',
-      'C1': 'bg-purple-100 text-purple-800 border-purple-200',
-      'C2': 'bg-red-100 text-red-800 border-red-200'
-    };
-    return colors[level as keyof typeof colors] || 'bg-gray-100 text-gray-800 border-gray-200';
-  };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(price);
-  };
 
-  const getCourseIllustration = (courseId: string) => {
-    const illustrations = {
-      'vocab-a1': {
-        bgGradient: 'bg-gradient-to-br from-green-400 via-emerald-500 to-teal-500',
-        icon: BookOpen,
-        pattern: (
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-4 left-4 text-white text-lg font-bold">ABC</div>
-            <div className="absolute bottom-4 right-4 text-white text-2xl">📚</div>
-            <div className="absolute top-8 right-8 text-white text-sm">Basic</div>
-          </div>
-        )
-      },
-      'vocab-a2': {
-        bgGradient: 'bg-gradient-to-br from-blue-400 via-cyan-500 to-sky-500',
-        icon: MessageSquare,
-        pattern: (
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-2 left-2 text-white text-sm bg-white/20 rounded px-2 py-1">Hello!</div>
-            <div className="absolute bottom-2 right-2 text-white text-2xl">💬</div>
-            <div className="absolute top-8 right-4 text-white text-xs">Chat</div>
-          </div>
-        )
-      },
-      'vocab-b1': {
-        bgGradient: 'bg-gradient-to-br from-yellow-400 via-orange-500 to-amber-500',
-        icon: Briefcase,
-        pattern: (
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-4 right-4 text-white text-2xl">💼</div>
-            <div className="absolute bottom-4 left-4 text-white text-sm bg-white/20 rounded px-2 py-1">Work</div>
-            <div className="absolute top-2 left-8 text-white text-xs">Business</div>
-          </div>
-        )
-      },
-      'vocab-b2': {
-        bgGradient: 'bg-gradient-to-br from-orange-400 via-red-500 to-pink-500',
-        icon: GraduationCap,
-        pattern: (
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-2 right-2 text-white text-2xl">🎓</div>
-            <div className="absolute bottom-4 left-2 text-white text-sm bg-white/20 rounded px-2 py-1">Academic</div>
-            <div className="absolute top-8 left-8 text-white text-xs">IELTS</div>
-          </div>
-        )
-      },
-      'vocab-c1': {
-        bgGradient: 'bg-gradient-to-br from-purple-400 via-violet-500 to-indigo-500',
-        icon: Target,
-        pattern: (
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-4 left-4 text-white text-2xl">🏢</div>
-            <div className="absolute bottom-2 right-4 text-white text-sm bg-white/20 rounded px-2 py-1">Pro</div>
-            <div className="absolute top-2 right-8 text-white text-xs">Expert</div>
-          </div>
-        )
-      },
-      'vocab-c2': {
-        bgGradient: 'bg-gradient-to-br from-red-400 via-rose-500 to-red-600',
-        icon: Award,
-        pattern: (
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-2 left-2 text-white text-2xl">👑</div>
-            <div className="absolute bottom-4 right-2 text-white text-sm bg-white/20 rounded px-2 py-1">Master</div>
-            <div className="absolute top-8 right-2 text-white text-xs">Native</div>
-          </div>
-        )
-      },
-      'vocab-idioms': {
-        bgGradient: 'bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500',
-        icon: Lightbulb,
-        pattern: (
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-2 left-2 text-white text-2xl">💡</div>
-            <div className="absolute bottom-4 right-2 text-white text-sm bg-white/20 rounded px-2 py-1">Idioms</div>
-            <div className="absolute top-8 right-4 text-white text-xs">✨</div>
-            <div className="absolute bottom-2 left-8 text-white text-xs">Special</div>
-          </div>
-        )
-      },
-      'grammar-a1': {
-        bgGradient: 'bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600',
-        icon: PenTool,
-        pattern: (
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-4 right-4 text-white text-2xl">✓</div>
-            <div className="absolute bottom-4 left-4 text-white text-sm bg-white/20 rounded px-2 py-1">Grammar</div>
-            <div className="absolute top-2 left-2 text-white text-xs">Basic</div>
-          </div>
-        )
-      },
-      'grammar-a2': {
-        bgGradient: 'bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-500',
-        icon: FileText,
-        pattern: (
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-2 left-2 text-white text-2xl">📝</div>
-            <div className="absolute bottom-2 right-2 text-white text-sm bg-white/20 rounded px-2 py-1">Rules</div>
-            <div className="absolute top-8 right-8 text-white text-xs">Essential</div>
-          </div>
-        )
-      },
-      'grammar-b1': {
-        bgGradient: 'bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500',
-        icon: Zap,
-        pattern: (
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-4 left-4 text-white text-2xl">⚡</div>
-            <div className="absolute bottom-4 right-4 text-white text-sm bg-white/20 rounded px-2 py-1">Complex</div>
-            <div className="absolute top-2 right-2 text-white text-xs">Intermediate</div>
-          </div>
-        )
-      },
-      'grammar-b2': {
-        bgGradient: 'bg-gradient-to-br from-orange-400 via-amber-500 to-yellow-600',
-        icon: Target,
-        pattern: (
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-2 right-2 text-white text-2xl">🎯</div>
-            <div className="absolute bottom-4 left-2 text-white text-sm bg-white/20 rounded px-2 py-1">Advanced</div>
-            <div className="absolute top-8 left-8 text-white text-xs">Sophisticated</div>
-          </div>
-        )
-      },
-      'grammar-c1': {
-        bgGradient: 'bg-gradient-to-br from-violet-400 via-purple-500 to-indigo-600',
-        icon: Globe,
-        pattern: (
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-4 right-4 text-white text-2xl">🌍</div>
-            <div className="absolute bottom-2 left-4 text-white text-sm bg-white/20 rounded px-2 py-1">Expert</div>
-            <div className="absolute top-2 left-2 text-white text-xs">Professional</div>
-          </div>
-        )
-      },
-      'grammar-c2': {
-        bgGradient: 'bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-600',
-        icon: Award,
-        pattern: (
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-2 left-2 text-white text-2xl">🏆</div>
-            <div className="absolute bottom-4 right-2 text-white text-sm bg-white/20 rounded px-2 py-1">Master</div>
-            <div className="absolute top-8 right-4 text-white text-xs">Perfection</div>
-          </div>
-        )
-      }
-    };
 
-    return illustrations[courseId as keyof typeof illustrations] || {
-      bgGradient: 'bg-gradient-to-br from-gray-400 to-gray-600',
-      icon: BookOpen,
-      pattern: null
-    };
-  };
 
   // API Course Card Component
   const APICourseCard: React.FC<{ course: APICourse }> = ({ course }) => {
     const levelColors = {
       'A1': 'bg-green-100 text-green-800',
-      'A2': 'bg-blue-100 text-blue-800', 
+      'A2': 'bg-blue-100 text-blue-800',
       'B1': 'bg-yellow-100 text-yellow-800',
       'B2': 'bg-orange-100 text-orange-800',
       'C1': 'bg-purple-100 text-purple-800',
@@ -472,7 +91,7 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
 
     return (
       <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer flex flex-col h-full"
-           onClick={() => onCourseSelect?.(course._id!)}>
+        onClick={() => onCourseSelect?.(course._id!)}>
         <div className="relative">
           <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center relative overflow-hidden">
             <div className="absolute inset-0 bg-black/10"></div>
@@ -489,7 +108,7 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
           <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
             {course.title}
           </h3>
-          
+
           <p className="text-gray-600 text-sm mb-4 h-10 overflow-hidden" style={{
             display: '-webkit-box',
             WebkitLineClamp: 2,
@@ -525,7 +144,7 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
               </div>
               <span className="text-xs text-gray-500">{course.instructor}</span>
             </div>
-            
+
             <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2">
               <Play className="h-4 w-4" />
               Học ngay
@@ -536,115 +155,14 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
     );
   };
 
-  const CourseCard: React.FC<{ course: Course }> = ({ course }) => {
-    const illustration = getCourseIllustration(course.id);
-    const IconComponent = illustration.icon;
 
-    return (
-      <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col h-full">
-        {course.isPopular && (
-          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-sm font-semibold px-4 py-1 text-center">
-            🔥 Phổ biến nhất
-          </div>
-        )}
-        
-        {course.id === 'vocab-idioms' && (
-          <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-semibold px-4 py-1 text-center">
-            ✨ Khóa học đặc biệt - Thành ngữ
-          </div>
-        )}
-        
-        <div className="relative">
-          <div className={`h-48 ${illustration.bgGradient} flex items-center justify-center relative overflow-hidden`}>
-            {illustration.pattern}
-            <div className="relative z-10">
-              <IconComponent className="w-16 h-16 text-white" />
-            </div>
-          </div>
-          <div className="absolute top-4 left-4">
-            <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${course.id === 'vocab-idioms' ? 'bg-purple-100 text-purple-800 border-purple-200' : getLevelColor(course.level)}`}>
-              {course.id === 'vocab-idioms' ? 'IDIOMS' : course.level}
-            </span>
-          </div>
-          <div className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-md">
-            <Star className="w-4 h-4 text-yellow-500 fill-current" />
-            <span className="text-xs font-semibold text-gray-700 ml-1">{course.rating}</span>
-          </div>
-        </div>
-
-        <div className="p-6 flex flex-col flex-grow">
-          <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
-            {course.title}
-          </h3>
-          
-          <p className="text-gray-600 text-sm mb-4 h-10 overflow-hidden" style={{
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical'
-          }}>
-            {course.description}
-          </p>
-
-          <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-            <div className="flex items-center gap-1">
-              <Clock className="w-4 h-4" />
-              <span>{course.duration}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <BookOpen className="w-4 h-4" />
-              <span>{course.lessonsCount} bài</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Users className="w-4 h-4" />
-              <span>{course.studentsCount}</span>
-            </div>
-          </div>
-
-          <div className="space-y-2 mb-4">
-            {course.features.slice(0, 2).map((feature, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-gray-600">{feature}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-blue-600">
-                {formatPrice(course.price)}
-              </span>
-              {course.originalPrice && (
-                <span className="text-lg text-gray-400 line-through">
-                  {formatPrice(course.originalPrice)}
-                </span>
-              )}
-            </div>
-            {course.originalPrice && (
-              <span className="bg-red-100 text-red-800 text-xs font-semibold px-2 py-1 rounded-full">
-                -{Math.round((1 - course.price / course.originalPrice) * 100)}%
-              </span>
-            )}
-          </div>
-
-          <button 
-            onClick={() => onCourseSelect?.(course.id)}
-            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 group mt-auto"
-          >
-            <span>Đăng ký ngay</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </button>
-        </div>
-      </div>
-    );
-  };
 
   // Special case for purchased courses
   if (activeType === 'purchased') {
     return (
-      <PurchasedCourses 
-        onBack={() => setActiveType(null)} 
-        onCourseSelect={onCourseSelect || (() => {})}
+      <PurchasedCourses
+        onBack={() => setActiveType(null)}
+        onCourseSelect={onCourseSelect || (() => { })}
       />
     );
   }
@@ -750,7 +268,7 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
             </span>
           </button>
         </div>
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
@@ -784,7 +302,7 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          <div 
+          <div
             onClick={() => {
               setActiveType('vocabulary');
               onCourseTypeSelect?.('vocabulary');
@@ -798,11 +316,11 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
                 </div>
                 <ChevronRight className="w-6 h-6 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
               </div>
-              
+
               <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
                 Từ vựng thông minh
               </h3>
-              
+
               <p className="text-gray-600 mb-6 leading-relaxed">
                 Học từ vựng với phương pháp ghi nhớ khoa học, bao gồm cả khóa học thành ngữ đặc biệt
               </p>
@@ -837,7 +355,7 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
             </div>
           </div>
 
-          <div 
+          <div
             onClick={() => {
               setActiveType('grammar');
               onCourseTypeSelect?.('grammar');
@@ -851,11 +369,11 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
                 </div>
                 <ChevronRight className="w-6 h-6 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
               </div>
-              
+
               <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
                 Ngữ pháp tương tác
               </h3>
-              
+
               <p className="text-gray-600 mb-6 leading-relaxed">
                 Bài tập ngữ pháp đa dạng với giải thích chi tiết và ví dụ sinh động
               </p>
@@ -890,7 +408,7 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
             </div>
           </div>
 
-          <div 
+          <div
             onClick={() => {
               setActiveType('purchased');
               onCourseTypeSelect?.('purchased');
@@ -904,11 +422,11 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
                 </div>
                 <ChevronRight className="w-6 h-6 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all" />
               </div>
-              
+
               <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-purple-600 transition-colors">
                 Khóa học đã mua
               </h3>
-              
+
               <p className="text-gray-600 mb-6 leading-relaxed">
                 Tiếp tục học với các khóa học bạn đã đăng ký, theo dõi tiến độ và nhận chứng chỉ
               </p>

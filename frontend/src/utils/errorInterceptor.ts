@@ -1,4 +1,4 @@
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '@/stores/authStore';
 
 // Global error interceptor for handling account disabled
 export const setupGlobalErrorInterceptor = (): void => {

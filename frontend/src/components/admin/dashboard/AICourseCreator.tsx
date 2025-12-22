@@ -14,8 +14,8 @@ import {
   DollarSign,
   Lightbulb
 } from 'lucide-react';
-import type { Course } from '../../../services/courseAPI';
-import { aiCourseService, AIGenerationConfig } from '../../../services/aiCourseService';
+import type { Course } from '@/services/courseAPI';
+import { aiCourseService, AIGenerationConfig } from '@/services/aiCourseService';
 
 interface AIConfig {
   type: 'vocabulary' | 'grammar';

@@ -1,4 +1,4 @@
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '@/stores/authStore';
 
 // Custom fetch wrapper that handles account disabled errors
 export const fetchWithAuth = async (

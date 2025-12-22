@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 
 import { User, Mail, Calendar, Edit3, Save, X, Phone, MapPin, GraduationCap, Heart, Lock, Eye, EyeOff, Award, ArrowLeft, Shield, LogOut, Camera, Trash2 } from 'lucide-react';
-import { useAuthStore } from '../stores/authStore';
-import { useToast } from '../hooks/useToast';
-import { ToastContainer } from './Toast';
-import ConfirmModal from './ConfirmModal';
-import { getLevelDisplayName, getLevelDescription, getLevelColor, UserLevel } from '../utils/levelDisplay';
+import { useAuthStore } from '@/stores/authStore';
+import { useToast } from '@/hooks/useToast';
+import { ToastContainer } from '../common/Toast';
+import ConfirmModal from '../common/ConfirmModal';
+import { getLevelDisplayName, getLevelDescription, getLevelColor, UserLevel } from '@/utils/levelDisplay';
 
 interface UserProfileProps {
   onBack: () => void;
@@ -53,7 +53,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
 
   const handleSave = async () => {
     if (!user || !token) return;
-    
+
     try {
       const response = await fetch('http://localhost:5002/api/user/profile', {
         method: 'PUT',
@@ -70,9 +70,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
           level: editForm.level
         })
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         // Update local state with the response from server
         setUser(data.data, token);
@@ -103,7 +103,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
   // Fetch latest profile data including calculated level
   const fetchProfile = async () => {
     if (!token) return;
-    
+
     setIsLoadingProfile(true);
     try {
       const response = await fetch('http://localhost:5002/api/user/profile', {
@@ -113,9 +113,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
           'Content-Type': 'application/json'
         }
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setUser(data.data, token);
         // Update edit form with fresh data
@@ -162,12 +162,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
 
   const handleAvatarUpload = async (file: File) => {
     if (!user || !token) return;
-    
+
     setIsUploadingAvatar(true);
     try {
       const formData = new FormData();
       formData.append('avatar', file);
-      
+
       const response = await fetch(`http://localhost:5002/api/user/${user.id}/avatar`, {
         method: 'POST',
         headers: {
@@ -175,9 +175,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
         },
         body: formData,
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         // Update user object with new avatar
         const updatedUser = { ...user, avatar: data.data.avatar };
@@ -201,9 +201,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
 
   const handleAvatarDelete = async () => {
     if (!user || !token || !user.avatar) return;
-    
+
     setShowDeleteConfirm(false);
-    
+
     try {
       const response = await fetch(`http://localhost:5002/api/user/${user.id}/avatar`, {
         method: 'DELETE',
@@ -211,9 +211,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
           'Authorization': `Bearer ${token}`,
         },
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         // Update user object without avatar
         const updatedUser = { ...user, avatar: undefined };
@@ -237,13 +237,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
         error('Lỗi!', 'Vui lòng chọn file ảnh!');
         return;
       }
-      
+
       // Validate file size (5MB)
       if (file.size > 5 * 1024 * 1024) {
         error('Lỗi!', 'Kích thước file không được vượt quá 5MB!');
         return;
       }
-      
+
       handleAvatarUpload(file);
     }
   };
@@ -304,7 +304,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
           </div>
           <h3 className="text-lg font-semibold text-gray-900">Thay đổi mật khẩu</h3>
         </div>
-        
+
         <div className="space-y-6">
           {/* Current Password */}
           <div>
@@ -397,7 +397,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
             <p className="text-gray-500 text-sm">Quản lý thông tin cá nhân và học tập của bạn</p>
           </div>
         </div>
-        
+
         {/* Edit Buttons */}
         <div className="flex space-x-2">
           {!isEditing ? (
@@ -437,7 +437,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
           </div>
           <h3 className="text-lg font-semibold text-gray-900">Thông tin cá nhân</h3>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Full Name */}
           <div>
@@ -539,7 +539,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
                 </span>
               )}
             </div>
-            
+
             {/* Show level only if user has test results */}
             {user?.level && user?.levelSource === 'test_results' ? (
               <div className={`px-4 py-3 rounded-lg border-2 ${getLevelColor(user.level as UserLevel)}`}>
@@ -571,7 +571,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
                     <div className="text-sm text-gray-600 mt-1">
                       Hãy làm bài kiểm tra IELTS để hệ thống đánh giá trình độ của bạn
                     </div>
-                    <button 
+                    <button
                       onClick={() => {
                         if (onNavigate) {
                           onNavigate('practice');
@@ -686,7 +686,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
             <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border border-gray-100">
               <div className="text-center">
                 <div className="relative">
-                  <div 
+                  <div
                     onClick={() => setShowAvatarModal(true)}
                     className="w-24 h-24 rounded-full mx-auto mb-4 shadow-lg cursor-pointer transition-all duration-200 hover:shadow-xl hover:scale-105 group relative overflow-hidden"
                   >
@@ -701,12 +701,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
                         <User className="h-12 w-12 text-white" />
                       </div>
                     )}
-                    
+
                     {/* Hover overlay */}
                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-full flex items-center justify-center">
                       <Camera className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-all duration-200" />
                     </div>
-                    
+
                     {/* Loading overlay */}
                     {isUploadingAvatar && (
                       <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
@@ -714,7 +714,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center border-3 border-white">
                     <Shield className="h-4 w-4 text-white" />
                   </div>
@@ -735,11 +735,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200 group ${
-                    activeTab === tab.id
-                      ? `bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg transform scale-105`
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200 group ${activeTab === tab.id
+                    ? `bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg transform scale-105`
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
                 >
                   <tab.icon className="h-5 w-5" />
                   <span className="font-medium">{tab.label}</span>
@@ -760,7 +759,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
           {/* Main Content */}
           <div className="lg:col-span-3">
             <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
-              {renderContent()}
+              {isLoadingProfile ? (
+                <div className="flex justify-center items-center h-64">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+                </div>
+              ) : (
+                renderContent()
+              )}
             </div>
           </div>
         </div>

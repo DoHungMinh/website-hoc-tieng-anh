@@ -5,7 +5,7 @@ import UserManagement from "./dashboard/UserManagement";
 import CourseManagement from "./dashboard/CourseManagement";
 import ExamManagement from "./dashboard/ExamManagement";
 import PaymentManagement from "./dashboard/PaymentManagement";
-import ErrorBoundary from "../ErrorBoundary";
+import ErrorBoundary from "../common/ErrorBoundary";
 
 interface AdminDashboardProps {
     onLogout?: () => void;

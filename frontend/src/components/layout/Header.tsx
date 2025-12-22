@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { BookOpen, Menu, X, Bell } from "lucide-react";
-import { useAuthStore } from "../stores/authStore";
+import { useAuthStore } from "@/stores/authStore";
 import {
     useNotificationStore,
     loadNotificationsFromStorage,
-} from "../stores/notificationStore";
-import NotificationDropdown from "./NotificationDropdown";
-import AvatarDisplay from "./AvatarDisplay";
+} from "@/stores/notificationStore";
+import NotificationDropdown from "../common/NotificationDropdown";
+import AvatarDisplay from "@/components/common/AvatarDisplay";
 
 interface HeaderProps {
     onAuthClick?: () => void;

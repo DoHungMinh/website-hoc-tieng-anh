@@ -15,7 +15,7 @@ import IELTSPractice from "./IELTSPractice";
 import IELTSTest from "./IELTSTest";
 import IELTSExamCard from "./IELTSExamCard";
 import IELTSTestHistory from "./IELTSTestHistory";
-import { useCachedFetch } from "../../utils/apiCache";
+import { useCachedFetch } from "@/utils/apiCache";
 
 interface IELTSExam {
     _id: string;
