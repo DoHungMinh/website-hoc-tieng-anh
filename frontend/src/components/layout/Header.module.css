@@ -1,0 +1,351 @@
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+    background-color: #fff;
+    position: sticky;
+    top: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 50;
+}
+
+/* Logo Section */
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: #1a1a1a;
+}
+
+.logoIcon {
+    width: 28px;
+    height: 28px;
+    color: #1a1a1a;
+}
+
+.logoText {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    letter-spacing: -0.02em;
+}
+
+/* Navigation */
+.nav {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    background-color: #f5f5f5;
+    padding: 0.25rem;
+    border-radius: 9999px;
+}
+
+.navLink {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #666;
+    text-decoration: none;
+    border-radius: 9999px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.navLink:hover {
+    color: #1a1a1a;
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.navLinkActive {
+    background-color: #fff;
+    color: #1a1a1a;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Right Section */
+.rightSection {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Language Selector */
+.languageSelector {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+}
+
+.flagIcon {
+    width: 24px;
+    height: 18px;
+    border-radius: 2px;
+    object-fit: cover;
+}
+
+.chevronIcon {
+    width: 16px;
+    height: 16px;
+    color: #666;
+}
+
+/* Auth Buttons */
+.loginButton {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.loginButton:hover {
+    color: #666;
+}
+
+.signUpButton {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #fff;
+    background-color: #1a1a1a;
+    border: none;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+
+.signUpButton:hover {
+    background-color: #333;
+}
+
+/* User Profile Button */
+.userButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    background-color: #f5f5f5;
+    border: none;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    text-decoration: none;
+    color: #1a1a1a;
+}
+
+.userButton:hover {
+    background-color: #e8e8e8;
+}
+
+.userName {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1a1a1a;
+}
+
+/* Notification Bell */
+.notificationButton {
+    position: relative;
+    padding: 0.5rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    transition: color 0.2s ease;
+}
+
+.notificationButton:hover {
+    color: #1a1a1a;
+}
+
+.bellIcon {
+    width: 20px;
+    height: 20px;
+}
+
+.notificationBadge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: #fff;
+    background-color: #ef4444;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Mobile Menu Button */
+.mobileMenuButton {
+    display: none;
+    padding: 0.5rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #1a1a1a;
+}
+
+.menuIcon {
+    width: 24px;
+    height: 24px;
+}
+
+/* Mobile Navigation */
+.mobileNav {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #fff;
+    border-top: 1px solid #eee;
+    padding: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.mobileNavOpen {
+    display: block;
+}
+
+.mobileNavList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.mobileNavLink {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #666;
+    text-decoration: none;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.mobileNavLink:hover {
+    color: #1a1a1a;
+    background-color: #f5f5f5;
+}
+
+.mobileNavLinkActive {
+    color: #1a1a1a;
+    background-color: #f5f5f5;
+}
+
+.mobileAuthSection {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.mobileUserButton {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background-color: #f5f5f5;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    color: #1a1a1a;
+    transition: background-color 0.2s ease;
+}
+
+.mobileUserButton:hover {
+    background-color: #e5e5e5;
+}
+
+.mobileUserName {
+    font-weight: 500;
+    font-size: 0.9375rem;
+}
+
+.mobileCTAButton {
+    display: block;
+    width: 100%;
+    padding: 1rem;
+    background-color: #1a1a1a;
+    color: #fff;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 100px;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+
+.mobileCTAButton:hover {
+    background-color: #333;
+}
+
+.mobileSignUpButton {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .nav {
+        display: none;
+    }
+
+    .mobileMenuButton {
+        display: block;
+    }
+
+    .mobileNav {
+        display: none;
+    }
+
+    .mobileNavOpen {
+        display: block;
+    }
+}
+
+@media (max-width: 640px) {
+    .header {
+        padding: 0.75rem 1rem;
+    }
+
+    .languageSelector {
+        display: none;
+    }
+
+    .loginButton {
+        display: none;
+    }
+
+    .signUpButton {
+        padding: 0.5rem 1rem;
+        font-size: 0.8125rem;
+    }
+
+    .userButton {
+        display: none;
+    }
+
+    .notificationButton {
+        padding: 0.375rem;
+    }
+}

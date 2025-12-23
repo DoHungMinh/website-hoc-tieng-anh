@@ -1,0 +1,333 @@
+.hero {
+  position: relative;
+  min-height: 100vh;
+  background-color: var(--body-bg);
+}
+
+.container {
+  padding: 50px 200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+
+.leftSection {
+  max-width: 580px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 24px;
+  margin-bottom: 24px;
+}
+
+.topBadgeIcon {
+  flex-shrink: 0;
+  color: #22c55e;
+}
+
+.badgeText {
+  font-size: 14px;
+  font-weight: 500;
+  color: #166534;
+  margin: 0;
+}
+
+.title {
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #1a1a1a;
+  margin: 0 0 24px 0;
+}
+
+.titleIcon {
+  display: inline-block;
+  margin: 0 4px;
+  font-size: 48px;
+}
+
+.titleHighlight {
+  color: #ff6b35;
+}
+
+.titleGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.teacherIcons {
+  display: inline-flex;
+  margin-left: 8px;
+  position: relative;
+}
+
+.teacherIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 3px solid white;
+  margin-left: -12px;
+}
+
+.teacherIcon:first-child {
+  margin-left: 0;
+}
+
+.description {
+  font-size: 17px;
+  line-height: 1.7;
+  color: #666;
+  margin: 0 0 32px 0;
+  max-width: 520px;
+}
+
+.buttons {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 48px;
+}
+
+.primaryButton {
+  padding: 16px 32px;
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 32px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.primaryButton:hover {
+  background: #2d2d2d;
+}
+
+.secondaryButton {
+  padding: 16px 32px;
+  background: white;
+  color: #1a1a1a;
+  border: 2px solid #e5e5e5;
+  border-radius: 32px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondaryButton:hover {
+  border-color: #d4d4d4;
+  background: #fafafa;
+}
+
+.stats {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.avatars {
+  display: flex;
+  margin-right: 8px;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid white;
+  margin-left: -12px;
+  object-fit: cover;
+}
+
+.avatar:first-child {
+  margin-left: 0;
+}
+
+.statsText {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.statsHighlight {
+  font-weight: 700;
+}
+
+.rightSection {
+  position: relative;
+}
+
+.imageContainer {
+  position: relative;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.heroImage {
+  width: 100%;
+  height: 700px;
+  object-fit: cover;
+  display: block;
+  border-radius: 24px;
+}
+
+.floatingBadge {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.badgeIcon {
+  color: #22c55e;
+}
+
+.videoIcon {
+  color: #ff6b35;
+}
+
+.capIcon {
+  color: #9333ea;
+}
+
+.floatingTop {
+  top: 40px;
+  left: -40px;
+}
+
+.floatingRight {
+  top: 40px;
+  right: -60px;
+}
+
+.floatingBottom {
+  bottom: 60px;
+  left: -30px;
+}
+
+.floatingBottomRight {
+  bottom: 40px;
+  right: -40px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .content {
+    grid-template-columns: 1fr;
+    gap: 60px;
+  }
+  
+  .leftSection {
+    max-width: 100%;
+    text-align: center;
+  }
+  
+  .title {
+    font-size: 48px;
+  }
+  
+  .buttons {
+    justify-content: center;
+  }
+  
+  .stats {
+    justify-content: center;
+  }
+  
+  .floatingBadge {
+    position: static;
+    margin: 8px auto;
+  }
+}
+
+@media (max-width: 768px) {
+    .hero {
+        padding: 50px 0 40px 0;
+    }
+
+  .container {
+    padding: 0px 25px;
+  }
+
+  .content {
+    gap: 40px;
+  }
+
+  .title {
+    font-size: 42px;
+  }
+
+  .titleIcon {
+    font-size: 40px;
+  }
+
+  .description {
+    font-size: 16px;
+  }
+
+  .buttons {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    width: 100%;
+    padding: 14px 28px;
+  }
+
+  .heroImage {
+    height: 500px;
+  }
+
+  .imageContainer {
+    padding-bottom: 10px;
+  }
+
+  .floatingBadge {
+    font-size: 13px;
+    padding: 10px 16px;
+    margin: 10px;
+  }
+}
+
+@media (max-width: 640px) {
+  .title {
+    font-size: 36px;
+  }
+  
+  .titleIcon {
+    font-size: 32px;
+  }
+  
+  .buttons {
+    flex-direction: column;
+  }
+  
+  .primaryButton,
+  .secondaryButton {
+    width: 100%;
+  }
+}

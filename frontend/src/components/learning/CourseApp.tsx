@@ -62,7 +62,8 @@ const CourseApp: React.FC<CourseAppProps> = ({ onBack, onAuthRequired }) => {
   const [purchasedCourses, setPurchasedCourses] = useState<Set<string>>(new Set()); // Track purchased courses
   const [courseCache, setCourseCache] = useState<Map<string, Course>>(new Map()); // Cache for loaded courses
   const [courseSource, setCourseSource] = useState<'purchased' | 'list' | null>(null); // Track where course was accessed from
-  const { isAuthenticated } = useAuthStore();
+  // Atomic selector để tối ưu performance
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const { enrollments, fetchEnrollments } = useEnrollment();
 
   // Check if a course is purchased by checking enrollments

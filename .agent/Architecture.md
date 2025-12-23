@@ -1,8 +1,8 @@
-# UniLish System Architecture
+# EngPro System Architecture
 
 ## 1. Executive Summary
 
-This document outlines the technical architecture for **UniLish**, a modern specific English Learning Platform. The system adopts a monolithic monorepo structure, integrating a React-based frontend with a Node.js/Express backend. Key design goals include high interactivity, scalability, and personalized learning experiences powered by AI integration.
+This document outlines the technical architecture for **EngPro**, a modern specific English Learning Platform. The system adopts a monolithic monorepo structure, integrating a React-based frontend with a Node.js/Express backend. Key design goals include high interactivity, scalability, and personalized learning experiences powered by AI integration.
 
 ## 2. Technology Stack
 
@@ -102,4 +102,4 @@ The architecture strictly separates **Client State** (UI/Session) and **Server S
 - **File Naming**: Uses CamelCase for non-component files (`authService.ts`) and PascalCase for components (`Button.tsx`).
 
 ---
-*UniLish Platform Architecture Documentation*
+*EngPro Platform Architecture Documentation*

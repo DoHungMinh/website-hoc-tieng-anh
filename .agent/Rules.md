@@ -1,12 +1,12 @@
-# 🎯 Hướng dẫn & Nguyên tắc Phát triển CLIENT - UNILISH
+# 🎯 Hướng dẫn & Nguyên tắc Phát triển CLIENT - ENGPRO
 
-Tài liệu này định nghĩa các tiêu chuẩn, nguyên tắc và hướng dẫn tối ưu hóa để đảm bảo Frontend **UNILISH** đạt hiệu suất cao, code chất lượng và trải nghiệm người dùng xuất sắc.
+Tài liệu này định nghĩa các tiêu chuẩn, nguyên tắc và hướng dẫn tối ưu hóa để đảm bảo Frontend **ENGPRO** đạt hiệu suất cao, code chất lượng và trải nghiệm người dùng xuất sắc.
 
 ***
 
 ## 1. Tầm nhìn & Quy mô (Scope)
 
-**UNILISH Client** là giao diện người dùng cho nền tảng học tiếng Anh trực tuyến, tích hợp AI Chatbot làm gia sư ảo, hệ thống đánh giá năng lực và lộ trình học tập thích ứng.
+**ENGPRO Client** là giao diện người dùng cho nền tảng học tiếng Anh trực tuyến, tích hợp AI Chatbot làm gia sư ảo, hệ thống đánh giá năng lực và lộ trình học tập thích ứng.
 
 - **Tech Stack**: React 18 + Vite + TypeScript + Zustand + React Query + Axios + CSS Modules
 - **Architecture**: Modular Feature-based structure
@@ -207,4 +207,4 @@ export const useCourses = (level: string) => {
 
 ***
 
-**🎯 Mục tiêu**: Xây dựng nền tảng UniLish nhanh, mượt mà và tin cậy để đồng hành cùng người học mỗi ngày!
+**🎯 Mục tiêu**: Xây dựng nền tảng EngPro nhanh, mượt mà và tin cậy để đồng hành cùng người học mỗi ngày!

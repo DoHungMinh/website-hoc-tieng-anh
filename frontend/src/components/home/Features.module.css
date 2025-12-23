@@ -1,0 +1,367 @@
+.features {
+  padding: 5rem 0;
+  background-color: var(--body-bg);
+  overflow: hidden;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Header Section */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.headerLeft {
+  flex: 1;
+}
+
+.title {
+  font-size: 2.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+}
+
+.titleLine {
+  display: block;
+}
+
+.wavyArrow {
+  display: block;
+  margin-top: 0.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.wavyArrow svg {
+  width: 120px;
+  height: auto;
+}
+
+.subtitle {
+  font-size: 1rem;
+  line-height: 1.7;
+  max-width: 300px;
+}
+
+/* Slider Section */
+.sliderWrapper {
+  position: relative;
+}
+
+.swiperContainer {
+  overflow: visible !important;
+  padding-bottom: 1rem;
+}
+
+/* Feature Card */
+.card {
+  height: 400px;
+  width: 400px;
+  border-radius: 24px;
+  padding: 1.75rem;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Card Background Colors */
+.cardGreen {
+  background: linear-gradient(135deg, #d4f7c5 0%, #b8f5a0 100%);
+}
+
+.cardYellow {
+  background: linear-gradient(135deg, #fef6c7 0%, #fef08a 100%);
+}
+
+.cardBlue {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+}
+
+.cardPink {
+  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+}
+
+.cardPurple {
+  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+}
+
+.cardOrange {
+  background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
+}
+
+/* Icon Box */
+.iconBox {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: auto;
+  position: relative;
+  z-index: 2;
+}
+
+.iconBoxGreen {
+  background-color: #22c55e;
+}
+
+.iconBoxYellow {
+  background-color: #facc15;
+}
+
+.iconBoxBlue {
+  background-color: #3b82f6;
+}
+
+.iconBoxPink {
+  background-color: #ec4899;
+}
+
+.iconBoxPurple {
+  background-color: #8b5cf6;
+}
+
+.iconBoxOrange {
+  background-color: #f97316;
+}
+
+.iconBox svg {
+  width: 28px;
+  height: 28px;
+  color: white;
+}
+
+/* Decorative Shapes */
+.decorations {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 200px;
+  height: 200px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.circle1 {
+  position: absolute;
+  top: 20px;
+  right: 40px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  opacity: 0.5;
+}
+
+.circle2 {
+  position: absolute;
+  top: 60px;
+  right: -20px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  opacity: 0.4;
+}
+
+.gear {
+  position: absolute;
+  top: 80px;
+  right: 60px;
+  width: 60px;
+  height: 60px;
+  opacity: 0.3;
+}
+
+/* Circle Colors */
+.circleGreen {
+  background-color: #86efac;
+}
+
+.circleYellow {
+  background-color: #fde047;
+}
+
+.circleBlue {
+  background-color: #93c5fd;
+}
+
+.circlePink {
+  background-color: #f9a8d4;
+}
+
+.circlePurple {
+  background-color: #c4b5fd;
+}
+
+.circleOrange {
+  background-color: #fdba74;
+}
+
+/* Card Content */
+.cardContent {
+  margin-top: auto;
+  position: relative;
+  z-index: 2;
+}
+
+.cardTitle {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+}
+
+.cardDescription {
+  font-size: 0.95rem;
+  color: #4a4a4a;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+/* Button */
+.cardButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.75rem;
+  background-color: #a855f7;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.cardButton:hover {
+  background-color: #9333ea;
+}
+
+/* Navigation Arrows */
+.navigation {
+  display: flex;
+  gap: 12px;
+  margin-top: 1.5rem;
+  justify-content: flex-end;
+}
+
+.navButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #fff;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #1a1a1a;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.navButton:hover:not(:disabled) {
+  background-color: #a855f7;
+  border-color: #a855f7;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(168, 85, 247, 0.3);
+}
+
+.navButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.navButton svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Swiper Custom Styles */
+:global(.swiper-slide) {
+  width: auto !important;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .headerLeft {
+    max-width: 100%;
+  }
+
+  .title {
+    font-size: 2.25rem;
+  }
+
+  .subtitle {
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  .wavyArrow {
+    display: flex;
+    justify-content: center;
+  }
+
+  .card {
+    height: 380px;
+  }
+}
+
+@media (max-width: 640px) {
+  .features {
+    padding: 3rem 0;
+  }
+
+  .swiperContainer {
+    overflow: hidden !important;
+  }
+
+  .title {
+    font-size: 1.875rem;
+  }
+
+  .card {
+    height: 360px;
+    width: 100% !important;
+    padding: 1.5rem;
+  }
+
+  .cardTitle {
+    font-size: 1.25rem;
+  }
+
+  .cardDescription {
+    font-size: 0.875rem;
+  }
+
+  .cardButton {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+  }
+
+  .navigation {
+    justify-content: center;
+  }
+}

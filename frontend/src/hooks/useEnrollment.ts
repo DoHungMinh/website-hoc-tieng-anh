@@ -48,7 +48,8 @@ export const useEnrollment = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastFetch, setLastFetch] = useState<number>(0);
-  const { token } = useAuthStore();
+  // Atomic selector - chỉ re-render khi token thay đổi
+  const token = useAuthStore((state) => state.token);
 
   // Fetch user enrollments
   const fetchEnrollments = useCallback(async () => {

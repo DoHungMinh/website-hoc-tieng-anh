@@ -7,7 +7,8 @@ import {
 } from "@/services/progressService";
 
 const Progress = () => {
-    const { isAuthenticated } = useAuthStore();
+    // Atomic selector để tối ưu performance
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const [progressStats, setProgressStats] =
         useState<UserProgressStats | null>(null);
 

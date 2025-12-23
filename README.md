@@ -1,6 +1,6 @@
-# UniLish - English Learning Platform with AI Chatbot
+# EngPro - English Learning Platform with AI Chatbot
 
-UniLish is a comprehensive online English learning platform featuring an intelligent AI Chatbot, proficiency assessment systems, and adaptive learning lessons.
+EngPro is a comprehensive online English learning platform featuring an intelligent AI Chatbot, proficiency assessment systems, and adaptive learning lessons.
 
 ## Project Status
 
@@ -290,7 +290,7 @@ MIT License
 
 If you have questions or need support:
 - Create an issue on GitHub
-- Email: support@unilish.com
+- Email: support@engpro.com
 
 ---
 

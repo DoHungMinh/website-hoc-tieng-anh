@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import { useAuthStore } from "@/stores/authStore";
 
 export const useHeartbeat = () => {
-    const { user, token, forceLogout } = useAuthStore();
+    // Atomic selectors để tối ưu performance
+    const user = useAuthStore((state) => state.user);
+    const token = useAuthStore((state) => state.token);
+    const forceLogout = useAuthStore((state) => state.forceLogout);
     const [accountDisabledMessage, setAccountDisabledMessage] = useState<
         string | null
     >(null);

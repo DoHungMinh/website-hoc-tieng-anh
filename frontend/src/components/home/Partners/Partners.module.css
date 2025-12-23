@@ -1,0 +1,140 @@
+.partners {
+  padding: 4rem 0;
+  background-color: #fff;
+  overflow-x: hidden;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #f5f5f5;
+  border-radius: 100px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+}
+
+.badge svg {
+  color: #1a1a1a;
+}
+
+.subtitle {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Partner Logos */
+.logos {
+  display: flex;
+  align-items: center;
+  position: relative;
+  height: 100px;
+  overflow: hidden;
+  /* Break out of container to full width */
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+}
+
+.logoItem {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 160px;
+  height: 80px;
+  flex-shrink: 0;
+}
+
+.logo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: filter 0.3s ease, opacity 0.3s ease;
+  cursor: pointer;
+}
+
+.logoItem:hover .logo {
+  opacity: 1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .partners {
+    padding: 2.5rem 0;
+  }
+
+  .header {
+    margin-bottom: 1.5rem;
+  }
+
+  .badge {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+  }
+
+  .subtitle {
+    font-size: 0.9375rem;
+    padding: 0 1rem;
+  }
+
+  .logos {
+    height: 60px;
+  }
+
+  .logoItem {
+    width: 120px;
+    height: 50px;
+  }
+
+  .logo {
+    max-width: 90%;
+    max-height: 90%;
+  }
+}
+
+@media (max-width: 480px) {
+  .partners {
+    padding: 2rem 0;
+  }
+
+  .header {
+    margin-bottom: 1rem;
+  }
+
+  .subtitle {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .logos {
+    height: 50px;
+  }
+
+  .logoItem {
+    width: 100px;
+    height: 40px;
+  }
+
+  .logo {
+    max-width: 85%;
+    max-height: 85%;
+  }
+}

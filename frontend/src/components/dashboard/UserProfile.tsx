@@ -15,7 +15,11 @@ interface UserProfileProps {
 type ProfileTab = 'profile' | 'password';
 
 const UserProfile: React.FC<UserProfileProps> = ({ onBack, onNavigate }) => {
-  const { user, logout, setUser, token } = useAuthStore();
+  // Atomic selectors để tối ưu performance
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
+  const setUser = useAuthStore((state) => state.setUser);
+  const token = useAuthStore((state) => state.token);
   const { toasts, removeToast, success, error } = useToast();
   const [activeTab, setActiveTab] = useState<ProfileTab>('profile');
   const [isEditing, setIsEditing] = useState(false);

@@ -1,6 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --body-bg: #FCF8F8;
+}
 
 /* Custom slider styles */
 .slider {

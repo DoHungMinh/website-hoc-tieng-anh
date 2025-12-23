@@ -1,6 +1,7 @@
-import React from 'react';
-import { BookOpen, Clock, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { BookOpen, Settings, Paperclip } from 'lucide-react';
 import { useNotificationStore } from '@/stores/notificationStore';
+import styles from './NotificationDropdown.module.css';
 
 interface NotificationDropdownProps {
   isOpen: boolean;
@@ -8,133 +9,128 @@ interface NotificationDropdownProps {
 }
 
 const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isOpen, onClose }) => {
-  const { notifications, markAsRead, markAllAsRead, clearNotifications } = useNotificationStore();
+  const { notifications, markAsRead, markAllAsRead } = useNotificationStore();
+  const [activeTab, setActiveTab] = useState<'inbox' | 'general'>('inbox');
 
   if (!isOpen) return null;
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    const diffInHours = Math.floor(diffInMinutes / 60);
     
-    if (diffInHours < 1) return 'Vừa xong';
+    if (diffInMinutes < 60) return `${diffInMinutes} phút trước`;
     if (diffInHours < 24) return `${diffInHours} giờ trước`;
-    return date.toLocaleDateString('vi-VN');
+    return `${Math.floor(diffInHours / 24)} ngày trước`;
   };
 
   const handleNotificationClick = (notificationId: string) => {
     markAsRead(notificationId);
   };
 
+  const getAvatarClass = (index: number) => {
+    const classes = [styles.avatarPink, styles.avatarGreen, styles.avatarPurple];
+    return classes[index % classes.length];
+  };
+
+  const getEmoji = (index: number) => {
+    const emojis = ['👨🏻', '👨🏻', '👩🏾', '👨🏾'];
+    return emojis[index % emojis.length];
+  };
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
   return (
     <>
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 z-40" 
-        onClick={onClose}
-      />
+      <div className={styles.backdrop} onClick={onClose} />
       
-      {/* Dropdown */}
-      <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border z-50 max-h-96 overflow-hidden">
+      <div className={styles.dropdown}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b bg-gray-50">
-          <h3 className="font-semibold text-gray-800">Thông báo khóa học</h3>
-          <div className="flex items-center gap-2">
-            {notifications.length > 0 && (
-              <>
-                <button
-                  onClick={markAllAsRead}
-                  className="text-xs text-blue-600 hover:text-blue-800"
-                >
-                  Đánh dấu tất cả đã đọc
-                </button>
-                <button
-                  onClick={clearNotifications}
-                  className="text-xs text-red-600 hover:text-red-800"
-                >
-                  Xóa tất cả
-                </button>
-              </>
-            )}
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
+        <div className={styles.header}>
+          <h3 className={styles.title}>Thông báo</h3>
+          <button onClick={markAllAsRead} className={styles.markAllRead}>
+            Đánh dấu tất cả đã đọc
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className={styles.tabs}>
+          <button
+            onClick={() => setActiveTab('inbox')}
+            className={`${styles.tab} ${activeTab === 'inbox' ? styles.tabActive : ''}`}
+          >
+            Hộp thư
+            {unreadCount > 0 && <span className={styles.badge}>{unreadCount}</span>}
+          </button>
+          <button
+            onClick={() => setActiveTab('general')}
+            className={`${styles.tab} ${activeTab === 'general' ? styles.tabActive : ''}`}
+          >
+            Chung
+          </button>
+          <button className={styles.settingsButton}>
+            <Settings size={20} />
+          </button>
         </div>
 
         {/* Content */}
-        <div className="max-h-80 overflow-y-auto">
+        <div className={styles.content}>
           {notifications.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              <BookOpen className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+            <div className={styles.emptyState}>
+              <BookOpen className={styles.emptyIcon} />
               <p>Chưa có thông báo nào</p>
-              <p className="text-sm">Các khóa học bạn mua sẽ hiển thị ở đây</p>
+              <p style={{ fontSize: '14px', marginTop: '8px' }}>
+                Các khóa học bạn mua sẽ hiển thị ở đây
+              </p>
             </div>
           ) : (
-            <div className="p-2">
-              {notifications.map((notification) => (
+            <div className={styles.notificationList}>
+              {notifications.map((notification, index) => (
                 <div
                   key={notification.id}
                   onClick={() => handleNotificationClick(notification.id)}
-                  className={`p-3 rounded-lg mb-2 cursor-pointer transition-colors ${
-                    notification.isRead 
-                      ? 'bg-gray-50 hover:bg-gray-100' 
-                      : 'bg-blue-50 hover:bg-blue-100 border-l-4 border-blue-500'
-                  }`}
+                  className={styles.notificationItem}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-full ${
-                      notification.isRead ? 'bg-gray-200' : 'bg-green-100'
-                    }`}>
-                      <BookOpen className={`h-4 w-4 ${
-                        notification.isRead ? 'text-gray-500' : 'text-green-600'
-                      }`} />
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className={`font-medium text-sm ${
-                          notification.isRead ? 'text-gray-700' : 'text-gray-900'
-                        }`}>
-                          Mua khóa học thành công!
-                        </p>
-                        {!notification.isRead && (
-                          <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
-                        )}
-                      </div>
-                      
-                      <p className={`text-sm mt-1 ${
-                        notification.isRead ? 'text-gray-500' : 'text-gray-700'
-                      }`}>
-                        {notification.courseName}
-                      </p>
-                      
-                      <div className="flex items-center gap-1 mt-2 text-xs text-gray-400">
-                        <Clock className="h-3 w-3" />
-                        <span>{formatDate(notification.purchaseDate)}</span>
-                      </div>
-                    </div>
+                  <div className={`${styles.avatar} ${getAvatarClass(index)}`}>
+                    {getEmoji(index)}
                   </div>
+                  
+                  <div className={styles.notificationContent}>
+                    <p className={styles.notificationTitle}>
+                      {notification.courseName}
+                    </p>
+                    <p className={styles.notificationMeta}>
+                      {formatDate(notification.purchaseDate)}
+                      <span className={styles.metaSeparator} />
+                      Khóa học mới
+                    </p>
+
+                    {/* Example action buttons for specific notifications */}
+                    {index === 2 && (
+                      <div className={styles.actions}>
+                        <button className={styles.declineButton}>Từ chối</button>
+                        <button className={styles.acceptButton}>Chấp nhận</button>
+                      </div>
+                    )}
+
+                    {/* Example file attachment */}
+                    {index === 3 && (
+                      <div className={styles.attachment}>
+                        <Paperclip className={styles.attachmentIcon} />
+                        <span>Tài liệu khóa học.pdf</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {!notification.isRead && (
+                    <div className={styles.unreadDot} />
+                  )}
                 </div>
               ))}
             </div>
           )}
         </div>
-
-        {/* Footer */}
-        {notifications.length > 0 && (
-          <div className="p-3 border-t bg-gray-50 text-center">
-            <button 
-              onClick={onClose}
-              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-            >
-              Đóng
-            </button>
-          </div>
-        )}
       </div>
     </>
   );

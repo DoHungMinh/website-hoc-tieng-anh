@@ -32,7 +32,9 @@ export const fetchWithAuth = async (
 
 // Hook to get authenticated fetch function
 export const useAuthenticatedFetch = () => {
-  const { token, forceLogout } = useAuthStore();
+  // Atomic selectors để tối ưu performance
+  const token = useAuthStore((state) => state.token);
+  const forceLogout = useAuthStore((state) => state.forceLogout);
   
   return async (url: string, options: RequestInit = {}): Promise<Response> => {
     const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};

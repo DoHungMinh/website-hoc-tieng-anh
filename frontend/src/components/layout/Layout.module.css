@@ -1,0 +1,114 @@
+/* Layout Container */
+.layout {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-primary, #fff);
+}
+
+/* Main Content Area */
+.mainContent {
+    flex: 1;
+    width: 100%;
+}
+
+/* ========================================
+   Skeleton Loaders
+   ======================================== */
+
+/* Header Skeleton */
+.headerSkeleton {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    height: 72px;
+}
+
+.skeletonLogo {
+    width: 120px;
+    height: 32px;
+    background-color: rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+}
+
+.skeletonNav {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.skeletonNavItem {
+    width: 80px;
+    height: 20px;
+    background-color: rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+}
+
+.skeletonButton {
+    width: 100px;
+    height: 40px;
+    background-color: rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+}
+
+/* Footer Skeleton */
+.footerSkeleton {
+    padding: 2rem;
+    background: linear-gradient(90deg, #f5f5f5 25%, #ebebeb 50%, #f5f5f5 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    min-height: 200px;
+}
+
+.skeletonFooterContent {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    height: 150px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+}
+
+/* Shimmer Animation */
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* ========================================
+   Responsive Design
+   ======================================== */
+
+@media (max-width: 768px) {
+    .headerSkeleton {
+        padding: 0.75rem 1rem;
+        height: 60px;
+    }
+
+    .skeletonLogo {
+        width: 100px;
+        height: 28px;
+    }
+
+    .skeletonNav {
+        display: none;
+    }
+
+    .skeletonButton {
+        width: 80px;
+        height: 36px;
+    }
+
+    .footerSkeleton {
+        padding: 1.5rem 1rem;
+        min-height: 150px;
+    }
+}

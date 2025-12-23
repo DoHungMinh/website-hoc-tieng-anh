@@ -26,7 +26,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
     onLogout,
 }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const { user, logout } = useAuthStore();
+    // Atomic selectors để tối ưu performance
+    const user = useAuthStore((state) => state.user);
+    const logout = useAuthStore((state) => state.logout);
 
     const menuItems = [
         { id: "dashboard", label: "Thống kê", icon: BarChart3 },

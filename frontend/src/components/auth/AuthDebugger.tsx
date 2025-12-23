@@ -3,7 +3,9 @@ import { useAuthStore } from '@/stores/authStore';
 import { STORAGE_KEYS } from '@/utils/constants';
 
 export const AuthDebugger: React.FC = () => {
-  const { user, logout } = useAuthStore();
+  // Atomic selectors để tối ưu performance
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
   const [showDebug, setShowDebug] = useState(false);
 
   const handleForceLogout = () => {

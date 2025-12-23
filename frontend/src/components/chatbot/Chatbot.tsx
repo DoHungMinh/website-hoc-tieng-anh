@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { MessageCircle, Send, X, Bot, User, Minimize2, TrendingUp, BookOpen, Expand, Shrink, Mic, Keyboard } from 'lucide-react';
 import { apiService } from '@/services/api';
 import { useAuthStore } from '@/stores/authStore';
@@ -25,8 +25,9 @@ const Chatbot = () => {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Get authentication status from AuthStore
-  const { isAuthenticated, user } = useAuthStore();
+  // Atomic selectors - tránh re-render không cần thiết
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const user = useAuthStore((state) => state.user);
 
   // Function to check current auth status
   const getCurrentAuthStatus = useCallback(() => {
@@ -531,4 +532,5 @@ const Chatbot = () => {
   );
 };
 
-export default Chatbot;
+// Memo để tránh re-render không cần thiết
+export default memo(Chatbot);

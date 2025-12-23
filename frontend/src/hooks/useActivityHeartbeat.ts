@@ -2,7 +2,9 @@ import { useEffect, useRef } from "react";
 import { useAuthStore } from "@/stores/authStore";
 
 export const useActivityHeartbeat = () => {
-    const { user, token } = useAuthStore();
+    // Atomic selectors để tối ưu performance
+    const user = useAuthStore((state) => state.user);
+    const token = useAuthStore((state) => state.token);
     const lastHeartbeatRef = useRef<number>(0);
     const isCheckingRef = useRef<boolean>(false);
 

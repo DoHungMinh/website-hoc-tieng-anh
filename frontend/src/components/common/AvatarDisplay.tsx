@@ -8,6 +8,7 @@ interface AvatarDisplayProps {
   showOnlineStatus?: boolean;
   isOnline?: boolean;
   className?: string;
+  bgColor?: string;
 }
 
 const AvatarDisplay: React.FC<AvatarDisplayProps> = ({
@@ -16,7 +17,8 @@ const AvatarDisplay: React.FC<AvatarDisplayProps> = ({
   size = 'md',
   showOnlineStatus = false,
   isOnline = false,
-  className = ''
+  className = '',
+  bgColor = 'from-green-400 to-lime-500'
 }) => {
   const getSizeClasses = () => {
     switch (size) {
@@ -93,7 +95,7 @@ const AvatarDisplay: React.FC<AvatarDisplayProps> = ({
               const parent = target.parentElement;
               if (parent) {
                 parent.innerHTML = `
-                  <div class="w-full h-full bg-gradient-to-br from-green-400 to-lime-500 flex items-center justify-center">
+                  <div class="w-full h-full bg-gradient-to-br ${bgColor} flex items-center justify-center">
                     <span class="text-white font-semibold text-sm">${getInitials(name)}</span>
                   </div>
                 `;
@@ -103,13 +105,13 @@ const AvatarDisplay: React.FC<AvatarDisplayProps> = ({
         ) : (
           // Fallback với initials hoặc icon
           name ? (
-            <div className="w-full h-full bg-gradient-to-br from-green-400 to-lime-500 flex items-center justify-center">
+            <div className={`w-full h-full bg-gradient-to-br ${bgColor} flex items-center justify-center`}>
               <span className="text-white font-semibold text-sm">
                 {getInitials(name)}
               </span>
             </div>
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-green-400 to-lime-500 flex items-center justify-center">
+            <div className={`w-full h-full bg-gradient-to-br ${bgColor} flex items-center justify-center`}>
               <User className={`${getIconSize()} text-white`} />
             </div>
           )
