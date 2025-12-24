@@ -1,6 +1,7 @@
 import { memo, useState, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from './Rating.module.css';
+import { useTextReveal } from '../../../hooks/useTextReveal';
 
 interface Testimonial {
   id: number;
@@ -73,6 +74,19 @@ const Rating = memo(() => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const totalSlides = TESTIMONIALS.length;
 
+  const { ref: titleRef } = useTextReveal({
+    type: 'words,lines',
+    duration: 0.8,
+    stagger: 0.08,
+    ease: 'expo.out',
+    autoStart: false,
+    delay: 0,
+    scrollTrigger: {
+      start: 'top 80%',
+      toggleActions: 'play none none none',
+    },
+  });
+
   const handlePrev = useCallback(() => {
     setCurrentIndex((prev) => (prev === 0 ? totalSlides - 1 : prev - 1));
   }, [totalSlides]);
@@ -110,7 +124,7 @@ const Rating = memo(() => {
     <section className={styles.rating}>
       <div className={styles.container}>
         {/* Header */}
-        <h2 className={styles.title}>Học viên nói gì về chúng tôi</h2>
+        <h2 ref={titleRef} className={styles.title}>Học viên nói gì về chúng tôi</h2>
 
         {/* Cards Carousel */}
         <div className={styles.carousel}>

@@ -28,6 +28,8 @@
   font-weight: 600;
   line-height: 1.2;
   margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .titleLine {

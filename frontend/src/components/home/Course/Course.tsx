@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { GraduationCap, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import styles from './Course.module.css';
+import { useTextReveal } from '../../../hooks/useTextReveal';
 
 interface CourseLevel {
   id: string;
@@ -54,6 +55,32 @@ const COURSE_LEVELS: CourseLevel[] = [
 const Course = memo(() => {
   const navigate = useNavigate();
 
+  const { ref: titleRef } = useTextReveal({
+    type: 'words,lines',
+    duration: 0.8,
+    stagger: 0.08,
+    ease: 'expo.out',
+    autoStart: false,
+    delay: 0,
+    scrollTrigger: {
+      start: 'top 80%',
+      toggleActions: 'play none none none',
+    },
+  });
+
+  const { ref: subtitleRef } = useTextReveal({
+    type: 'words,lines',
+    duration: 0.8,
+    stagger: 0.08,
+    ease: 'expo.out',
+    autoStart: false,
+    delay: 0.2,
+    scrollTrigger: {
+      start: 'top 80%',
+      toggleActions: 'play none none none',
+    },
+  });
+
   const handleStartCourse = (level: string) => {
     navigate(`/courses?level=${level.toLowerCase()}`);
   };
@@ -70,8 +97,8 @@ const Course = memo(() => {
             <GraduationCap size={18} />
             <span>Cấp độ khóa học</span>
           </div>
-          <h2 className={styles.title}>Khóa học tiếng Anh cho mọi trình độ</h2>
-          <p className={styles.subtitle}>
+          <h2 ref={titleRef} className={styles.title}>Khóa học tiếng Anh cho mọi trình độ</h2>
+          <p ref={subtitleRef} className={styles.subtitle}>
             Chọn cấp độ phù hợp và tiến bộ từng bước với các bài học
             được thiết kế theo tốc độ học của bạn.
           </p>

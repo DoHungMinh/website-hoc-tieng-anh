@@ -2,6 +2,7 @@ import { memo, useState, useCallback } from 'react';
 import { Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import styles from './Pricing.module.css';
+import { useTextReveal } from '../../../hooks/useTextReveal';
 
 type BillingPeriod = 'monthly' | 'quarterly';
 
@@ -82,6 +83,32 @@ const Pricing = memo(() => {
   const navigate = useNavigate();
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
 
+  const { ref: titleRef } = useTextReveal({
+    type: 'words,lines',
+    duration: 0.8,
+    stagger: 0.08,
+    ease: 'expo.out',
+    autoStart: false,
+    delay: 0,
+    scrollTrigger: {
+      start: 'top 80%',
+      toggleActions: 'play none none none',
+    },
+  });
+
+  const { ref: subtitleRef } = useTextReveal({
+    type: 'words,lines',
+    duration: 0.8,
+    stagger: 0.08,
+    ease: 'expo.out',
+    autoStart: false,
+    delay: 0.2,
+    scrollTrigger: {
+      start: 'top 80%',
+      toggleActions: 'play none none none',
+    },
+  });
+
   const handleSelectPlan = useCallback((planId: string) => {
     if (planId === 'enterprise') {
       // Contact form or email
@@ -108,8 +135,8 @@ const Pricing = memo(() => {
       <div className={styles.container}>
         {/* Header */}
         <div className={styles.header}>
-          <h2 className={styles.title}>Chọn gói phù hợp với bạn!</h2>
-          <p className={styles.subtitle}>
+          <h2 ref={titleRef} className={styles.title}>Chọn gói phù hợp với bạn!</h2>
+          <p ref={subtitleRef} className={styles.subtitle}>
             Lựa chọn gói học phù hợp nhất với nhu cầu của bạn.
             Cần thêm hoặc bớt? Tùy chỉnh dễ dàng!
           </p>

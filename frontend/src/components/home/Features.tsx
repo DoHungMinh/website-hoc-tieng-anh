@@ -4,6 +4,7 @@ import { Navigation } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import { Download, Mic, MessageCircle, BookOpen, Brain, Target, ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from './Features.module.css';
+import { useTextReveal } from '../../hooks/useTextReveal';
 
 // Import Swiper styles
 import 'swiper/css';
@@ -114,6 +115,45 @@ const Features = memo<FeaturesProps>(({ onNavigate }) => {
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
+  const { ref: titleLine1Ref } = useTextReveal({
+    type: 'words',
+    duration: 0.8,
+    stagger: 0.08,
+    ease: 'expo.out',
+    autoStart: false,
+    delay: 0,
+    scrollTrigger: {
+      start: 'top 80%',
+      toggleActions: 'play none none none',
+    },
+  });
+
+  const { ref: titleLine2Ref } = useTextReveal({
+    type: 'words',
+    duration: 0.8,
+    stagger: 0.08,
+    ease: 'expo.out',
+    autoStart: false,
+    delay: 0.15,
+    scrollTrigger: {
+      start: 'top 80%',
+      toggleActions: 'play none none none',
+    },
+  });
+
+  const { ref: subtitleRef } = useTextReveal({
+    type: 'words,lines',
+    duration: 0.8,
+    stagger: 0.08,
+    ease: 'expo.out',
+    autoStart: false,
+    delay: 0.2,
+    scrollTrigger: {
+      start: 'top 80%',
+      toggleActions: 'play none none none',
+    },
+  });
+
   const handleSlideChange = useCallback((swiper: SwiperType) => {
     setActiveIndex(swiper.realIndex);
     setIsBeginning(swiper.isBeginning);
@@ -141,11 +181,11 @@ const Features = memo<FeaturesProps>(({ onNavigate }) => {
         <div className={styles.header}>
           <div className={styles.headerLeft}>
             <h2 className={styles.title}>
-              <span className={styles.titleLine}>Tính năng</span>
-              <span className={styles.titleLine}>đặc biệt cho bạn</span>
+              <span ref={titleLine1Ref} className={styles.titleLine}>Tính năng</span>
+              <span ref={titleLine2Ref} className={styles.titleLine}>đặc biệt cho bạn</span>
             </h2>
             
-            <p className={styles.subtitle}>
+            <p ref={subtitleRef} className={styles.subtitle}>
               Chúng tôi kết hợp công nghệ thông minh và thực hành thực tế để hành trình học tiếng Anh của bạn trở nên mượt mà hơn bao giờ hết.
             </p>
 

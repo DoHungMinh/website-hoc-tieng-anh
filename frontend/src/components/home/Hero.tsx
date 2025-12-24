@@ -16,7 +16,7 @@ const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
         type: 'words,lines',
         duration: 0.8,
         stagger: 0.1,
-        ease: 'ease.out',
+        ease: 'expo.out',
         delay: 0.2,
     });
 
@@ -24,7 +24,7 @@ const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
         type: 'words,lines',
         duration: 0.8,
         stagger: 0.1,
-        ease: 'ease.out',
+        ease: 'expo.out',
         delay: 0.5,
     });
 
@@ -36,8 +36,9 @@ const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
     //     delay: 0,
     // });
     
-    // Refs for floating badges
+    // Refs for floating badges and buttons
     const floatingBadgesRef = useRef<HTMLDivElement>(null);
+    const buttonsRef = useRef<HTMLDivElement>(null);
 
     // Floating badges animation - slide from right
     useEffect(() => {
@@ -46,7 +47,7 @@ const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
         const badges = floatingBadgesRef.current.querySelectorAll(`.${styles.floatingBadge}`);
         
         gsap.set(badges, { 
-            x: 100, 
+            x: 50, 
             opacity: 0 
         });
 
@@ -54,13 +55,34 @@ const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
             x: 0,
             opacity: 1,
             duration: 1,
-            stagger: 0.15,
-            ease: 'power3.inOut',
+            stagger: 0.2,
             delay: 1,
         });
 
         return () => {
             gsap.killTweensOf(badges);
+        };
+    }, []);
+
+    // Buttons animation - slide from right
+    useEffect(() => {
+        if (!buttonsRef.current) return;
+        
+        gsap.set(buttonsRef.current, { 
+            x: 100, 
+            opacity: 0 
+        });
+
+        gsap.to(buttonsRef.current, {
+            x: 0,
+            opacity: 1,
+            duration: 0.8,
+            ease: 'power3.out',
+            delay: 0.8,
+        });
+
+        return () => {
+            gsap.killTweensOf(buttonsRef.current);
         };
     }, []);
     return (
@@ -89,7 +111,7 @@ const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
                         </p>
 
                         {/* Buttons */}
-                        <div className={styles.buttons}>
+                        <div ref={buttonsRef} className={styles.buttons}>
                             <button 
                                 onClick={() => onNavigate?.("courses")}
                                 className={styles.primaryButton}

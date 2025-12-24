@@ -1,5 +1,8 @@
 import { useRef, useEffect, useCallback } from 'react';
 import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 interface TextRevealConfig {
     type?: 'words' | 'lines' | 'words,lines';
@@ -8,6 +11,7 @@ interface TextRevealConfig {
     ease?: string;
     autoStart?: boolean;
     delay?: number;
+    scrollTrigger?: ScrollTrigger.Vars;
 }
 
 interface TextRevealReturn {
@@ -31,6 +35,7 @@ export function useTextReveal(config: TextRevealConfig = {}): TextRevealReturn {
         ease = 'expo.out',
         autoStart = true,
         delay = 0,
+        scrollTrigger,
     } = config;
 
     const ref = useRef<HTMLElement>(null);
@@ -122,7 +127,14 @@ export function useTextReveal(config: TextRevealConfig = {}): TextRevealReturn {
         if (targets.length === 0) return;
 
         // Create timeline
-        const tl = gsap.timeline({ paused: true, delay });
+        const tl = gsap.timeline({ 
+            paused: true, 
+            delay,
+            scrollTrigger: scrollTrigger ? {
+                trigger: element,
+                ...scrollTrigger,
+            } : undefined,
+        });
 
         // Animate from below with opacity
         tl.from(targets, {

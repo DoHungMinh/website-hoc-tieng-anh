@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { Handshake } from 'lucide-react';
 import styles from './Partners.module.css';
 import { useInfiniteCarousel } from '../../../hooks/useInfiniteCarousel';
+import { useTextReveal } from '../../../hooks/useTextReveal';
 
 const PARTNERS = [
   { id: 1, name: 'Partner 1', logo: '/img/partner1.webp' },
@@ -27,6 +28,19 @@ const Partners = memo(() => {
     itemsVisible: 10, // Số lượng logo hiển thị cùng lúc (tăng = gap nhỏ hơn, giảm = gap lớn hơn)
   });
 
+  const { ref: subtitleRef } = useTextReveal({
+    type: 'words,lines',
+    duration: 0.8,
+    stagger: 0.08,
+    ease: 'expo.out',
+    autoStart: false,
+    delay: 0,
+    scrollTrigger: {
+      start: 'top 80%',
+      toggleActions: 'play none none none',
+    },
+  });
+
   return (
     <section className={styles.partners}>
       <div className={styles.container}>
@@ -36,7 +50,7 @@ const Partners = memo(() => {
             <Handshake size={18} />
             <span>ĐỐI TÁC TIN CẬY</span>
           </div>
-          <p className={styles.subtitle}>
+          <p ref={subtitleRef} className={styles.subtitle}>
             EngPro được tin dùng bởi các trường học và tổ chức giáo dục hàng đầu,
             cùng cam kết mang đến trải nghiệm học tập hiệu quả và thú vị.
           </p>
