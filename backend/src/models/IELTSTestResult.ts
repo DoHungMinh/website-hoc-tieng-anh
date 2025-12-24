@@ -7,7 +7,7 @@ interface IAnswer {
   isCorrect: boolean;
 }
 
-interface IIELTSTestResult extends Document {
+interface IIELTSTestResult extends Omit<Document, "_id"> {
   userId: string;
   examId: string;
   examTitle: string;

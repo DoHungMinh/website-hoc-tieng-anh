@@ -31,7 +31,7 @@ interface ISection {
 }
 
 // Interface cho IELTS Exam
-export interface IIELTSExam extends Document {
+export interface IIELTSExam extends Omit<Document, "_id"> {
   title: string;
   type: 'reading' | 'listening';
   difficulty: string;

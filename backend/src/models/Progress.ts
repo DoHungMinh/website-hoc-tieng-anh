@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IProgress extends Document {
+export interface IProgress extends Omit<Document, "_id"> {
   _id: string;
   userId: string;
   vocabulary: {

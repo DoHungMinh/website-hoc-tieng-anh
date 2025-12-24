@@ -12,7 +12,7 @@ export interface IQuiz {
   bestScore: number;
 }
 
-export interface IEnrollment extends Document {
+export interface IEnrollment extends Omit<Document, "_id"> {
   userId: mongoose.Types.ObjectId;
   courseId: mongoose.Types.ObjectId;
   enrolledAt: Date;

@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export interface ICourse extends Document {
+export interface ICourse extends Omit<Document, "_id"> {
   title: string;
   description: string;
   type: 'vocabulary' | 'grammar';

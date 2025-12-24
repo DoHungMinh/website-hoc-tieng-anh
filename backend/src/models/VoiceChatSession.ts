@@ -4,7 +4,7 @@ import mongoose, { Document, Schema } from 'mongoose';
  * Voice Chat Session Model
  * Track voice chat sessions để monitoring và billing
  */
-export interface IVoiceChatSession extends Document {
+export interface IVoiceChatSession extends Omit<Document, "_id"> {
   userId: string;
   sessionId: string;
   startTime: Date;

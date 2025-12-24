@@ -11,7 +11,7 @@ export interface IChatMessage {
   };
 }
 
-export interface IChatSession extends Document {
+export interface IChatSession extends Omit<Document, "_id"> {
   _id: string;
   userId: string;
   messages: IChatMessage[];

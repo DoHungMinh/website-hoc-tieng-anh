@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IAssessment extends Document {
+export interface IAssessment extends Omit<Document, "_id"> {
   _id: string;
   userId: string;
   type: 'placement' | 'progress' | 'final';
