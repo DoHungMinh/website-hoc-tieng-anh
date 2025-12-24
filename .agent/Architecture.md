@@ -2,15 +2,15 @@
 
 ## 1. Executive Summary
 
-This document outlines the technical architecture for **EngPro**, a modern specific English Learning Platform. The system adopts a monolithic monorepo structure, integrating a React-based frontend with a Node.js/Express backend. Key design goals include high interactivity, scalability, and personalized learning experiences powered by AI integration.
+This document outlines the technical architecture for **EngPro**, a comprehensive English Learning Platform with AI-powered features. The system adopts a monorepo structure with two separate frontend applications (Client & Admin) and a unified Node.js/Express backend. Key design goals include high interactivity, scalability, IELTS exam preparation, and personalized learning experiences powered by AI integration.
 
 ## 2. Technology Stack
 
-### 2.1 Frontend
+### 2.1 Frontend (Client & Admin)
 - **Framework**: React 18
 - **Language**: TypeScript
 - **Build Tool**: Vite
-- **Styling**: CSS Modules
+- **Styling**: CSS Modules + Tailwind CSS
 - **State Management**: Zustand
 - **Routing**: React Router DOM v6
 - **Icons**: Lucide React
@@ -22,84 +22,147 @@ This document outlines the technical architecture for **EngPro**, a modern speci
 - **Framework**: Express.js
 - **Database**: MongoDB + Mongoose
 - **Real-time**: Socket.IO
-- **AI Integration**: OpenAI API
+- **AI Integration**: OpenAI API (GPT-4, Whisper, TTS)
 - **Auth**: JWT + Bcrypt
+- **Validation**: Joi
 
-## 3. Frontend Architecture
-
-The frontend application (`frontend/`) uses a modular, feature-based directory structure to ensure maintainability and separation of concerns.
-
-### 3.1 Directory Structure
+## 3. Project Structure
 
 ```
-frontend/
-├── src/
-│   ├── components/              # UI Components
-│   │   ├── assessment/          # Assessment & Testing features
-│   │   ├── auth/                # Authentication forms
-│   │   ├── common/              # Reusable UI primitives (Buttons, Inputs)
-│   │   ├── dashboard/           # Progress tracking & Analytics
-│   │   ├── layout/              # Structural layouts (Header, Sidebar)
-│   │   ├── learning/            # Lessons & Practice interface
-│   │   └── chatbot/             # AI Chat interface
-│   ├── config/                  # App configuration (Environment)
-│   ├── hooks/                   # Custom logic hooks
-│   ├── pages/                   # Page-level components
-│   ├── services/                # API communication layer
-│   │   ├── api.ts               # Axios instance & interceptors
-│   │   └── *Service.ts          # Domain-specific API methods
-│   ├── stores/                  # Global state (Zustand)
-│   │   ├── useAuthStore.ts
-│   │   ├── useLessonStore.ts
-│   │   └── useUIStore.ts
-│   ├── types/                   # TypeScript definitions
-│   └── utils/                   # Helper functions
-└── ...
+website-hoc-tieng-anh/
+├── .agent/                          # Agent documentation
+│   ├── Architecture.md              # This file
+│   ├── Overview.md                  # Project overview
+│   └── Rules.md                     # Development rules
+├── frontend/
+│   ├── client/                      # User-facing application
+│   │   ├── src/
+│   │   │   ├── components/
+│   │   │   │   ├── assessment/      # Proficiency tests
+│   │   │   │   ├── auth/            # Login/Register
+│   │   │   │   ├── chatbot/         # AI Chatbot (GoPro 4.2)
+│   │   │   │   ├── common/          # Reusable UI (Logo, Buttons)
+│   │   │   │   ├── dashboard/       # Progress tracking
+│   │   │   │   ├── home/            # Landing page sections
+│   │   │   │   ├── ielts/           # IELTS exam components
+│   │   │   │   ├── layout/          # Header, Sidebar, Footer
+│   │   │   │   ├── learning/        # Lessons & Practice
+│   │   │   │   └── video/           # Video player components
+│   │   │   ├── hooks/               # Custom React hooks
+│   │   │   ├── pages/               # Page components
+│   │   │   ├── services/            # API communication
+│   │   │   ├── stores/              # Zustand stores
+│   │   │   ├── types/               # TypeScript definitions
+│   │   │   └── utils/               # Helper functions
+│   │   └── ...
+│   └── admin/                       # Admin dashboard application
+│       ├── src/
+│       │   ├── components/
+│       │   │   └── admin/
+│       │   │       └── dashboard/   # Admin management components
+│       │   │           ├── AIIELTSReadingCreator.tsx
+│       │   │           ├── CourseManagement.tsx
+│       │   │           ├── CreateIELTSExam.tsx
+│       │   │           ├── DashboardStats.tsx
+│       │   │           └── EditIELTSExam.tsx
+│       │   ├── contexts/            # React contexts
+│       │   ├── hooks/               # Admin-specific hooks
+│       │   ├── layouts/             # Admin layouts
+│       │   ├── pages/               # Admin pages
+│       │   ├── services/            # Admin API services
+│       │   ├── stores/              # Admin state
+│       │   └── utils/               # Admin utilities
+│       └── ...
+└── backend/
+    ├── src/
+    │   ├── controllers/             # API Controllers (13 files)
+    │   ├── middleware/              # Auth, Validation (5 files)
+    │   ├── models/                  # Mongoose schemas (9 files)
+    │   ├── routes/                  # API routes (13 files)
+    │   ├── services/                # Business logic (9 files)
+    │   ├── utils/                   # Helpers (3 files)
+    │   ├── server.ts                # Express server setup
+    │   └── index.ts                 # Entry point
+    └── ...
 ```
 
-### 3.2 State Management & Data Fetching (Optimized Pattern)
+## 4. Frontend Architecture
 
-The architecture strictly separates **Client State** (UI/Session) and **Server State** (Data Cache) to ensure optimal performance and code maintainability.
+### 4.1 Client Application
+The client application serves end-users with learning features:
 
-#### 1. Server State: React Query
-- **Role**: Manages all asynchronous data (fetching, caching, synchronizing).
-- **Strategy**:
-  - **Stale-while-revalidate**: Data is served immediately from cache while updating in the background.
-  - **Window Focus Refetch**: Ensures data freshness when the user returns to the tab.
-  - **Optimistic Updates**: Immediate UI feedback for mutations (e.g., submitting a quiz answer) before the server response confirms.
+- **Assessment**: Placement tests, scoring, adaptive difficulty
+- **Learning**: Lessons, vocabulary, grammar exercises
+- **IELTS**: Full IELTS exam simulation (Reading, Listening, Writing, Speaking)
+- **Dashboard**: Progress visualization, achievements, streaks
+- **Chatbot**: AI-powered assistant "GoPro 4.2" with voice support
 
-#### 2. Client State: Zustand
-- **Role**: Manages synchronous global state.
-- **Scope**:
-  - **Session**: User tokens, profile summaries.
-  - **UI**: Theme toggles, sidebar visibility, modal states.
-  - **Logic**: Ephemeral logic like "current active lesson step" or "timer status".
-- **Optimization**: Uses atomic selectors to prevent unnecessary re-renders (components only re-render when their specific slice changes).
+### 4.2 Admin Application
+The admin application provides management capabilities:
 
-### 3.3 Feature Modules
-- **Assessment**: Contains logic for placement tests, scoring algorithms, and adaptive difficulty adjustments.
-- **Learning**: The core system for lesson delivery, supporting diverse question types including Grammar, Vocabulary, and Listening exercises.
-- **Dashboard**: Visualizes user progress through interactive charts and graphs.
-- **Chatbot**: Provides a real-time interface for communication with the backend AI service.
+- **Course Management**: Create, edit, delete courses
+- **IELTS Exam Creator**: AI-powered exam generation
+- **User Management**: View and manage user accounts
+- **Statistics Dashboard**: Platform analytics
 
-## 4. Backend Architecture
+### 4.3 State Management Pattern
 
-### 4.1 MVC Pattern
-- **Models**: structured Mongoose schemas that define data shape and validation rules.
-- **Controllers**: Request handlers encapsulating business logic.
-- **Routes**: API endpoint definitions that map URLs to specific controllers.
-- **Services**: Isolated business logic layer, separated from HTTP transport concerns.
+**Client State (Zustand)**:
+- Session: User tokens, profile
+- UI: Theme, sidebar, modals
+- Logic: Timer status, current lesson step
 
-### 4.2 API Design
-- **RESTful**: Adheres to standard resource-based endpoint conventions.
-- **Secure**: All protected routes require a valid JWT passed in the Authorization header.
+**Server State (API + Caching)**:
+- Course data, lessons
+- User progress
+- Chat history
 
-## 5. Development Standards
+### 4.4 Component Styling
+- **CSS Modules**: For component-specific styles (e.g., `Chatbot.module.css`)
+- **Tailwind CSS**: For utility-first styling where needed
 
-- **TypeScript**: Enforces strict typing for all Props, State, and API Responses to ensure code reliability.
-- **Component Design**: Utilizes functional components with Hooks for modern React development.
-- **Styling**: CSS Modules
-- **File Naming**: Uses CamelCase for non-component files (`authService.ts`) and PascalCase for components (`Button.tsx`).
+## 5. Backend Architecture
+
+### 5.1 MVC Pattern
+- **Models**: Mongoose schemas (User, Course, Lesson, Progress, IELTSExam, etc.)
+- **Controllers**: Request handlers with business logic
+- **Routes**: RESTful API endpoint definitions
+- **Services**: Isolated business logic (AI, Email, Payment)
+
+### 5.2 Key Services
+- **AI Service**: OpenAI integration for chatbot, exam generation
+- **Voice Chat API**: Speech-to-text and text-to-speech
+- **Payment Service**: VNPay integration
+- **Email Service**: Nodemailer for notifications
+
+### 5.3 API Design
+- **RESTful**: Resource-based endpoints
+- **Authentication**: JWT in Authorization header
+- **Real-time**: Socket.IO for chat and notifications
+
+## 6. AI Features
+
+### 6.1 GoPro 4.2 Chatbot
+- Text-based conversation
+- Voice chat with Whisper (STT) and TTS
+- Context-aware responses
+- Learning progress analysis
+
+### 6.2 IELTS AI Generator
+- Automatic reading passage generation
+- Question generation (Multiple choice, True/False/Not Given, etc.)
+- Writing prompt generation
+- Speaking topic generation
+
+## 7. Development Standards
+
+- **TypeScript**: Strict typing for all Props, State, API responses
+- **Component Design**: Functional components with Hooks
+- **Styling**: CSS Modules preferred, Tailwind for utilities
+- **File Naming**: 
+  - Components: PascalCase (`Button.tsx`)
+  - Non-components: camelCase (`authService.ts`)
+  - CSS Modules: `ComponentName.module.css`
 
 ---
-*EngPro Platform Architecture Documentation*
+*EngPro Platform Architecture Documentation - Updated December 2025*

@@ -1,108 +1,147 @@
 # EngPro - English Learning Platform with AI Chatbot
 
-EngPro is a comprehensive online English learning platform featuring an intelligent AI Chatbot, proficiency assessment systems, and adaptive learning lessons.
+EngPro is a comprehensive online English learning platform featuring an intelligent AI Chatbot (GoPro 4.2), IELTS exam preparation, proficiency assessment systems, and adaptive learning lessons.
 
 ## Project Status
 
-- **Frontend**: Completed - React + TypeScript + Vite + Tailwind CSS
-- **Backend Structure**: Completed - Node.js + Express + MongoDB (MVC)
-- **Components**: Completed - UI/UX components and features
-- **Development Environment**: Ready - Dev server running at http://localhost:5173
-- **Package Management**: Completed - NPM workspaces for monorepo
+| Component | Status | Technology |
+|-----------|--------|------------|
+| **Frontend Client** | Completed | React + TypeScript + Vite + CSS Modules |
+| **Frontend Admin** | Completed | React + TypeScript + Vite + Tailwind CSS |
+| **Backend** | Completed | Node.js + Express + MongoDB |
+| **AI Chatbot** | Completed | OpenAI GPT-4 + Voice Chat |
+| **IELTS System** | Completed | AI-powered exam generation |
+
+### Development Servers
+- **Client**: http://localhost:5173
+- **Admin**: http://localhost:5174
+- **Backend**: http://localhost:5000
 
 ## Project Architecture
 
 ```
 website-hoc-tieng-anh/
-├── frontend/                     # React + Vite + Tailwind CSS
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── assessment/       # Proficiency assessment tests
-│   │   │   ├── auth/            # Login/Register
-│   │   │   ├── dashboard/       # Progress tracking dashboard
-│   │   │   ├── learning/        # Lessons and practice
-│   │   │   └── ...              # Existing components
-│   │   ├── pages/               # Main pages
-│   │   ├── services/            # API calls
-│   │   ├── stores/              # Zustand state management
-│   │   ├── types/               # TypeScript types
-│   │   └── utils/               # Helper functions
-│   ├── public/
-│   ├── package.json             # Frontend dependencies
-│   ├── vite.config.ts          # Frontend build config
-│   └── tsconfig.json           # Frontend TypeScript config
-├── backend/                      # Node.js + Express + MongoDB
-│   ├── src/
-│   │   ├── controllers/         # API Controllers (MVC)
-│   │   ├── models/              # Database Models
-│   │   ├── services/            # Business Logic
-│   │   ├── routes/              # API Routes
-│   │   ├── middleware/          # Authentication, Validation
-│   │   └── utils/               # Helper functions
-│   ├── config/                  # Configuration files
-│   ├── package.json             # Backend dependencies
-│   └── tsconfig.json           # Backend TypeScript config
-├── package.json                 # Root package.json (monorepo)
-├── .gitignore
-└── README.md
+├── .agent/                           # Agent documentation
+│   ├── Architecture.md               # System architecture
+│   ├── Overview.md                   # Project overview
+│   └── Rules.md                      # Development rules
+├── frontend/
+│   ├── client/                       # User-facing application
+│   │   ├── src/
+│   │   │   ├── components/
+│   │   │   │   ├── assessment/       # Proficiency tests
+│   │   │   │   ├── auth/             # Login/Register
+│   │   │   │   ├── chatbot/          # AI Chatbot (GoPro 4.2)
+│   │   │   │   ├── common/           # Reusable UI (Logo, Buttons)
+│   │   │   │   ├── dashboard/        # Progress tracking
+│   │   │   │   ├── home/             # Landing page sections
+│   │   │   │   ├── ielts/            # IELTS exam components
+│   │   │   │   ├── layout/           # Header, Sidebar, Footer
+│   │   │   │   ├── learning/         # Lessons & Practice
+│   │   │   │   └── video/            # Video player
+│   │   │   ├── hooks/                # Custom React hooks
+│   │   │   ├── pages/                # Page components
+│   │   │   ├── services/             # API communication
+│   │   │   ├── stores/               # Zustand stores
+│   │   │   ├── types/                # TypeScript definitions
+│   │   │   └── utils/                # Helper functions
+│   │   └── ...
+│   └── admin/                        # Admin dashboard
+│       ├── src/
+│       │   ├── components/admin/     # Admin components
+│       │   │   └── dashboard/
+│       │   │       ├── AIIELTSReadingCreator.tsx
+│       │   │       ├── CourseManagement.tsx
+│       │   │       ├── CreateIELTSExam.tsx
+│       │   │       ├── DashboardStats.tsx
+│       │   │       └── EditIELTSExam.tsx
+│       │   ├── hooks/                # Admin hooks
+│       │   ├── layouts/              # Admin layouts
+│       │   ├── pages/                # Admin pages
+│       │   ├── services/             # Admin API services
+│       │   └── stores/               # Admin state
+│       └── ...
+└── backend/
+    ├── src/
+    │   ├── controllers/              # API Controllers
+    │   ├── middleware/               # Auth, Validation
+    │   ├── models/                   # Mongoose schemas
+    │   ├── routes/                   # API routes
+    │   ├── services/                 # Business logic
+    │   ├── utils/                    # Helpers
+    │   └── server.ts                 # Express server
+    └── ...
 ```
 
 ## Key Features
 
-### 1. Entrance Assessment System
-- **Test Format**: 30 minutes, 40 questions covering Grammar, Vocabulary, Reading, and Listening.
-- **Detailed Results**:
-  - Overall score (0-100)
-  - Proficiency classification (A1, A2, B1, B2, C1, C2)
-  - Strength/Weakness report by skill
-  - Personalized learning path recommendations
+### 1. AI Chatbot - GoPro 4.2
+- **Intelligent Conversation**: Powered by OpenAI GPT-4
+- **Voice Chat**: Speech-to-text (Whisper) and text-to-speech
+- **Learning Support**: Grammar explanations, vocabulary help
+- **Progress Analysis**: Personalized recommendations
+- **Modern UI**: Purple gradient design with CSS Modules
 
-### 2. AI Chatbot Learning Assistant
-- **Intelligent Interaction**: Answers questions regarding grammar and vocabulary.
-- **Practical Examples**: Provides specific examples and practice exercises.
-- **Mini Quiz**: Generates quick 5-question tests.
-- **Progress Tracking**: Records interactions in the personal learning profile.
+### 2. IELTS Preparation System
+- **Reading**: Full passages with various question types
+- **Listening**: Audio-based tests with transcripts
+- **Writing**: Task 1 & Task 2 practice
+- **Speaking**: AI-powered speaking practice
+- **AI Exam Generator**: Automatic exam creation
 
-### 3. Adaptive Lesson System
-- **Intelligent Logic**:
-  - Based on entrance test results
-  - Analyzes learning progress
-  - AI recommends suitable lessons
-  - Automatically adjusts difficulty
-  - Prioritizes weak topics
+### 3. Entrance Assessment
+- **30-minute Test**: Grammar, Vocabulary, Reading, Listening
+- **Detailed Results**: Score 0-100, Level A1-C2
+- **Skill Analysis**: Strength/Weakness report
+- **Personalized Path**: Custom learning recommendations
 
-### 4. Detailed Progress Tracking
-- **Overview Dashboard**: Detailed learning statistics.
-- **Progress Charts**: Tracks vocabulary, listening, tests, and streaks.
-- **Achievements**: Achievement and badge system.
-- **Weekly Activity**: Study time charts.
+### 4. Adaptive Learning
+- **Dynamic Content**: Adjusts based on progress
+- **Skill-based**: Focus on weak areas
+- **Video Lessons**: YouTube integration
+- **Practice Exercises**: Interactive quizzes
+
+### 5. Progress Dashboard
+- **Overview Stats**: Learning statistics
+- **Progress Charts**: Visual tracking
+- **Achievements**: Badge system
+- **Streak Tracking**: Daily motivation
+
+### 6. Admin Dashboard
+- **Course Management**: Create/Edit/Delete courses
+- **IELTS Creator**: AI-powered exam generation
+- **User Management**: View and manage users
+- **Analytics**: Platform statistics
 
 ## Technology Stack
 
 ### Frontend
-- **React 18** + **TypeScript**
-- **Vite** (Build tool)
-- **Tailwind CSS** (Styling)
-- **Zustand** (State management)
-- **React Router** (Navigation)
-- **Lucide React** (Icons)
-- **Socket.IO Client** (Real-time chat)
-- **Axios** (HTTP client)
+| Technology | Purpose |
+|------------|---------|
+| React 18 | UI Framework |
+| TypeScript | Type Safety |
+| Vite | Build Tool |
+| CSS Modules | Component Styling |
+| Tailwind CSS | Utility Styling |
+| Zustand | State Management |
+| React Router | Navigation |
+| Lucide React | Icons |
+| Socket.IO Client | Real-time |
+| Axios | HTTP Client |
 
 ### Backend
-- **Node.js** + **Express**
-- **TypeScript**
-- **MongoDB** + **Mongoose**
-- **Socket.IO** (Real-time)
-- **OpenAI API** (AI Chatbot)
-- **JWT** (Authentication)
-- **Bcrypt** (Password hashing)
-- **Joi** (Validation)
-
-### DevOps & Deployment
-- **Vercel** (Frontend hosting)
-- **MongoDB Atlas** (Database)
-- **Git** (Version control)
+| Technology | Purpose |
+|------------|---------|
+| Node.js | Runtime |
+| Express.js | Framework |
+| TypeScript | Type Safety |
+| MongoDB | Database |
+| Mongoose | ODM |
+| Socket.IO | Real-time |
+| OpenAI API | AI Features |
+| JWT | Authentication |
+| Bcrypt | Password Hashing |
+| Joi | Validation |
 
 ## Installation and Execution
 
@@ -110,92 +149,52 @@ website-hoc-tieng-anh/
 - Node.js 18+
 - MongoDB
 - Git
+- OpenAI API Key
 
-### Quick Start (Recommended)
+### Quick Start
 
 ```bash
 # Clone repository
 git clone https://github.com/DoHungMinh/website-hoc-tieng-anh.git
 cd website-hoc-tieng-anh
 
-# Install dependencies for the entire monorepo
+# Install all dependencies
 npm run install:all
 
-# Create environment files
+# Configure environment
 cp backend/.env.example backend/.env
-echo "VITE_API_URL=http://localhost:5000/api" > frontend/.env.local
+# Edit backend/.env with your API keys
 
-# Run both frontend and backend concurrently
+# Run development servers
 npm run dev
 ```
 
 ### Manual Setup
 
-#### Backend Setup
-
+#### Backend
 ```bash
-# Navigate to backend directory
 cd backend
-
-# Install dependencies
 npm install
-
-# Configure environment variables
 cp .env.example .env
-# Update .env with:
-# - MONGODB_URI=mongodb://localhost:27017/english-learning
-# - JWT_SECRET=your-secret-key
-# - OPENAI_API_KEY=your-openai-key
-
-# Run development server
+# Configure:
+# - MONGODB_URI
+# - JWT_SECRET
+# - OPENAI_API_KEY
 npm run dev
 ```
 
-#### Frontend Setup
-
+#### Frontend Client
 ```bash
-# Navigate to frontend directory
-cd frontend
-
-# Install dependencies
+cd frontend/client
 npm install
-
-# Create .env.local file
-echo "VITE_API_URL=http://localhost:5000/api" > .env.local
-
-# Run development server
 npm run dev
 ```
 
-### Available Scripts
-
-#### Root Level (Monorepo)
+#### Frontend Admin
 ```bash
-npm run dev              # Run both frontend + backend
-npm run build            # Build both projects
-npm run test             # Test both projects
-npm run lint             # Lint both projects
-npm run install:all      # Install dependencies for all
-npm run clean            # Clean node_modules and build files
-```
-
-#### Frontend Scripts
-```bash
-cd frontend
-npm run dev              # Development server (Vite)
-npm run build            # Production build
-npm run preview          # Preview build
-npm run lint             # ESLint check
-```
-
-#### Backend Scripts
-```bash
-cd backend
-npm run dev              # Development server (nodemon)
-npm run build            # TypeScript build
-npm run start            # Production server
-npm run test             # Jest tests
-npm run lint             # ESLint check
+cd frontend/admin
+npm install
+npm run dev
 ```
 
 ## API Endpoints
@@ -211,64 +210,50 @@ npm run lint             # ESLint check
 - `POST /api/assessment/submit-answer` - Submit answer
 - `POST /api/assessment/complete/:id` - Complete test
 
+### Chatbot
+- `POST /api/chatbot/message` - Send message
+- `GET /api/chatbot/history` - Chat history
+- `POST /api/voice/chat` - Voice chat
+
+### IELTS
+- `GET /api/ielts/exams` - List exams
+- `POST /api/ielts/exams` - Create exam
+- `POST /api/ielts/generate` - AI generate exam
+
 ### Progress
 - `GET /api/progress` - Get progress
 - `PUT /api/progress/update` - Update progress
 
-### Chatbot
-- `POST /api/chatbot/message` - Send message
-- `GET /api/chatbot/history` - Chat history
+## Design System
 
-## UI/UX Design
+### Colors
+- **Primary Gradient**: `#6366f1 → #8b5cf6` (Indigo to Purple)
+- **Background**: Light lavender gradient
+- **Text**: Dark gray (`#1f2937`)
 
-### Design System
-- **Colors**: Green gradient (green-800 → lime-600)
-- **Typography**: Font weights from medium to bold
-- **Spacing**: Consistent padding and margins
-- **Border Radius**: 2xl (16px) for cards, xl (12px) for buttons
-- **Shadows**: Subtle box-shadows for depth
+### Typography
+- **Headings**: Semi-bold to Bold
+- **Body**: Regular weight
+- **Font**: System fonts
 
-## Testing
-
-```bash
-# Backend tests
-cd backend
-npm test
-
-# Frontend tests
-npm test
-```
+### Components
+- **Border Radius**: 24px (large), 12px (medium), 50% (circular)
+- **Shadows**: Subtle elevation with rgba
 
 ## Documentation
 
-Comprehensive project documentation is organized in the [`docs/`](docs/) folder:
+See the `.agent/` folder for detailed documentation:
+- **Architecture.md** - System architecture
+- **Overview.md** - Project overview
+- **Rules.md** - Development guidelines
 
-- **[Setup & Configuration](docs/01-setup/)** - Initial setup, tech stack, admin accounts
-- **[Features](docs/02-features/)** - AI chatbot, IELTS generation, payment system
-- **[Bug Fixes](docs/03-fixes/)** - Issue resolutions and improvements
-- **[Guides](docs/04-guides/)** - How-to guides and workflows
-- **[Analysis](docs/05-analysis/)** - Technical analysis and planning
-- **[Summaries](docs/06-summaries/)** - Project changelogs and reports
+## Contributing
 
-See [docs/README.md](docs/README.md) for the complete documentation index.
-
-## Deployment
-
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
-
-### Vercel Deployment
-
-```bash
-# Build frontend
-npm run build
-
-# Deploy to Vercel
-npx vercel --prod
-```
-
-### Backend Deployment
-- Deploy to services like Railway, Render, or Heroku
-- Update CORS origins and environment variables
+1. Fork the project
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'feat: Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
@@ -277,20 +262,6 @@ MIT License
 ## Contributors
 
 - **DoHungMinh** - Initial work and development
-
-## Contributing
-
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## Support
-
-If you have questions or need support:
-- Create an issue on GitHub
-- Email: support@engpro.com
 
 ---
 

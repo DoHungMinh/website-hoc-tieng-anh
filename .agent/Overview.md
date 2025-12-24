@@ -1,78 +1,116 @@
-## 📋 MÔ TẢ BÀI TOÁN ENGPRO
+## MÔ TẢ BÀI TOÁN ENGPRO
 
 ### **Bài toán**
 
-Người học tiếng Anh thường gặp khó khăn trong việc xác định chính xác trình độ hiện tại, tìm kiếm lộ trình học tập phù hợp và thiếu môi trường tương tác để giải đáp thắc mắc tức thì. Các khóa học trực tuyến truyền thống thường thiết kế theo kiểu "one-size-fits-all", thiếu sự cá nhân hóa dựa trên điểm mạnh, điểm yếu và mục tiêu riêng của từng người học.
+Người học tiếng Anh thường gặp khó khăn trong việc xác định chính xác trình độ hiện tại, tìm kiếm lộ trình học tập phù hợp và thiếu môi trường tương tác để giải đáp thắc mắc tức thì. Đặc biệt, việc chuẩn bị cho kỳ thi IELTS đòi hỏi tài liệu chất lượng và phương pháp luyện tập hiệu quả. Các khóa học trực tuyến truyền thống thường thiết kế theo kiểu "one-size-fits-all", thiếu sự cá nhân hóa dựa trên điểm mạnh, điểm yếu và mục tiêu riêng của từng người học.
 
 ### **Giải pháp**
 
-ENGPRO là nền tảng học tiếng Anh trực tuyến toàn diện tích hợp AI Chatbot thông minh, cung cấp hệ thống đánh giá năng lực đầu vào chuẩn xác và lộ trình học tập thích ứng (Adaptive Learning). Hệ thống tự động phân tích và điều chỉnh nội dung học tập dựa trên tiến độ, kết quả kiểm tra và sở thích của người dùng.
+**ENGPRO** là nền tảng học tiếng Anh trực tuyến toàn diện tích hợp:
+- **AI Chatbot thông minh (GoPro 4.2)**: Hỗ trợ text và voice chat 24/7
+- **Hệ thống luyện thi IELTS đầy đủ**: Reading, Listening, Writing, Speaking
+- **Đánh giá năng lực đầu vào**: Xếp loại trình độ A1-C2
+- **Lộ trình học tập thích ứng (Adaptive Learning)**: Tự động điều chỉnh theo tiến độ người học
+- **Trang quản trị Admin**: Quản lý khóa học, tạo đề thi IELTS bằng AI
 
-## 🛠️ CÔNG NGHỆ SỬ DỤNG
+## CÔNG NGHỆ SỬ DỤNG
 
 ### **Nền tảng chính**
 
-- **Data Management**: strictly separated into **React Query** (Server State/Caching) and **Zustand** (Client State/Session) for maximum performance.
-- **AI Engine**: OpenAI API (Hỗ trợ Chatbot và phân tích lộ trình)
-- **Database**: MongoDB (Lưu trữ dữ liệu)
-- **Styling**: Vanilla CSS (Module CSS preference)
-- **Bảo mật**: JWT Authentication, Bcrypt
+| Thành phần | Công nghệ |
+|------------|-----------|
+| **Frontend Client** | React 18 + TypeScript + Vite |
+| **Frontend Admin** | React 18 + TypeScript + Vite |
+| **Backend** | Node.js + Express.js + TypeScript |
+| **Database** | MongoDB + Mongoose |
+| **AI Engine** | OpenAI API (GPT-4, Whisper, TTS) |
+| **State Management** | Zustand |
+| **Styling** | CSS Modules + Tailwind CSS |
+| **Authentication** | JWT + Bcrypt |
+| **Real-time** | Socket.IO |
+| **Payment** | VNPay |
 
 ### **Kiến trúc AI**
 
-Hệ thống tích hợp OpenAI API để xây dựng Chatbot thông minh có khả năng hiểu ngữ cảnh, giải thích ngữ pháp, cung cấp ví dụ và tạo bài tập nhanh, đóng vai trò như một gia sư ảo 24/7.
+Hệ thống tích hợp OpenAI API để xây dựng:
+1. **Chatbot GoPro 4.2**: Hiểu ngữ cảnh, giải thích ngữ pháp, cung cấp ví dụ, hỗ trợ voice chat
+2. **IELTS AI Generator**: Tạo đề thi IELTS tự động (Reading passages, Questions, Writing prompts)
+3. **Learning Analytics**: Phân tích tiến độ và đưa ra gợi ý cá nhân hóa
 
-## 📊 CẤU TRÚC DỮ LIỆU
+## CẤU TRÚC DỮ LIỆU
 
 ### **Collection users**
-
-Lưu thông tin học viên bao gồm email, mật khẩu đã mã hóa, và thông tin cá nhân.
-- **Quan trọng**: `level` (A1-C2), `streak` (chuỗi ngày học liên tục), và `preferences` (mục tiêu học tập) để hệ thống cá nhân hóa gợi ý bài học.
-
-### **Collection assessments**
-
-Lưu trữ các bài kiểm tra (Placement Test, Progress Test).
-- Cấu trúc bao gồm các câu hỏi đa dạng (Trắc nghiệm, Điền từ, Nghe/Đọc).
-- Kết quả chi tiết giúp phân loại trình độ người dùng chính xác.
+Lưu thông tin học viên: email, mật khẩu đã mã hóa, thông tin cá nhân.
+- `level` (A1-C2): Trình độ hiện tại
+- `streak`: Chuỗi ngày học liên tục
+- `preferences`: Mục tiêu học tập
+- `role`: user/admin
 
 ### **Collection courses/lessons**
+Kho nội dung bài học "Knowledge Base":
+- Phân loại theo trình độ (A1-C2) và kỹ năng
+- Lý thuyết, ví dụ và bài tập thực hành
+- Video lessons với YouTube integration
 
-Kho nội dung bài học "Knowledge Base" của hệ thống.
-- Được phân loại kỹ lưỡng theo trình độ (A1-C2) và kỹ năng (Từ vựng, Ngữ pháp).
-- Mỗi bài học chứa lý thuyết, ví dụ và bài tập thực hành.
+### **Collection ieltsExams**
+Lưu trữ đề thi IELTS:
+- Reading passages với các loại câu hỏi (Multiple Choice, True/False/Not Given, Matching, Fill in blanks)
+- Listening audio và transcripts
+- Writing tasks (Task 1, Task 2)
+- Speaking topics
 
 ### **Collection progress**
+Theo dõi tiến độ học tập chi tiết:
+- Bài học đã hoàn thành, điểm số
+- Kết quả thi IELTS
+- Vocabulary đã học
+- Dữ liệu cho Dashboard và thuật toán gợi ý
 
-Lưu vết tiến độ học tập chi tiết của người dùng.
-- Theo dõi các bài học đã hoàn thành, điểm số, từ vựng đã học.
-- Dữ liệu này được sử dụng để hiển thị Dashboard và làm đầu vào cho thuật toán gợi ý bài học tiếp theo.
+### **Collection chatSessions**
+Lịch sử chat với AI:
+- Messages (user/assistant)
+- Context và metadata
+- Session management
 
-## 🔄 LUỒNG HOẠT ĐỘNG
+## LUỒNG HOẠT ĐỘNG
 
-### **Đánh giá & Xếp lớp (Assessment)**
+### **1. Đánh giá & Xếp lớp (Assessment)**
+1. Người dùng mới thực hiện bài Test đầu vào (30 phút)
+2. Hệ thống chấm điểm, phân tích kỹ năng và xếp loại trình độ (A1-C2)
+3. Đề xuất lộ trình học tập phù hợp
 
-1. Người dùng mới thực hiện bài Test đầu vào (30 phút).
-2. Hệ thống chấm điểm, phân tích kỹ năng và xếp loại trình độ (A1-C2).
-3. Đề xuất lộ trình học tập phù hợp nhất.
+### **2. Học tập thích ứng (Adaptive Learning)**
+1. Người dùng bắt đầu học theo lộ trình gợi ý
+2. Hệ thống theo dõi kết quả bài tập và tương tác
+3. Tự động điều chỉnh độ khó và đề xuất bài tập bổ trợ
 
-### **Học tập thích ứng (Adaptive Learning)**
+### **3. Luyện thi IELTS**
+1. Chọn kỹ năng cần luyện (Reading/Listening/Writing/Speaking)
+2. Làm bài thi mô phỏng với thời gian chuẩn
+3. Nhận kết quả chi tiết và phân tích điểm yếu
 
-1. Người dùng bắt đầu học theo lộ trình gợi ý.
-2. Hệ thống theo dõi kết quả bài tập và tương tác.
-3. Nếu người dùng yếu kỹ năng nào, hệ thống tự động đề xuất thêm bài tập bổ trợ cho kỹ năng đó.
+### **4. AI Chatbot Support (GoPro 4.2)**
+1. Người dùng đặt câu hỏi qua text hoặc voice
+2. GoPro 4.2 sử dụng OpenAI API để trả lời kèm ví dụ minh họa
+3. Hỗ trợ phân tích tiến độ và đưa ra gợi ý cá nhân
 
-### **AI Chatbot Support**
+### **5. Admin Management**
+1. Quản lý khóa học và lessons
+2. Tạo đề thi IELTS bằng AI hoặc thủ công
+3. Xem thống kê người dùng và hệ thống
 
-1. Người dùng đặt câu hỏi (ví dụ: "Giải thích thì hiện tại hoàn thành").
-2. Chatbot sử dụng OpenAI API để trả lời kèm ví dụ minh họa dễ hiểu.
-3. Có thể yêu cầu Chatbot tạo quiz nhanh để kiểm tra kiến thức vừa hỏi.
+## ĐIỂM NỔI BẬT
 
-## ✨ ĐIỂM NỔI BẬT
+| Tính năng | Mô tả |
+|-----------|-------|
+| **Quy trình khép kín** | Kiểm tra → Lộ trình cá nhân → Học tập → Theo dõi → Đánh giá lại |
+| **Cá nhân hóa sâu** | Nội dung thay đổi linh hoạt theo level và progress |
+| **AI Tutor GoPro 4.2** | Hỗ trợ 24/7 với text và voice chat |
+| **IELTS Preparation** | Hệ thống luyện thi đầy đủ 4 kỹ năng |
+| **AI Exam Generator** | Tạo đề thi IELTS tự động bằng AI |
+| **Voice Chat** | Luyện Speaking với AI qua Whisper + TTS |
+| **Gamification** | Streak, Badges, Thống kê trực quan |
+| **Admin Dashboard** | Quản lý toàn diện qua giao diện riêng |
 
-**Quy trình khép kín**: Từ Kiểm tra đầu vào -> Lộ trình cá nhân -> Học tập & Luyện tập -> Theo dõi tiến độ -> Đánh giá lại.
-
-**Cá nhân hóa sâu**: Nội dung học tập không cố định mà thay đổi linh hoạt dựa trên `level` và `progress` thực tế của người dùng.
-
-**AI Tutor thông minh**: Hỗ trợ giải đáp thắc mắc mọi lúc mọi nơi, giúp người học không bị tắc nghẽn kiến thức.
-
-**Gamification**: Hệ thống Streak, Badges và Thống kê trực quan giúp duy trì động lực học tập mỗi ngày.
+---
+*EngPro Overview - Updated December 2025*
