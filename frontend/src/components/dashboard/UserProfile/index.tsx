@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '../../common/Toast';
@@ -12,6 +13,8 @@ import { ProfileTab, EditFormData, PasswordFormData, UserProfileProps } from './
 import styles from './UserProfile.module.css';
 
 const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
+  const navigate = useNavigate();
+  
   // Atomic selectors để tối ưu performance
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
@@ -94,6 +97,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
     logout();
     onBack();
   }, [logout, onBack]);
+
+  const handleNavigateAdmin = useCallback(() => {
+    navigate('/admin');
+  }, [navigate]);
 
   const handleInputChange = useCallback((field: string, value: string) => {
     setEditForm(prev => ({ ...prev, [field]: value }));
@@ -286,6 +293,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
             onInputChange={handleInputChange}
             onAvatarClick={() => setShowAvatarModal(true)}
             onLogout={handleLogout}
+            onNavigateAdmin={user?.role === 'admin' ? handleNavigateAdmin : undefined}
           />
         );
       case 'password':
@@ -321,6 +329,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
             activeTab={activeTab}
             onTabChange={setActiveTab}
             onLogout={handleLogout}
+            isAdmin={user?.role === 'admin'}
+            onNavigateAdmin={handleNavigateAdmin}
           />
 
           <div className={styles.mainContent}>

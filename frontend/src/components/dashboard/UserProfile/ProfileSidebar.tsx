@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Shield, Users, UserCheck, Bell, CreditCard, Download, Trash2, LogOut } from 'lucide-react';
+import { User, Shield, Users, UserCheck, Bell, CreditCard, Download, Trash2, LogOut, LayoutDashboard } from 'lucide-react';
 import { ProfileTab, TabItem } from './types';
 import styles from './UserProfile.module.css';
 
@@ -7,20 +7,23 @@ interface ProfileSidebarProps {
   activeTab: ProfileTab;
   onTabChange: (tab: ProfileTab) => void;
   onLogout: () => void;
+  isAdmin?: boolean;
+  onNavigateAdmin?: () => void;
 }
 
 const tabs: TabItem[] = [
   { id: 'profile', label: 'Hồ sơ cá nhân', icon: User },
   { id: 'security', label: 'Bảo mật', icon: Shield },
   { id: 'notifications', label: 'Thông báo', icon: Bell },
-  { id: 'billing', label: 'Thanh toán', icon: CreditCard },
-  { id: 'delete-account', label: 'Xóa tài khoản', icon: Trash2, danger: true },
+  { id: 'billing', label: 'Thanh toán', icon: CreditCard }
 ];
 
 const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ 
   activeTab, 
   onTabChange, 
-  onLogout 
+  onLogout,
+  isAdmin,
+  onNavigateAdmin,
 }) => {
   return (
     <div className={styles.sidebar}>
@@ -39,6 +42,17 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             {tab.label}
           </button>
         ))}
+        
+        {/* Admin Dashboard Button - Show only for admin */}
+        {isAdmin && onNavigateAdmin && (
+          <button
+            onClick={onNavigateAdmin}
+            className={`${styles.tabItem} ${styles.adminTab}`}
+          >
+            <LayoutDashboard className={styles.tabIcon} />
+            Admin Dashboard
+          </button>
+        )}
         
         {/* Logout Button */}
         <button

@@ -13,6 +13,19 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom', 'zustand'],
+          'ui-libs': ['framer-motion', 'gsap', '@studio-freight/lenis', 'lenis'],
+          'charts': ['chart.js', 'react-chartjs-2'],
+          'pdf-libs': ['jspdf', 'jspdf-autotable'],
+          'utils': ['axios', 'socket.io-client']
+        }
+      }
+    }
+  },
   server: {
     proxy: {
       '/api': {

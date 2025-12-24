@@ -69,13 +69,6 @@ const RootLayout = memo(() => {
         syncTokens();
     }, []);
 
-    // Auto-redirect admin users to admin page
-    useEffect(() => {
-        if (isAuthenticated && user?.role === "admin" && location.pathname !== "/admin") {
-            navigate("/admin", { replace: true });
-        }
-    }, [isAuthenticated, user?.role, location.pathname, navigate]);
-
     // Determine if header/footer should be hidden
     const hideHeader = HIDE_HEADER_ROUTES.some((route) =>
         location.pathname.startsWith(route)

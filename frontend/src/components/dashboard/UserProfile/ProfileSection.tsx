@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Edit3, Save, X, LogOut } from 'lucide-react';
+import { Shield, Edit3, Save, X, LogOut, LayoutDashboard } from 'lucide-react';
 import { EditFormData } from './types';
 import AvatarDisplay from '@/components/common/AvatarDisplay';
 import styles from './UserProfile.module.css';
@@ -19,6 +19,7 @@ interface ProfileSectionProps {
   onInputChange: (field: string, value: string) => void;
   onAvatarClick: () => void;
   onLogout: () => void;
+  onNavigateAdmin?: () => void;
 }
 
 const ProfileSection: React.FC<ProfileSectionProps> = ({
@@ -31,6 +32,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
   onInputChange,
   onAvatarClick,
   onLogout,
+  onNavigateAdmin,
 }) => {
   return (
     <div>
@@ -51,7 +53,9 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
         
         <div className={styles.profileInfo}>
           <h2>{user?.fullName || 'Tên người dùng'}</h2>
-          <p>{user?.role === 'admin' ? 'Quản trị viên' : 'Người dùng'}</p>
+          <div className={`${styles.roleBadge} ${user?.role === 'admin' ? styles.adminBadge : styles.userBadge}`}>
+            {user?.role === 'admin' ? 'Admin' : 'User'}
+          </div>
           <p>Hà Nội, Việt Nam</p>
           <div className={styles.profileBadge}>
             <Shield className="h-3 w-3 mr-1" />
@@ -217,6 +221,14 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
             Hủy
           </button>
         </div>
+      )}
+
+      {/* Admin Dashboard Button - Show only for admin */}
+      {user?.role === 'admin' && onNavigateAdmin && (
+        <button onClick={onNavigateAdmin} className={styles.adminDashboardBtn}>
+          <LayoutDashboard size={18} />
+          Bảng điều khiển quản trị
+        </button>
       )}
 
       {/* Logout Button - Mobile Only */}
