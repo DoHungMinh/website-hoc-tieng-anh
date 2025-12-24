@@ -1,10 +1,14 @@
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import { Download, Mic, MessageCircle, BookOpen, Brain, Target, ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from './Features.module.css';
 import { useTextReveal } from '../../hooks/useTextReveal';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 // Import Swiper styles
 import 'swiper/css';
@@ -114,6 +118,7 @@ const Features = memo<FeaturesProps>(({ onNavigate }) => {
   const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
+  const sliderRef = useRef<HTMLDivElement>(null);
 
   const { ref: titleLine1Ref } = useTextReveal({
     type: 'words',
@@ -153,6 +158,36 @@ const Features = memo<FeaturesProps>(({ onNavigate }) => {
       toggleActions: 'play none none none',
     },
   });
+
+  // Slider animation - slide from right with scroll trigger
+  useEffect(() => {
+    if (!sliderRef.current) return;
+
+    gsap.set(sliderRef.current, {
+      x: 300,
+      opacity: 0,
+    });
+
+    gsap.to(sliderRef.current, {
+      x: 0,
+      opacity: 1,
+      duration: 1,
+      ease: 'power2.inOut',
+      scrollTrigger: {
+        trigger: sliderRef.current,
+        start: 'top 80%',
+        toggleActions: 'play none none none',
+      },
+    });
+
+    return () => {
+      ScrollTrigger.getAll().forEach(trigger => {
+        if (trigger.vars.trigger === sliderRef.current) {
+          trigger.kill();
+        }
+      });
+    };
+  }, []);
 
   const handleSlideChange = useCallback((swiper: SwiperType) => {
     setActiveIndex(swiper.realIndex);
@@ -214,7 +249,7 @@ const Features = memo<FeaturesProps>(({ onNavigate }) => {
         </div>
 
         {/* Swiper Carousel */}
-        <div className={styles.sliderWrapper}>
+        <div ref={sliderRef} className={styles.sliderWrapper}>
           <Swiper
             modules={[Navigation]}
             spaceBetween={24}

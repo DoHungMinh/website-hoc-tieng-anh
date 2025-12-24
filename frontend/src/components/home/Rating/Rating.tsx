@@ -1,7 +1,11 @@
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from './Rating.module.css';
 import { useTextReveal } from '../../../hooks/useTextReveal';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 interface Testimonial {
   id: number;
@@ -73,6 +77,7 @@ const TESTIMONIALS: Testimonial[] = [
 const Rating = memo(() => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const totalSlides = TESTIMONIALS.length;
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   const { ref: titleRef } = useTextReveal({
     type: 'words,lines',
@@ -86,6 +91,36 @@ const Rating = memo(() => {
       toggleActions: 'play none none none',
     },
   });
+
+  // Carousel animation - slide from bottom with scroll trigger
+  useEffect(() => {
+    if (!carouselRef.current) return;
+
+    gsap.set(carouselRef.current, {
+      y: 100,
+      opacity: 0,
+    });
+
+    gsap.to(carouselRef.current, {
+      y: 0,
+      opacity: 1,
+      duration: 1,
+      ease: 'power3.out',
+      scrollTrigger: {
+        trigger: carouselRef.current,
+        start: 'top 80%',
+        toggleActions: 'play none none none',
+      },
+    });
+
+    return () => {
+      ScrollTrigger.getAll().forEach(trigger => {
+        if (trigger.vars.trigger === carouselRef.current) {
+          trigger.kill();
+        }
+      });
+    };
+  }, []);
 
   const handlePrev = useCallback(() => {
     setCurrentIndex((prev) => (prev === 0 ? totalSlides - 1 : prev - 1));
@@ -127,7 +162,7 @@ const Rating = memo(() => {
         <h2 ref={titleRef} className={styles.title}>Học viên nói gì về chúng tôi</h2>
 
         {/* Cards Carousel */}
-        <div className={styles.carousel}>
+        <div ref={carouselRef} className={styles.carousel}>
           <div className={styles.cardsWrapper}>
             {visibleCards.map((card) => (
               <div

@@ -1,8 +1,12 @@
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import styles from './Pricing.module.css';
 import { useTextReveal } from '../../../hooks/useTextReveal';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 type BillingPeriod = 'monthly' | 'quarterly';
 
@@ -82,6 +86,7 @@ const PRICING_PLANS: PricingPlan[] = [
 const Pricing = memo(() => {
   const navigate = useNavigate();
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
+  const cardsRef = useRef<HTMLDivElement>(null);
 
   const { ref: titleRef } = useTextReveal({
     type: 'words,lines',
@@ -108,6 +113,39 @@ const Pricing = memo(() => {
       toggleActions: 'play none none none',
     },
   });
+
+  // Cards animation - slide from bottom with stagger
+  useEffect(() => {
+    if (!cardsRef.current) return;
+
+    const cards = cardsRef.current.querySelectorAll(`.${styles.card}`);
+    
+    gsap.set(cards, {
+      y: 100,
+      opacity: 0,
+    });
+
+    gsap.to(cards, {
+      y: 0,
+      opacity: 1,
+      duration: 0.8,
+      stagger: 0.2,
+      ease: 'power2.inOut',
+      scrollTrigger: {
+        trigger: cardsRef.current,
+        start: 'top 80%',
+        toggleActions: 'play none none none',
+      },
+    });
+
+    return () => {
+      ScrollTrigger.getAll().forEach(trigger => {
+        if (trigger.vars.trigger === cardsRef.current) {
+          trigger.kill();
+        }
+      });
+    };
+  }, []);
 
   const handleSelectPlan = useCallback((planId: string) => {
     if (planId === 'enterprise') {
@@ -159,7 +197,7 @@ const Pricing = memo(() => {
         </div>
 
         {/* Pricing Cards */}
-        <div className={styles.cards}>
+        <div ref={cardsRef} className={styles.cards}>
           {PRICING_PLANS.map((plan) => (
             <div
               key={plan.id}

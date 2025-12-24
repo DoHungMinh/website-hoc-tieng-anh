@@ -1,8 +1,12 @@
-import { memo } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { GraduationCap, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import styles from './Course.module.css';
 import { useTextReveal } from '../../../hooks/useTextReveal';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 interface CourseLevel {
   id: string;
@@ -54,6 +58,7 @@ const COURSE_LEVELS: CourseLevel[] = [
  */
 const Course = memo(() => {
   const navigate = useNavigate();
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const { ref: titleRef } = useTextReveal({
     type: 'words,lines',
@@ -81,6 +86,36 @@ const Course = memo(() => {
     },
   });
 
+  // Grid animation - slide from bottom with scroll trigger
+  useEffect(() => {
+    if (!gridRef.current) return;
+
+    gsap.set(gridRef.current, {
+      y: 100,
+      opacity: 0,
+    });
+
+    gsap.to(gridRef.current, {
+      y: 0,
+      opacity: 1,
+      duration: 1,
+      ease: 'power2.inOut',
+      scrollTrigger: {
+        trigger: gridRef.current,
+        start: 'top 80%',
+        toggleActions: 'play none none none',
+      },
+    });
+
+    return () => {
+      ScrollTrigger.getAll().forEach(trigger => {
+        if (trigger.vars.trigger === gridRef.current) {
+          trigger.kill();
+        }
+      });
+    };
+  }, []);
+
   const handleStartCourse = (level: string) => {
     navigate(`/courses?level=${level.toLowerCase()}`);
   };
@@ -105,7 +140,7 @@ const Course = memo(() => {
         </div>
 
         {/* Course Grid */}
-        <div className={styles.grid}>
+        <div ref={gridRef} className={styles.grid}>
           {/* Featured Course - A1 */}
           {featuredCourse && (
             <div className={styles.featuredCard}>

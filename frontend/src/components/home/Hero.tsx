@@ -77,7 +77,7 @@ const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
             x: 0,
             opacity: 1,
             duration: 0.8,
-            ease: 'power3.out',
+            ease: 'power2.inOut',
             delay: 0.8,
         });
 
