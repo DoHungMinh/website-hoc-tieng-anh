@@ -11,6 +11,7 @@ const CoursesPage = lazy(() => import("./pages/CoursesPage"));
 const PracticePage = lazy(() => import("./pages/PracticePage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const PlacementTestPage = lazy(() => import("./pages/PlacementTestPage"));
+const ChatPage = lazy(() => import("./pages/Chat/Chat"));
 
 const PaymentSuccessHandler = lazy(
     () => import("./components/learning/PaymentSuccessHandler")
@@ -50,6 +51,10 @@ const router = createBrowserRouter([
             {
                 path: "practice",
                 element: <PracticePage />,
+            },
+            {
+                path: "aichat",
+                element: <ChatPage />,
             },
 
             // ============ PROTECTED ROUTES (require authentication) ============

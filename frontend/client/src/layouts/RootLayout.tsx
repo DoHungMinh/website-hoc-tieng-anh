@@ -1,68 +1,32 @@
 import { useEffect, useState, Suspense, memo } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Layout from "../components/layout/Layout";
 import AccountDisabledNotification from "../components/common/AccountDisabledNotification";
 import { AuthDebugger } from "../components/auth/AuthDebugger";
 import PageLoader from "../components/common/PageLoader";
 import Chatbot from "../components/chatbot/Chatbot";
-import { useAuthStore } from "../stores/authStore";
 import { syncTokens } from "../utils/tokenSync";
 import { useActivityHeartbeat } from "../hooks/useActivityHeartbeat";
 import { setupGlobalErrorInterceptor } from "../utils/errorInterceptor";
 import { useLenis } from "../hooks/useLenis";
 import { useScrollToTop } from "../hooks/useScrollToTop";
 
-/** Pages that should hide header */
-const HIDE_HEADER_ROUTES = ["/login", "/register", "/admin", "/placement-test"];
-
-/** Pages that should hide footer */
-const HIDE_FOOTER_ROUTES = ["/login", "/register", "/admin", "/placement-test"];
+/** Routes configuration for hiding header/footer */
+const HIDE_LAYOUT_ROUTES = ["/login", "/register", "/admin", "/placement-test"];
 
 /**
  * Root Layout Component
  * Wraps all pages with common layout elements (Header, Footer)
- * Handles global initialization and auth redirects
+ * Handles global initialization
  */
 const RootLayout = memo(() => {
-    const location = useLocation();
-    const navigate = useNavigate();
-    // Atomic selectors - chỉ re-render khi giá trị cụ thể thay đổi
-    const user = useAuthStore((state) => state.user);
-    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const { pathname } = useLocation();
+    const [accountDisabledMessage, setAccountDisabledMessage] = useState<string | null>(null);
 
-    // Account disabled state
-    const [accountDisabledMessage, setAccountDisabledMessage] = useState<
-        string | null
-    >(null);
-    const clearAccountDisabledMessage = () => setAccountDisabledMessage(null);
-
-    // Initialize activity heartbeat
+    // Initialize hooks
     useActivityHeartbeat();
-
-    // Initialize smooth scrolling
     useLenis();
-
-    // Scroll to top on route change
     useScrollToTop();
-
-    // Listen for account disabled events
-    useEffect(() => {
-        const handleAccountDisabled = (event: CustomEvent) => {
-            setAccountDisabledMessage(event.detail.message);
-        };
-
-        window.addEventListener(
-            "accountDisabled",
-            handleAccountDisabled as EventListener
-        );
-
-        return () => {
-            window.removeEventListener(
-                "accountDisabled",
-                handleAccountDisabled as EventListener
-            );
-        };
-    }, []);
 
     // Setup global error interceptor and sync tokens on mount
     useEffect(() => {
@@ -70,36 +34,38 @@ const RootLayout = memo(() => {
         syncTokens();
     }, []);
 
+    // Listen for account disabled events
+    useEffect(() => {
+        const handleAccountDisabled = (event: CustomEvent) => {
+            setAccountDisabledMessage(event.detail.message);
+        };
+
+        window.addEventListener("accountDisabled", handleAccountDisabled as EventListener);
+        return () => window.removeEventListener("accountDisabled", handleAccountDisabled as EventListener);
+    }, []);
+
     // Determine if header/footer should be hidden
-    const hideHeader = HIDE_HEADER_ROUTES.some((route) =>
-        location.pathname.startsWith(route)
-    );
-    const hideFooter = HIDE_FOOTER_ROUTES.some((route) =>
-        location.pathname.startsWith(route)
-    );
+    const hideLayout = HIDE_LAYOUT_ROUTES.some((route) => pathname.startsWith(route));
 
     return (
         <Layout
-            hideHeader={hideHeader}
-            hideFooter={hideFooter}
-            currentPage={location.pathname.slice(1) || "home"}
+            hideHeader={hideLayout}
+            hideFooter={hideLayout}
+            currentPage={pathname.slice(1) || "home"}
         >
             <Suspense fallback={<PageLoader />}>
                 <Outlet />
             </Suspense>
 
-            {/* Account Disabled Notification */}
             {accountDisabledMessage && (
                 <AccountDisabledNotification
                     message={accountDisabledMessage}
-                    onClose={clearAccountDisabledMessage}
+                    onClose={() => setAccountDisabledMessage(null)}
                 />
             )}
 
-            {/* Global Chatbot - appears on all pages */}
             <Chatbot />
 
-            {/* Auth Debugger - only in development */}
             {import.meta.env.DEV && <AuthDebugger />}
         </Layout>
     );

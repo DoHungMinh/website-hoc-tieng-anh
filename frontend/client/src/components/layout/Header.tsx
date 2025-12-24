@@ -22,7 +22,7 @@ const NAV_ITEMS = [
     { path: "/courses", label: "Khóa học", key: "courses" },
     { path: "/practice", label: "Luyện tập", key: "practice" },
     { path: "/pricing", label: "Bảng giá", key: "pricing" },
-    { path: "/voice", label: "AI Voice", key: "voice" },
+    { path: "/aichat", label: "AI Speaking", key: "voice" },
     { path: "/contact", label: "Liên hệ", key: "contact" },
 ];
 
@@ -91,11 +91,11 @@ const Header: React.FC<HeaderProps> = memo(({ currentPage: currentPageProp }) =>
             {/* Right Section */}
             <div className={styles.rightSection}>
                 {/* Language Selector */}
-                
+
 
                 {isAuthenticated ? (
                     <>
-                        
+
 
                         {/* Notification Bell */}
                         <div style={{ position: "relative" }}>
@@ -195,8 +195,8 @@ const Header: React.FC<HeaderProps> = memo(({ currentPage: currentPageProp }) =>
                                     {user?.fullName}
                                 </span>
                             </Link>
-                            
-                            
+
+
                         </>
                     ) : (
                         <>
