@@ -4,6 +4,7 @@ import Layout from "../components/layout/Layout";
 import AccountDisabledNotification from "../components/common/AccountDisabledNotification";
 import { AuthDebugger } from "../components/auth/AuthDebugger";
 import PageLoader from "../components/common/PageLoader";
+import Chatbot from "../components/chatbot/Chatbot";
 import { useAuthStore } from "../stores/authStore";
 import { syncTokens } from "../utils/tokenSync";
 import { useActivityHeartbeat } from "../hooks/useActivityHeartbeat";
@@ -94,6 +95,9 @@ const RootLayout = memo(() => {
                     onClose={clearAccountDisabledMessage}
                 />
             )}
+
+            {/* Global Chatbot - appears on all pages */}
+            <Chatbot />
 
             {/* Auth Debugger - only in development */}
             {import.meta.env.DEV && <AuthDebugger />}
