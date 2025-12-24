@@ -9,7 +9,7 @@ interface VoiceVisualizerProps {
 
 export const VoiceVisualizer: React.FC<VoiceVisualizerProps> = ({
   isActive,
-  color = '#3B82F6',
+  color = '#000000',
   barCount = 5,
   className = '',
 }) => {

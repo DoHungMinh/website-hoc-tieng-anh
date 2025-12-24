@@ -50,7 +50,7 @@ export const VoiceChat: React.FC<VoiceChatProps> = ({
     setTranscript('');
     setAiResponse('');
     recorder.controls.clearRecording();
-    
+
     try {
       await recorder.controls.startRecording();
       console.log('✅ Recording started successfully');
@@ -68,7 +68,7 @@ export const VoiceChat: React.FC<VoiceChatProps> = ({
   // Handle recording stop and send to backend
   const handleStopRecording = async () => {
     console.log('🛑 Stopping recording...');
-    
+
     try {
       // Check minimum duration
       if (recorder.state.recordingTime < 1) {
@@ -76,19 +76,19 @@ export const VoiceChat: React.FC<VoiceChatProps> = ({
         recorder.controls.clearRecording();
         return;
       }
-      
+
       // Wait for recorder to stop and return blob
       const audioBlob = await recorder.controls.stopRecording();
-      
+
       if (audioBlob && audioBlob.size > 0) {
         console.log('📦 Audio blob ready, size:', audioBlob.size, 'bytes');
-        
+
         // Check minimum blob size
         if (audioBlob.size < 1000) {
           setError('Recording too short or failed. Please speak for at least 1-2 seconds.');
           return;
         }
-        
+
         await processVoiceMessage(audioBlob);
       } else {
         console.error('❌ No audio blob available or empty blob');
@@ -108,7 +108,7 @@ export const VoiceChat: React.FC<VoiceChatProps> = ({
       type: audioBlob.type,
       sizeKB: (audioBlob.size / 1024).toFixed(2) + ' KB'
     });
-    
+
     setIsProcessing(true);
     setError(null);
 
@@ -135,7 +135,7 @@ export const VoiceChat: React.FC<VoiceChatProps> = ({
       // Set transcript - ALWAYS show it!
       setTranscript(result.transcript);
       onTranscriptReceived?.(result.transcript);
-      
+
       // Log what Whisper heard
       console.log('🎤 Whisper transcribed:', result.transcript);
 
@@ -151,7 +151,7 @@ export const VoiceChat: React.FC<VoiceChatProps> = ({
         console.log('🔊 Playing audio response...');
         const audioBlob = base64ToBlob(result.audioData, 'audio/mpeg');
         player.controls.loadAudio(audioBlob);
-        
+
         // Auto-play after a short delay
         setTimeout(() => {
           player.controls.play();
@@ -196,7 +196,7 @@ export const VoiceChat: React.FC<VoiceChatProps> = ({
         <select
           value={selectedVoice}
           onChange={(e) => setSelectedVoice(e.target.value as VoiceOption)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"
           disabled={recorder.state.isRecording || isProcessing}
         >
           {availableVoices.map((voice) => (
@@ -214,7 +214,7 @@ export const VoiceChat: React.FC<VoiceChatProps> = ({
           {recorder.state.isRecording || player.state.isPlaying ? (
             <VoiceVisualizer
               isActive={recorder.state.isRecording || player.state.isPlaying}
-              color={recorder.state.isRecording ? '#EF4444' : '#3B82F6'}
+              color={recorder.state.isRecording ? '#000000' : '#333333'}
             />
           ) : (
             <div className="h-[60px]" /> // Placeholder
@@ -233,7 +233,7 @@ export const VoiceChat: React.FC<VoiceChatProps> = ({
               </div>
             )}
             {recorder.state.recordingTime >= 1 && (
-              <div className="text-xs text-green-600 font-medium">
+              <div className="text-xs text-black font-medium">
                 ✓ Ready to send
               </div>
             )}
@@ -248,8 +248,8 @@ export const VoiceChat: React.FC<VoiceChatProps> = ({
             w-20 h-20 rounded-full flex items-center justify-center
             transition-all duration-200 shadow-lg
             ${recorder.state.isRecording
-              ? 'bg-red-500 hover:bg-red-600 animate-pulse'
-              : 'bg-blue-500 hover:bg-blue-600'
+              ? 'bg-red-600 hover:bg-red-700 animate-pulse'
+              : 'bg-black hover:bg-gray-800'
             }
             ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}
           `}
@@ -299,7 +299,7 @@ export const VoiceChat: React.FC<VoiceChatProps> = ({
           <div className="flex justify-center">
             <button
               onClick={player.state.isPlaying ? player.controls.pause : player.controls.play}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2"
+              className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 flex items-center gap-2"
             >
               {player.state.isPlaying ? (
                 <>
@@ -319,16 +319,14 @@ export const VoiceChat: React.FC<VoiceChatProps> = ({
 
       {/* Transcript Display */}
       {transcript && (
-        <div className={`mt-4 p-3 border rounded-lg ${
-          transcript.toLowerCase().trim() === 'you' || transcript.toLowerCase().trim() === 'you...'
+        <div className={`mt-4 p-3 border rounded-lg ${transcript.toLowerCase().trim() === 'you' || transcript.toLowerCase().trim() === 'you...'
             ? 'bg-orange-50 border-orange-300'
-            : 'bg-blue-50 border-blue-200'
-        }`}>
-          <p className={`text-xs font-semibold mb-1 ${
-            transcript.toLowerCase().trim() === 'you' || transcript.toLowerCase().trim() === 'you...'
-              ? 'text-orange-800'
-              : 'text-blue-800'
+            : 'bg-gray-50 border-gray-200'
           }`}>
+          <p className={`text-xs font-semibold mb-1 ${transcript.toLowerCase().trim() === 'you' || transcript.toLowerCase().trim() === 'you...'
+              ? 'text-orange-800'
+              : 'text-gray-800'
+            }`}>
             {transcript.toLowerCase().trim() === 'you' || transcript.toLowerCase().trim() === 'you...'
               ? '⚠️ Audio quality issue - Whisper only heard:'
               : 'You said:'
@@ -345,8 +343,8 @@ export const VoiceChat: React.FC<VoiceChatProps> = ({
 
       {/* AI Response Display */}
       {aiResponse && (
-        <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-xs font-semibold text-green-800 mb-1">AI Response:</p>
+        <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+          <p className="text-xs font-semibold text-gray-800 mb-1">AI Response:</p>
           <p className="text-sm text-gray-800">{aiResponse}</p>
         </div>
       )}

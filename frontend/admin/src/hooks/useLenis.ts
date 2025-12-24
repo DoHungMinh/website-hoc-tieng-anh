@@ -41,6 +41,8 @@ export function useLenis(options?: LenisOptions) {
     });
 
     lenisRef.current = lenis;
+    // Expose lenis globally for useScrollToTop
+    (window as any).lenis = lenis;
 
     // Animation frame loop
     function raf(time: number) {
@@ -57,12 +59,13 @@ export function useLenis(options?: LenisOptions) {
       }
       lenis.destroy();
       lenisRef.current = null;
+      (window as any).lenis = null;
     };
   }, []);
 
   // Memoized scrollTo function
   const scrollTo = useCallback((
-    target: string | number | HTMLElement, 
+    target: string | number | HTMLElement,
     scrollOptions?: { offset?: number; duration?: number }
   ) => {
     lenisRef.current?.scrollTo(target, scrollOptions);

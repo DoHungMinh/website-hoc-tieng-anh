@@ -1,0 +1,451 @@
+/* Chatbot Module CSS */
+
+.chatButton {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.chatButton:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(99, 102, 241, 0.5);
+}
+
+.chatWindow {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 420px;
+    height: 600px;
+    background: linear-gradient(180deg, #f8f7ff 0%, #ede9fe 50%, #e0d4fc 100%);
+    border-radius: 24px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.chatWindowExpanded {
+    width: 700px;
+    height: 80vh;
+    max-height: 800px;
+}
+
+.chatWindowMinimized {
+    height: 72px;
+}
+
+/* Header */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: transparent;
+}
+
+.headerInfo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logoWrapper {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.headerText h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.headerText p {
+    margin: 0;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.closeButton {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #1f2937;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+}
+
+.closeButton:hover {
+    background: #374151;
+}
+
+/* Messages Container */
+.messagesContainer {
+    flex: 1;
+    min-height: 0;
+    padding: 16px 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overscroll-behavior: contain;
+}
+
+.messagesContainer::-webkit-scrollbar {
+    width: 6px;
+}
+
+.messagesContainer::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.messagesContainer::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.3);
+    border-radius: 3px;
+}
+
+.messagesContainer::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.5);
+}
+
+/* Message Bubbles */
+.messageRow {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.messageRowUser {
+    justify-content: flex-end;
+}
+
+.messageRowBot {
+    justify-content: flex-start;
+}
+
+.messageBubble {
+    max-width: 75%;
+    padding: 14px 18px;
+    border-radius: 20px;
+    font-size: 14px;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.messageBubbleBot {
+    background: rgba(255, 255, 255, 0.9);
+    color: #1f2937;
+    border-bottom-left-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.messageBubbleUser {
+    background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+    color: white;
+    border-bottom-right-radius: 6px;
+    box-shadow: 0 2px 12px rgba(124, 58, 237, 0.3);
+}
+
+.messageTime {
+    font-size: 11px;
+    margin-top: 6px;
+    opacity: 0.7;
+}
+
+/* Typing Indicator */
+.typingIndicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 14px 18px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    border-bottom-left-radius: 6px;
+    width: fit-content;
+}
+
+.typingDot {
+    width: 8px;
+    height: 8px;
+    background: #9ca3af;
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out;
+}
+
+.typingDot:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.typingDot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typingDot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+
+    0%,
+    80%,
+    100% {
+        transform: translateY(0);
+    }
+
+    40% {
+        transform: translateY(-6px);
+    }
+}
+
+/* Input Area */
+.inputArea {
+    padding: 16px 20px;
+    background: transparent;
+}
+
+.inputWrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 50px;
+    padding: 8px 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.addButton {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: transparent;
+    border: 2px solid #d1d5db;
+    color: #6b7280;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.addButton:hover {
+    border-color: #8b5cf6;
+    color: #8b5cf6;
+}
+
+.textInput {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    color: #1f2937;
+    outline: none;
+    padding: 8px 0;
+}
+
+.textInput::placeholder {
+    color: #9ca3af;
+}
+
+.attachButton {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+    flex-shrink: 0;
+}
+
+.attachButton:hover {
+    color: #8b5cf6;
+}
+
+.voiceButton {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.voiceButton:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+
+.sendButton {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.sendButton:hover:not(:disabled) {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+
+.sendButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Voice Mode */
+.voiceModeContainer {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Loading & Error States */
+.loadingIndicator {
+    text-align: center;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 20px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.errorIndicator {
+    text-align: center;
+    padding: 12px 16px;
+    background: rgba(254, 226, 226, 0.8);
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    font-size: 12px;
+    color: #dc2626;
+}
+
+/* Quick Actions */
+.quickActions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 20px;
+    overflow-x: auto;
+}
+
+.quickActionButton {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.7);
+    border: none;
+    border-radius: 20px;
+    font-size: 13px;
+    color: #4b5563;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.quickActionButton:hover {
+    background: rgba(255, 255, 255, 0.9);
+    color: #8b5cf6;
+}
+
+.quickActionButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Mode Toggle */
+.modeToggle {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
+.modeToggleWrapper {
+    display: inline-flex;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 25px;
+    padding: 4px;
+}
+
+.modeToggleButton {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: transparent;
+    color: #6b7280;
+}
+
+.modeToggleButtonActive {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .chatWindow {
+        width: calc(100vw - 32px);
+        height: 70vh;
+        bottom: 16px;
+        right: 16px;
+    }
+
+    .chatWindowExpanded {
+        width: calc(100vw - 32px);
+        height: 85vh;
+    }
+}

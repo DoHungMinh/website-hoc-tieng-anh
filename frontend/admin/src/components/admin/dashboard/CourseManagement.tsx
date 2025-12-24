@@ -8,7 +8,6 @@ import {
   MessageSquare,
   Users,
   Clock,
-  Star,
   Save,
   X,
   ChevronLeft,
@@ -19,8 +18,6 @@ import {
   Lightbulb,
   FileText,
   CheckCircle,
-  Archive,
-  AlertCircle,
   Volume2,
   Loader
 } from 'lucide-react';
@@ -41,14 +38,6 @@ const CourseManagement: React.FC = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const [generatingAudio, setGeneratingAudio] = useState<string | null>(null);
-  const [stats, setStats] = useState({
-    total: 0,
-    active: 0,
-    draft: 0,
-    archived: 0,
-    vocabulary: 0,
-    grammar: 0
-  });
 
   const itemsPerPage = 10;
 
@@ -66,7 +55,7 @@ const CourseManagement: React.FC = () => {
       };
 
       const response = await courseAPI.getCourses(filters);
-      
+
       if (response.success) {
         setCourses(response.data);
       }
@@ -78,25 +67,9 @@ const CourseManagement: React.FC = () => {
     }
   }, [searchTerm, filterType, filterLevel, filterStatus, currentPage, itemsPerPage]);
 
-  // Fetch stats
-  const fetchStats = async () => {
-    try {
-      const response = await courseAPI.getCourseStats();
-      if (response.success) {
-        setStats(response.data);
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
-  };
-
   useEffect(() => {
     fetchCourses();
   }, [fetchCourses]);
-
-  useEffect(() => {
-    fetchStats();
-  }, []);
 
   // Generate initial course data
   const getInitialCourse = (): Course => ({
@@ -144,7 +117,6 @@ const CourseManagement: React.FC = () => {
       await courseAPI.deleteCourse(courseId);
       alert('Xóa khóa học thành công!');
       fetchCourses();
-      fetchStats();
     } catch (error) {
       console.error('Error deleting course:', error);
       alert('Lỗi khi xóa khóa học');
@@ -163,29 +135,18 @@ const CourseManagement: React.FC = () => {
         await courseAPI.updateCourse(selectedCourse._id!, selectedCourse);
         alert('Cập nhật khóa học thành công!');
       }
-      
+
       setIsEditing(false);
       setIsCreating(false);
       setSelectedCourse(null);
       fetchCourses();
-      fetchStats();
     } catch (error) {
       console.error('Error saving course:', error);
       alert('Lỗi khi lưu khóa học');
     }
   };
 
-  // Handle status change
-  const handleStatusChange = async (courseId: string, newStatus: string) => {
-    try {
-      await courseAPI.updateCourseStatus(courseId, newStatus);
-      fetchCourses();
-      fetchStats();
-    } catch (error) {
-      console.error('Error updating status:', error);
-      alert('Lỗi khi cập nhật trạng thái');
-    }
-  };
+
 
   // Handle cancel
   const handleCancel = () => {
@@ -201,7 +162,6 @@ const CourseManagement: React.FC = () => {
       await courseAPI.createCourse(courseData);
       alert('AI đã tạo khóa học thành công!');
       fetchCourses();
-      fetchStats();
     } catch (error) {
       console.error('Error creating AI course:', error);
       alert('Lỗi khi tạo khóa học bằng AI');
@@ -272,16 +232,16 @@ const CourseManagement: React.FC = () => {
   const playAudio = (audioUrl: string, wordId: string) => {
     const audio = new Audio(audioUrl);
     setPlayingAudio(wordId);
-    
+
     audio.onended = () => {
       setPlayingAudio(null);
     };
-    
+
     audio.onerror = () => {
       setPlayingAudio(null);
       alert('Không thể phát audio. Vui lòng thử lại.');
     };
-    
+
     audio.play().catch((error) => {
       console.error('Error playing audio:', error);
       setPlayingAudio(null);
@@ -292,7 +252,7 @@ const CourseManagement: React.FC = () => {
   // Generate audio for a specific word
   const generateAudioForWord = async (courseId: string, wordIndex: number) => {
     if (!selectedCourse?.vocabulary?.[wordIndex]) return;
-    
+
     const word = selectedCourse.vocabulary[wordIndex].word;
     if (!word) {
       alert('Vui lòng nhập từ vựng trước khi tạo audio');
@@ -300,7 +260,7 @@ const CourseManagement: React.FC = () => {
     }
 
     setGeneratingAudio(`${courseId}-${wordIndex}`);
-    
+
     try {
       const response = await fetch(`http://localhost:5002/api/course/${courseId}/generate-word-audio`, {
         method: 'POST',
@@ -316,7 +276,7 @@ const CourseManagement: React.FC = () => {
       }
 
       const data = await response.json();
-      
+
       if (data.success && data.audioUrl) {
         // Update the vocabulary item with the new audio URL
         const updated = [...selectedCourse.vocabulary];
@@ -358,7 +318,7 @@ const CourseManagement: React.FC = () => {
       }
 
       const data = await response.json();
-      
+
       if (data.success && data.course) {
         setSelectedCourse(data.course);
         alert(`✅ Đã tạo audio cho ${data.generatedCount} từ vựng!`);
@@ -455,7 +415,7 @@ const CourseManagement: React.FC = () => {
   // Filter courses based on search and filters
   const filteredCourses = courses.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         course.description.toLowerCase().includes(searchTerm.toLowerCase());
+      course.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesLevel = filterLevel === 'all' || course.level === filterLevel;
     const matchesStatus = filterStatus === 'all' || course.status === filterStatus;
     return matchesSearch && matchesLevel && matchesStatus;
@@ -509,7 +469,7 @@ const CourseManagement: React.FC = () => {
                 <BookOpen className="h-5 w-5" />
                 Thông tin cơ bản
               </h3>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Tên khóa học</label>
                 <input
@@ -612,6 +572,75 @@ const CourseManagement: React.FC = () => {
               </div>
             </div>
 
+            {/* Requirements & Benefits */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5" />
+                  Yêu cầu khóa học
+                </h3>
+                <div className="space-y-2">
+                  {selectedCourse.requirements?.map((req, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={req}
+                        onChange={(e) => updateRequirement(index, e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="Nhập yêu cầu..."
+                      />
+                      <button
+                        onClick={() => removeRequirement(index)}
+                        className="text-red-600 hover:text-red-800 p-2"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={addRequirement}
+                    className="text-purple-600 hover:text-purple-800 text-sm font-medium flex items-center gap-1"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Thêm yêu cầu
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5" />
+                  Lợi ích khóa học
+                </h3>
+                <div className="space-y-2">
+                  {selectedCourse.benefits?.map((benefit, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={benefit}
+                        onChange={(e) => updateBenefit(index, e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="Nhập lợi ích..."
+                      />
+                      <button
+                        onClick={() => removeBenefit(index)}
+                        className="text-red-600 hover:text-red-800 p-2"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={addBenefit}
+                    className="text-purple-600 hover:text-purple-800 text-sm font-medium flex items-center gap-1"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Thêm lợi ích
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Content Management */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -676,7 +705,7 @@ const CourseManagement: React.FC = () => {
                             <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
-                        
+
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1">Từ vựng</label>
@@ -699,7 +728,7 @@ const CourseManagement: React.FC = () => {
                             />
                           </div>
                         </div>
-                        
+
                         {/* Audio Controls */}
                         <div>
                           <label className="block text-xs font-medium text-gray-700 mb-1">Audio phát âm</label>
@@ -758,7 +787,7 @@ const CourseManagement: React.FC = () => {
                             )}
                           </div>
                         </div>
-                        
+
                         <div>
                           <label className="block text-xs font-medium text-gray-700 mb-1">Ý nghĩa</label>
                           <input
@@ -769,7 +798,7 @@ const CourseManagement: React.FC = () => {
                             placeholder="Xin chào"
                           />
                         </div>
-                        
+
                         <div>
                           <label className="block text-xs font-medium text-gray-700 mb-1">Ví dụ trong câu</label>
                           <input
@@ -811,7 +840,7 @@ const CourseManagement: React.FC = () => {
                             <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
-                        
+
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1">Quy tắc ngữ pháp</label>
@@ -834,7 +863,7 @@ const CourseManagement: React.FC = () => {
                             />
                           </div>
                         </div>
-                        
+
                         <div>
                           <label className="block text-xs font-medium text-gray-700 mb-1">Giải thích</label>
                           <textarea
@@ -845,7 +874,7 @@ const CourseManagement: React.FC = () => {
                             placeholder="Thì hiện tại đơn diễn tả hành động xảy ra thường xuyên..."
                           />
                         </div>
-                        
+
                         <div>
                           <label className="block text-xs font-medium text-gray-700 mb-1">Ví dụ</label>
                           <input
@@ -981,8 +1010,8 @@ const CourseManagement: React.FC = () => {
                   <span className="font-medium">Trạng thái</span>
                 </div>
                 <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedCourse.status)}`}>
-                  {selectedCourse.status === 'active' ? 'Hoạt động' : 
-                   selectedCourse.status === 'draft' ? 'Bản nháp' : 'Lưu trữ'}
+                  {selectedCourse.status === 'active' ? 'Hoạt động' :
+                    selectedCourse.status === 'draft' ? 'Bản nháp' : 'Lưu trữ'}
                 </span>
               </div>
             </div>
@@ -993,7 +1022,7 @@ const CourseManagement: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               {selectedCourse.type === 'vocabulary' ? 'Từ vựng trong khóa học' : 'Ngữ pháp trong khóa học'}
             </h3>
-            
+
             {selectedCourse.type === 'vocabulary' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {selectedCourse.vocabulary?.slice(0, 4).map((vocab) => (
@@ -1099,6 +1128,19 @@ const CourseManagement: React.FC = () => {
                 <option value="all">Tất cả loại</option>
                 <option value="vocabulary">Từ vựng</option>
                 <option value="grammar">Ngữ pháp</option>
+              </select>
+            </div>
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as 'all' | 'draft' | 'active' | 'archived')}
+                className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none bg-white"
+              >
+                <option value="all">Tất cả trạng thái</option>
+                <option value="draft">Bản nháp</option>
+                <option value="active">Hoạt động</option>
+                <option value="archived">Lưu trữ</option>
               </select>
             </div>
             <select
@@ -1211,8 +1253,8 @@ const CourseManagement: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(course.status)}`}>
-                          {course.status === 'active' ? 'Hoạt động' : 
-                           course.status === 'draft' ? 'Bản nháp' : 'Lưu trữ'}
+                          {course.status === 'active' ? 'Hoạt động' :
+                            course.status === 'draft' ? 'Bản nháp' : 'Lưu trữ'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -1291,11 +1333,10 @@ const CourseManagement: React.FC = () => {
                         <button
                           key={page}
                           onClick={() => setCurrentPage(page)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            page === currentPage
-                              ? 'z-10 bg-purple-50 border-purple-500 text-purple-600'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                          }`}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${page === currentPage
+                            ? 'z-10 bg-purple-50 border-purple-500 text-purple-600'
+                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                            }`}
                         >
                           {page}
                         </button>

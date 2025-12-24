@@ -20,6 +20,7 @@ export interface Course {
     pronunciation?: string;
     meaning: string;
     example?: string;
+    audioUrl?: string;
   }>;
   grammar?: Array<{
     id: string;
