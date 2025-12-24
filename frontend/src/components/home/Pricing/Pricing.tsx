@@ -44,7 +44,7 @@ const PRICING_PLANS: PricingPlan[] = [
     id: 'pro',
     name: 'Chuyên nghiệp',
     description: 'Lựa chọn tốt nhất cho người học nghiêm túc muốn tiến bộ nhanh chóng.',
-    price: 8000,
+    price: 10000,
     period: '/tháng',
     features: [
       'Truy cập tất cả khóa học A1-C1',
