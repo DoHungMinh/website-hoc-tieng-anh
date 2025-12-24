@@ -1,4 +1,5 @@
 import { API_BASE_URL, API_ENDPOINTS } from "@/utils/constants";
+import { logger } from "@/utils/logger";
 
 interface UserProgressStats {
     weeklyActivity: Array<{
@@ -58,7 +59,7 @@ interface ProgressData {
 class ProgressService {
     private async getAuthHeaders() {
         const token = localStorage.getItem("token");
-        console.log(
+        logger.log(
             "ProgressService: Using token:",
             token ? "Present" : "Missing"
         );
@@ -91,20 +92,20 @@ class ProgressService {
     async getUserProgress(): Promise<ProgressData | null> {
         try {
             const url = `${API_BASE_URL}${API_ENDPOINTS.PROGRESS.GET}`;
-            console.log("ProgressService: Fetching progress from:", url);
+            logger.log("ProgressService: Fetching progress from:", url);
 
             const response = await fetch(url, {
                 headers: await this.getAuthHeaders(),
             });
 
-            console.log(
+            logger.log(
                 "ProgressService: Progress response status:",
                 response.status
             );
 
             if (response.status === 404) {
                 // User chưa có progress, tự động initialize
-                console.log("Progress not found, initializing...");
+                logger.log("Progress not found, initializing...");
                 const initResponse = await fetch(
                     `${API_BASE_URL}/progress/initialize`,
                     {
@@ -115,25 +116,25 @@ class ProgressService {
 
                 if (initResponse.ok) {
                     const initData = await initResponse.json();
-                    console.log("Progress initialized:", initData.success);
+                    logger.log("Progress initialized:", initData.success);
                     return initData.success ? initData.data : null;
                 }
                 return null;
             }
 
             if (!response.ok) {
-                console.warn("Progress data not found, user might be new");
+                logger.warn("Progress data not found, user might be new");
                 return null;
             }
 
             const data = await response.json();
-            console.log(
+            logger.log(
                 "ProgressService: Progress data received:",
                 data.success
             );
             return data.success ? data.data : null;
         } catch (error) {
-            console.error("Error fetching user progress:", error);
+            logger.error("Error fetching user progress:", error);
             return null;
         }
     }
@@ -142,19 +143,19 @@ class ProgressService {
     async getUserEnrollments(): Promise<CourseEnrollment[]> {
         try {
             const url = `${API_BASE_URL}/enrollment`;
-            console.log("ProgressService: Fetching enrollments from:", url);
+            logger.log("ProgressService: Fetching enrollments from:", url);
 
             const response = await fetch(url, {
                 headers: await this.getAuthHeaders(),
             });
 
-            console.log(
+            logger.log(
                 "ProgressService: Enrollments response status:",
                 response.status
             );
 
             if (!response.ok) {
-                console.warn(
+                logger.warn(
                     "Enrollments request failed with status:",
                     response.status
                 );
@@ -162,18 +163,18 @@ class ProgressService {
             }
 
             const data = await response.json();
-            console.log("ProgressService: Enrollments data:", data);
+            logger.log("ProgressService: Enrollments data:", data);
 
             // API trả về trực tiếp object với enrollments array
             const enrollments = data.enrollments || [];
-            console.log(
+            logger.log(
                 "ProgressService: Parsed enrollments count:",
                 enrollments.length
             );
 
             return enrollments;
         } catch (error) {
-            console.error("Error fetching enrollments:", error);
+            logger.error("Error fetching enrollments:", error);
             return [];
         }
     }
@@ -182,7 +183,7 @@ class ProgressService {
     async getEnrollmentCount(): Promise<number> {
         try {
             const url = `${API_BASE_URL}/enrollment`;
-            console.log(
+            logger.log(
                 "ProgressService: Fetching enrollment count from:",
                 url
             );
@@ -192,7 +193,7 @@ class ProgressService {
             });
 
             if (!response.ok) {
-                console.warn(
+                logger.warn(
                     "Enrollment count request failed with status:",
                     response.status
                 );
@@ -200,15 +201,15 @@ class ProgressService {
             }
 
             const data = await response.json();
-            console.log("ProgressService: Enrollment count data:", data);
+            logger.log("ProgressService: Enrollment count data:", data);
 
             // Sử dụng totalCourses từ API response
             const count = data.totalCourses || data.enrollments?.length || 0;
-            console.log("ProgressService: Enrollment count:", count);
+            logger.log("ProgressService: Enrollment count:", count);
 
             return count;
         } catch (error) {
-            console.error("Error fetching enrollment count:", error);
+            logger.error("Error fetching enrollment count:", error);
             return 0;
         }
     }
@@ -228,7 +229,7 @@ class ProgressService {
             const data = await response.json();
             return data.success ? data.data : [];
         } catch (error) {
-            console.error("Error fetching IELTS results:", error);
+            logger.error("Error fetching IELTS results:", error);
             return [];
         }
     }
@@ -254,14 +255,14 @@ class ProgressService {
             );
 
             if (!response.ok) {
-                console.warn("Weekly activity data not found");
+                logger.warn("Weekly activity data not found");
                 return null;
             }
 
             const data = await response.json();
             return data.success ? data.data : null;
         } catch (error) {
-            console.error("Error fetching weekly activity:", error);
+            logger.error("Error fetching weekly activity:", error);
             return null;
         }
     }
@@ -269,7 +270,7 @@ class ProgressService {
     // Tính toán thống kê tổng hợp
     async getUserProgressStats(): Promise<UserProgressStats> {
         try {
-            console.log("ProgressService: Starting to fetch progress stats...");
+            logger.log("ProgressService: Starting to fetch progress stats...");
 
             // Lấy dữ liệu song song
             const [progress, enrollmentCount, ieltsResults, weeklyData] =
@@ -280,7 +281,7 @@ class ProgressService {
                     this.getWeeklyActivity(),
                 ]);
 
-            console.log("ProgressService: Data received:", {
+            logger.log("ProgressService: Data received:", {
                 progress: !!progress,
                 enrollments: enrollmentCount,
                 ieltsResults: ieltsResults.length,
@@ -297,12 +298,12 @@ class ProgressService {
             const averageScore =
                 ieltsResults.length > 0
                     ? ieltsResults.reduce(
-                          (sum, result) =>
-                              sum +
-                              (result.score.bandScore ||
-                                  result.score.percentage / 10),
-                          0
-                      ) / ieltsResults.length
+                        (sum, result) =>
+                            sum +
+                            (result.score.bandScore ||
+                                result.score.percentage / 10),
+                        0
+                    ) / ieltsResults.length
                     : 0;
 
             // Sử dụng dữ liệu từ API hoặc fallback
@@ -332,7 +333,7 @@ class ProgressService {
                 // Giữ nguyên dữ liệu từ API hoặc fallback về 0
             }
 
-            console.log("ProgressService: Final stats:", {
+            logger.log("ProgressService: Final stats:", {
                 testsCompleted,
                 coursesEnrolled,
                 averageScore,
@@ -357,7 +358,7 @@ class ProgressService {
                 weeklyGrowth,
             };
         } catch (error) {
-            console.error("Error calculating progress stats:", error);
+            logger.error("Error calculating progress stats:", error);
 
             // Fallback to default data if error
             return {
@@ -400,7 +401,7 @@ class ProgressService {
             });
 
             if (!response.ok) {
-                console.warn(
+                logger.warn(
                     "Failed to update test progress:",
                     response.status
                 );
@@ -408,10 +409,10 @@ class ProgressService {
             }
 
             const data = await response.json();
-            console.log("Test progress updated:", data.success);
+            logger.log("Test progress updated:", data.success);
             return data.success;
         } catch (error) {
-            console.error("Error updating test progress:", error);
+            logger.error("Error updating test progress:", error);
             return false;
         }
     }
@@ -437,7 +438,7 @@ class ProgressService {
             );
 
             if (!response.ok) {
-                console.warn(
+                logger.warn(
                     "Failed to update vocabulary progress:",
                     response.status
                 );
@@ -445,10 +446,10 @@ class ProgressService {
             }
 
             const data = await response.json();
-            console.log("Vocabulary progress updated:", data.success);
+            logger.log("Vocabulary progress updated:", data.success);
             return data.success;
         } catch (error) {
-            console.error("Error updating vocabulary progress:", error);
+            logger.error("Error updating vocabulary progress:", error);
             return false;
         }
     }
@@ -473,7 +474,7 @@ class ProgressService {
             });
 
             if (!response.ok) {
-                console.warn(
+                logger.warn(
                     "Failed to update listening progress:",
                     response.status
                 );
@@ -481,10 +482,10 @@ class ProgressService {
             }
 
             const data = await response.json();
-            console.log("Listening progress updated:", data.success);
+            logger.log("Listening progress updated:", data.success);
             return data.success;
         } catch (error) {
-            console.error("Error updating listening progress:", error);
+            logger.error("Error updating listening progress:", error);
             return false;
         }
     }

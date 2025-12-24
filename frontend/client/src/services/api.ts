@@ -1,5 +1,6 @@
 import { API_BASE_URL, API_ENDPOINTS, STORAGE_KEYS } from '@/utils/constants';
 import { Toast } from '@/utils/toast';
+import { logger } from '@/utils/logger';
 
 // Types for API responses
 interface ApiResponse<T = unknown> {
@@ -15,7 +16,7 @@ class ApiService {
   constructor() {
     this.baseURL = API_BASE_URL;
     // Always get the latest token from localStorage
-  this.token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+    this.token = localStorage.getItem(STORAGE_KEYS.TOKEN);
   }
 
   private async request<T>(
@@ -23,10 +24,10 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
-    
+
     // ALWAYS get fresh token from localStorage before making request
-  this.token = localStorage.getItem(STORAGE_KEYS.TOKEN);
-    
+    this.token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
@@ -36,11 +37,11 @@ class ApiService {
       ...options,
     };
 
-    console.log('🚀 ApiService.request:', { 
-      endpoint, 
-      hasToken: !!this.token, 
+    logger.log('🚀 ApiService.request:', {
+      endpoint,
+      hasToken: !!this.token,
       tokenPreview: this.token ? this.token.substring(0, 20) + '...' : 'null',
-      headers: config.headers 
+      headers: config.headers
     });
 
     try {
@@ -49,24 +50,24 @@ class ApiService {
 
       if (!response.ok) {
         // Handle account disabled error (403) or unauthorized (401)
-        if ((response.status === 403 || response.status === 401) && 
-            (data.message?.includes('vô hiệu hóa') || data.message?.includes('disabled'))) {
+        if ((response.status === 403 || response.status === 401) &&
+          (data.message?.includes('vô hiệu hóa') || data.message?.includes('disabled'))) {
           this.handleAccountDisabled(data.message);
           throw new Error(data.message || 'Account disabled');
         }
-        
+
         // Handle general 401 unauthorized
         if (response.status === 401) {
           this.handleAccountDisabled('Phiên đăng nhập đã hết hạn hoặc tài khoản bị vô hiệu hóa');
           throw new Error('Unauthorized');
         }
-        
+
         throw new Error(data.message || 'API request failed');
       }
 
       return data;
     } catch (error) {
-      console.error('API Error:', error);
+      logger.error('API Error:', error);
       throw error;
     }
   }
@@ -84,7 +85,7 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
-    
+
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
@@ -103,7 +104,7 @@ class ApiService {
 
       return data;
     } catch (error) {
-      console.error('API Error:', error);
+      logger.error('API Error:', error);
       throw error;
     }
   }
@@ -152,8 +153,8 @@ class ApiService {
     });
 
     this.removeToken();
-  localStorage.removeItem(STORAGE_KEYS.USER);
-  localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.USER);
+    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
 
     return response;
   }
@@ -229,10 +230,10 @@ class ApiService {
     const params = new URLSearchParams();
     if (level) params.append('level', level);
     if (type) params.append('type', type);
-    
+
     const queryString = params.toString();
     const endpoint = queryString ? `${API_ENDPOINTS.LEARNING.LESSONS}?${queryString}` : API_ENDPOINTS.LEARNING.LESSONS;
-    
+
     return this.request(endpoint);
   }
 
@@ -256,14 +257,14 @@ class ApiService {
     // Check if user is authenticated by checking localStorage token directly
     const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
     const isAuthenticated = !!token;
-    
-    console.log('🤖 ApiService.sendMessage:', { 
-      isAuthenticated, 
+
+    logger.log('🤖 ApiService.sendMessage:', {
+      isAuthenticated,
       token: token ? 'exists' : 'null',
       sessionId: sessionId || 'none',
-      endpoint: isAuthenticated ? '/chatbot/message' : '/chatbot/simple/message' 
+      endpoint: isAuthenticated ? '/chatbot/message' : '/chatbot/simple/message'
     });
-    
+
     if (isAuthenticated) {
       // Use real data endpoint for authenticated users
       return this.request('/chatbot/message', {
@@ -284,23 +285,23 @@ class ApiService {
     const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
     const user = localStorage.getItem(STORAGE_KEYS.USER);
     const isAuthenticated = !!token;
-    
-    console.log('📊 ApiService.generateProgressAnalysis DEBUG:', { 
-      isAuthenticated, 
+
+    logger.log('📊 ApiService.generateProgressAnalysis DEBUG:', {
+      isAuthenticated,
       token: token ? `${token.substring(0, 20)}...` : 'null',
       user: user ? 'exists' : 'null',
       endpoint: isAuthenticated ? '/chatbot/analysis' : '/chatbot/simple/analysis',
       STORAGE_KEYS,
       localStorage_keys: Object.keys(localStorage)
     });
-    
+
     if (isAuthenticated) {
-      console.log('🔄 Using REAL DATA endpoint: /chatbot/analysis');
+      logger.log('🔄 Using REAL DATA endpoint: /chatbot/analysis');
       return this.request('/chatbot/analysis', {
         method: 'POST',
       });
     } else {
-      console.log('🔄 Using FAKE DATA endpoint: /chatbot/simple/analysis');
+      logger.log('🔄 Using FAKE DATA endpoint: /chatbot/simple/analysis');
       return this.publicRequest('/chatbot/simple/analysis', {
         method: 'POST',
       });
@@ -309,15 +310,15 @@ class ApiService {
 
   async generateLearningRecommendations() {
     // Check if user is authenticated by checking localStorage token directly
-  const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+    const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
     const isAuthenticated = !!token;
-    
-    console.log('💡 ApiService.generateLearningRecommendations:', { 
-      isAuthenticated, 
+
+    logger.log('💡 ApiService.generateLearningRecommendations:', {
+      isAuthenticated,
       token: token ? 'exists' : 'null',
-      endpoint: isAuthenticated ? '/chatbot/recommendations' : '/chatbot/simple/recommendations' 
+      endpoint: isAuthenticated ? '/chatbot/recommendations' : '/chatbot/simple/recommendations'
     });
-    
+
     if (isAuthenticated) {
       return this.request('/chatbot/recommendations', {
         method: 'POST',
@@ -334,10 +335,10 @@ class ApiService {
     const params = new URLSearchParams();
     if (limit) params.append('limit', limit.toString());
     if (page) params.append('page', page.toString());
-    
+
     const queryString = params.toString();
     const endpoint = queryString ? `/chatbot/history?${queryString}` : '/chatbot/history';
-    
+
     return this.request(endpoint); // Requires auth
   }
 
@@ -360,17 +361,17 @@ class ApiService {
   // Utility methods
   setToken(token: string) {
     this.token = token;
-  localStorage.setItem(STORAGE_KEYS.TOKEN, token);
+    localStorage.setItem(STORAGE_KEYS.TOKEN, token);
   }
 
   removeToken() {
     this.token = null;
-  localStorage.removeItem(STORAGE_KEYS.TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.TOKEN);
   }
 
   isAuthenticated(): boolean {
     // Always check localStorage for the most current token
-  this.token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+    this.token = localStorage.getItem(STORAGE_KEYS.TOKEN);
     return !!this.token;
   }
 }
