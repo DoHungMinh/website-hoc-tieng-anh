@@ -1,7 +1,3 @@
-Dưới đây là nội dung toàn bộ file **"TỔNG HỢP FULL LỆNH SETUP CI/CD TỪ ĐẦU"** đã được chuyển đổi sang định dạng Markdown (.md) chuẩn, kèm theo các chỉnh sửa nhỏ để đảm bảo cú pháp lệnh chính xác (do lỗi hiển thị trong file PDF gốc).
-
-Bạn có thể sao chép nội dung bên dưới hoặc tải file về ở cuối câu trả lời.
-
 # ---
 
 **TỔNG HỢP FULL LỆNH SETUP CI/CD TỪ ĐẦU**

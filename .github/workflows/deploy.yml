@@ -64,12 +64,12 @@ jobs:
       - name: Deployment status
         run: |
           if [ "${{ needs.deploy-backend.result }}" == "success" ]; then
-            echo "🎉 EngPro backend deployment completed successfully!"
+            echo "EngPro backend deployment completed successfully!"
             echo ""
-            echo "📡 API Endpoint: https://YOUR_TAILSCALE_URL/engpro/"
-            echo "🏥 Health Check: https://YOUR_TAILSCALE_URL/engpro/health"
+            echo "API Endpoint: https://YOUR_TAILSCALE_URL/engpro/"
+            echo "Health Check: https://YOUR_TAILSCALE_URL/engpro/health"
           else
-            echo "❌ EngPro backend deployment failed!"
+            echo "EngPro backend deployment failed!"
             echo "Please check the logs above for errors."
             exit 1
           fi

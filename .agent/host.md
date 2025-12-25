@@ -1,5 +1,3 @@
-Dưới đây là nội dung từ tài liệu được chuyển đổi sang định dạng Markdown (.md) để bạn dễ dàng lưu trữ và sao chép lệnh.
-
 # ---
 
 **TỔNG HỢP FULL LỆNH: SETUP DEVENIR \+ N8N CHẠY 24/7 & PUBLIC**
