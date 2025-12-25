@@ -11,13 +11,9 @@ const emailService = require("../../payos/email-service");
 // Get all courses with filters
 export const getCourses = async (req: Request, res: Response) => {
     try {
-        const { search, type, level, status, page = 1, limit = 10 } = req.query;
+        const { search, type, level, status, page, limit } = req.query;
 
-        // Validate and sanitize pagination
-        const pageNum = Math.max(1, parseInt(page as string) || 1);
-        const limitNum = Math.min(100, Math.max(1, parseInt(limit as string) || 10));
-        const skip = (pageNum - 1) * limitNum;
-
+        // Build filter
         const filter: any = {};
 
         if (search && typeof search === 'string' && search.trim()) {
@@ -45,6 +41,11 @@ export const getCourses = async (req: Request, res: Response) => {
             filter.status = status;
         }
 
+        // If no limit specified or limit=0, return all courses (for admin dashboard)
+        const limitNum = limit ? Math.min(1000, Math.max(1, parseInt(limit as string) || 1000)) : 1000;
+        const pageNum = page ? Math.max(1, parseInt(page as string) || 1) : 1;
+        const skip = (pageNum - 1) * limitNum;
+
         const courses = await Course.find(filter)
             .skip(skip)
             .limit(limitNum)
@@ -65,7 +66,7 @@ export const getCourses = async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         console.error("Get courses error:", error);
-        
+
         if (error.code === 50 || error.message?.includes('timeout')) {
             res.status(504).json({
                 success: false,
@@ -73,7 +74,7 @@ export const getCourses = async (req: Request, res: Response) => {
             });
             return;
         }
-        
+
         res.status(500).json({
             success: false,
             message: "Lỗi khi lấy danh sách khóa học",
@@ -87,11 +88,11 @@ export const getPublicCourses = async (req: Request, res: Response) => {
         const { type, level } = req.query;
 
         const filter: any = { status: "active" };
-        
+
         // Validate enum values
         const validTypes = ['vocabulary', 'grammar', 'conversation', 'ielts', 'toeic', 'business'];
         const validLevels = ['beginner', 'elementary', 'intermediate', 'upper-intermediate', 'advanced'];
-        
+
         if (type && type !== "all" && validTypes.includes(type as string)) {
             filter.type = type;
         }
@@ -111,7 +112,7 @@ export const getPublicCourses = async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         console.error("Get public courses error:", error);
-        
+
         if (error.code === 50 || error.message?.includes('timeout')) {
             res.status(504).json({
                 success: false,
@@ -119,7 +120,7 @@ export const getPublicCourses = async (req: Request, res: Response) => {
             });
             return;
         }
-        
+
         res.status(500).json({
             success: false,
             message: "Lỗi khi lấy danh sách khóa học",
@@ -716,13 +717,13 @@ export const generateWordAudio = async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         console.error("❌ Error generating word audio:", error);
-        
+
         // Kiểm tra xem response đã được gửi chưa
         if (res.headersSent) {
             console.log('⚠️ Response already sent, skipping error response');
             return;
         }
-        
+
         return res.status(500).json({
             success: false,
             message: "Lỗi khi tạo audio",
@@ -766,7 +767,7 @@ export const generateAllAudio = async (req: Request, res: Response) => {
         // Generate audio for each word
         for (let i = 0; i < course.vocabulary.length; i++) {
             const vocab = course.vocabulary[i];
-            
+
             // Skip if already has audio
             if (vocab.audioUrl) {
                 console.log(`⏭️ [${i + 1}/${course.vocabulary.length}] Skipping "${vocab.word}" (already has audio)`);
@@ -808,13 +809,13 @@ export const generateAllAudio = async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         console.error("❌ Error generating all audio:", error);
-        
+
         // Kiểm tra xem response đã được gửi chưa
         if (res.headersSent) {
             console.log('⚠️ Response already sent, skipping error response');
             return;
         }
-        
+
         return res.status(500).json({
             success: false,
             message: "Lỗi khi tạo audio",

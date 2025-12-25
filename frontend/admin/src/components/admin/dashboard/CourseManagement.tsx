@@ -21,7 +21,7 @@ import {
   Volume2,
   Loader
 } from 'lucide-react';
-import { courseAPI, Course, CourseFilters } from '@/services/courseAPI';
+import { courseAPI, Course } from '@/services/courseAPI';
 import AICourseCreator from './AICourseCreator';
 
 const CourseManagement: React.FC = () => {
@@ -45,16 +45,8 @@ const CourseManagement: React.FC = () => {
   const fetchCourses = useCallback(async () => {
     try {
       setLoading(true);
-      const filters: CourseFilters = {
-        search: searchTerm || undefined,
-        type: filterType !== 'all' ? filterType : undefined,
-        level: filterLevel !== 'all' ? filterLevel : undefined,
-        status: filterStatus !== 'all' ? filterStatus : undefined,
-        page: currentPage,
-        limit: itemsPerPage
-      };
-
-      const response = await courseAPI.getCourses(filters);
+      // Fetch all courses without pagination - frontend handles it
+      const response = await courseAPI.getCourses({});
 
       if (response.success) {
         setCourses(response.data);
@@ -65,11 +57,16 @@ const CourseManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, filterType, filterLevel, filterStatus, currentPage, itemsPerPage]);
+  }, []);
 
   useEffect(() => {
     fetchCourses();
   }, [fetchCourses]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterType, filterLevel, filterStatus]);
 
   // Generate initial course data
   const getInitialCourse = (): Course => ({
@@ -416,9 +413,10 @@ const CourseManagement: React.FC = () => {
   const filteredCourses = courses.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       course.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = filterType === 'all' || course.type === filterType;
     const matchesLevel = filterLevel === 'all' || course.level === filterLevel;
     const matchesStatus = filterStatus === 'all' || course.status === filterStatus;
-    return matchesSearch && matchesLevel && matchesStatus;
+    return matchesSearch && matchesType && matchesLevel && matchesStatus;
   });
 
   // Paginate filtered courses
@@ -1292,34 +1290,46 @@ const CourseManagement: React.FC = () => {
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
-                <div className="flex-1 flex justify-between sm:hidden">
-                  <button
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Trước
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Sau
-                  </button>
+            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 rounded-b-xl">
+              {/* Mobile pagination */}
+              <div className="flex-1 flex justify-between sm:hidden">
+                <button
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Trước
+                </button>
+                <span className="text-sm text-gray-700 self-center">
+                  Trang {currentPage} / {totalPages || 1}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage >= totalPages}
+                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Sau
+                </button>
+              </div>
+
+              {/* Desktop pagination */}
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    {filteredCourses.length > 0 ? (
+                      <>
+                        Hiển thị <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> đến{' '}
+                        <span className="font-medium">
+                          {Math.min(currentPage * itemsPerPage, filteredCourses.length)}
+                        </span>{' '}
+                        trong tổng số <span className="font-medium">{filteredCourses.length}</span> khóa học
+                      </>
+                    ) : (
+                      <span>Không có khóa học nào</span>
+                    )}
+                  </p>
                 </div>
-                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm text-gray-700">
-                      Hiển thị <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> đến{' '}
-                      <span className="font-medium">
-                        {Math.min(currentPage * itemsPerPage, filteredCourses.length)}
-                      </span>{' '}
-                      trong tổng số <span className="font-medium">{filteredCourses.length}</span> khóa học
-                    </p>
-                  </div>
+                {totalPages > 1 && (
                   <div>
                     <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
                       <button
@@ -1329,30 +1339,51 @@ const CourseManagement: React.FC = () => {
                       >
                         <ChevronLeft className="h-5 w-5" />
                       </button>
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                        <button
-                          key={page}
-                          onClick={() => setCurrentPage(page)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${page === currentPage
-                            ? 'z-10 bg-purple-50 border-purple-500 text-purple-600'
-                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                            }`}
-                        >
-                          {page}
-                        </button>
-                      ))}
+
+                      {/* Page numbers with ellipsis for many pages */}
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(page => {
+                          // Show first, last, current, and pages near current
+                          if (totalPages <= 7) return true;
+                          if (page === 1 || page === totalPages) return true;
+                          if (Math.abs(page - currentPage) <= 1) return true;
+                          return false;
+                        })
+                        .map((page, index, arr) => {
+                          // Add ellipsis if there's a gap
+                          const showEllipsisBefore = index > 0 && page - arr[index - 1] > 1;
+                          return (
+                            <React.Fragment key={page}>
+                              {showEllipsisBefore && (
+                                <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500">
+                                  ...
+                                </span>
+                              )}
+                              <button
+                                onClick={() => setCurrentPage(page)}
+                                className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${page === currentPage
+                                    ? 'z-10 bg-purple-50 border-purple-500 text-purple-600'
+                                    : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                  }`}
+                              >
+                                {page}
+                              </button>
+                            </React.Fragment>
+                          );
+                        })}
+
                       <button
                         onClick={() => setCurrentPage(currentPage + 1)}
-                        disabled={currentPage === totalPages}
+                        disabled={currentPage >= totalPages}
                         className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <ChevronRight className="h-5 w-5" />
                       </button>
                     </nav>
                   </div>
-                </div>
+                )}
               </div>
-            )}
+            </div>
           </>
         )}
       </div>
