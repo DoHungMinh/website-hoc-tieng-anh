@@ -1,5 +1,5 @@
+import { API_BASE_URL } from "@/utils/constants";
 // API service cho authentication
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002/api';
 const TOKEN_KEY = 'english_learning_token';
 
 export interface LoginData {
@@ -30,7 +30,7 @@ export const authAPI = {
   login: async (data: LoginData): Promise<AuthResponse> => {
     try {
       const url = `${API_BASE_URL}/auth/login`;
-      
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -38,11 +38,11 @@ export const authAPI = {
         },
         body: JSON.stringify(data),
       });
-      
+
       if (!response.ok) {
         // Xử lý lỗi 429 (Too Many Requests) và các lỗi khác
         let errorMessage = `HTTP error! status: ${response.status}`;
-        
+
         try {
           const result = await response.json();
           errorMessage = result.message || errorMessage;
@@ -58,10 +58,10 @@ export const authAPI = {
             }
           }
         }
-        
+
         throw new Error(errorMessage);
       }
-      
+
       const result = await response.json();
       return result;
     } catch (error) {
@@ -73,7 +73,7 @@ export const authAPI = {
     }
   },
 
-      register: async (data: RegisterData): Promise<AuthResponse> => {
+  register: async (data: RegisterData): Promise<AuthResponse> => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
@@ -82,11 +82,11 @@ export const authAPI = {
         },
         body: JSON.stringify(data),
       });
-      
+
       if (!response.ok) {
         // Xử lý lỗi 429 (Too Many Requests) và các lỗi khác
         let errorMessage = `HTTP error! status: ${response.status}`;
-        
+
         try {
           const result = await response.json();
           errorMessage = result.message || errorMessage;
@@ -102,12 +102,12 @@ export const authAPI = {
             }
           }
         }
-        
+
         throw new Error(errorMessage);
       }
-      
+
       const result = await response.json();
-      
+
       return result;
     } catch (error) {
       if (error instanceof Error) {

@@ -14,8 +14,8 @@ interface TextRevealConfig {
     scrollTrigger?: ScrollTrigger.Vars;
 }
 
-interface TextRevealReturn {
-    ref: React.RefObject<HTMLElement>;
+interface TextRevealReturn<T> {
+    ref: React.RefObject<T>;
     replay: (timeScale?: number) => void;
     pause: () => void;
     resume: () => void;
@@ -27,7 +27,7 @@ interface TextRevealReturn {
  * Custom hook for text reveal animations using GSAP (free version)
  * Mimics SplitText behavior with mask effect on lines
  */
-export function useTextReveal(config: TextRevealConfig = {}): TextRevealReturn {
+export function useTextReveal<T extends HTMLElement = HTMLElement>(config: TextRevealConfig = {}): TextRevealReturn<T> {
     const {
         type = 'words,lines',
         duration = 0.6,
@@ -38,7 +38,7 @@ export function useTextReveal(config: TextRevealConfig = {}): TextRevealReturn {
         scrollTrigger,
     } = config;
 
-    const ref = useRef<HTMLElement>(null);
+    const ref = useRef<T>(null);
     const timelineRef = useRef<gsap.core.Timeline | null>(null);
     const originalHTMLRef = useRef<string>('');
     const isInitializedRef = useRef(false);
@@ -49,10 +49,10 @@ export function useTextReveal(config: TextRevealConfig = {}): TextRevealReturn {
     }, []);
 
     // Measure and split into lines based on element width
-    const splitIntoLines = useCallback((element: HTMLElement, words: string[]): string[][] => {
+    const splitIntoLines = useCallback((element: T, words: string[]): string[][] => {
         const lines: string[][] = [];
         let currentLine: string[] = [];
-        
+
         // Create temp container matching element styles
         const computedStyle = window.getComputedStyle(element);
         const temp = document.createElement('span');
@@ -72,7 +72,7 @@ export function useTextReveal(config: TextRevealConfig = {}): TextRevealReturn {
         words.forEach(word => {
             const testText = [...currentLine, word].join(' ');
             temp.textContent = testText;
-            
+
             if (temp.offsetWidth > maxWidth && currentLine.length > 0) {
                 lines.push([...currentLine]);
                 currentLine = [word];
@@ -123,12 +123,12 @@ export function useTextReveal(config: TextRevealConfig = {}): TextRevealReturn {
         } else {
             targets = element.querySelectorAll('.word');
         }
-        
+
         if (targets.length === 0) return;
 
         // Create timeline
-        const tl = gsap.timeline({ 
-            paused: true, 
+        const tl = gsap.timeline({
+            paused: true,
             delay,
             scrollTrigger: scrollTrigger ? {
                 trigger: element,
@@ -238,7 +238,7 @@ export function useTextReveal(config: TextRevealConfig = {}): TextRevealReturn {
     }, [init]);
 
     return {
-        ref: ref as React.RefObject<HTMLElement>,
+        ref: ref,
         replay,
         pause,
         resume,

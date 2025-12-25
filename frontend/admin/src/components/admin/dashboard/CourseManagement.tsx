@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { courseAPI, Course } from '@/services/courseAPI';
 import AICourseCreator from './AICourseCreator';
+import { API_BASE_URL } from '@/utils/constants';
 
 const CourseManagement: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -259,7 +260,7 @@ const CourseManagement: React.FC = () => {
     setGeneratingAudio(`${courseId}-${wordIndex}`);
 
     try {
-      const response = await fetch(`http://localhost:5002/api/course/${courseId}/generate-word-audio`, {
+      const response = await fetch(`${API_BASE_URL}/course/${courseId}/generate-word-audio`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -302,7 +303,7 @@ const CourseManagement: React.FC = () => {
     setGeneratingAudio('all');
 
     try {
-      const response = await fetch(`http://localhost:5002/api/course/${courseId}/generate-all-audio`, {
+      const response = await fetch(`${API_BASE_URL}/course/${courseId}/generate-all-audio`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1362,8 +1363,8 @@ const CourseManagement: React.FC = () => {
                               <button
                                 onClick={() => setCurrentPage(page)}
                                 className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${page === currentPage
-                                    ? 'z-10 bg-purple-50 border-purple-500 text-purple-600'
-                                    : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                  ? 'z-10 bg-purple-50 border-purple-500 text-purple-600'
+                                  : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
                                   }`}
                               >
                                 {page}

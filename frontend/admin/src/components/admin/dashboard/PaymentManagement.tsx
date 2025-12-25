@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { formatDateVN } from "@/utils/dateUtils";
 import { generateMonthlyPaymentReport } from "@/utils/pdfGenerator";
+import { API_BASE_URL } from "@/utils/constants";
 
 // Interfaces for type safety
 interface PaymentStats {
@@ -87,7 +88,7 @@ const PaymentManagement: React.FC = () => {
 
     const [fromDate, setFromDate] = useState<string>(getDefaultFromDate());
     const [toDate, setToDate] = useState<string>(getDefaultToDate());
-    
+
     // PDF Export states
     const [isExporting, setIsExporting] = useState(false);
     const [showExportModal, setShowExportModal] = useState(false);
@@ -158,7 +159,7 @@ const PaymentManagement: React.FC = () => {
 
             // Fetch today's stats with retry
             const todayResponse = await retryRequest(() =>
-                fetch("/api/payments/stats/today", {
+                fetch(`${API_BASE_URL}/payments/stats/today`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                         "Content-Type": "application/json",
@@ -176,7 +177,7 @@ const PaymentManagement: React.FC = () => {
 
             // Fetch week's stats (Monday to Sunday) with retry
             const weekResponse = await retryRequest(() =>
-                fetch("/api/payments/stats/week", {
+                fetch(`${API_BASE_URL}/payments/stats/week`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                         "Content-Type": "application/json",
@@ -194,7 +195,7 @@ const PaymentManagement: React.FC = () => {
 
             // Fetch success rate stats with retry
             const successRateResponse = await retryRequest(() =>
-                fetch("/api/payments/stats/success-rate", {
+                fetch(`${API_BASE_URL}/payments/stats/success-rate`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                         "Content-Type": "application/json",
@@ -253,7 +254,7 @@ const PaymentManagement: React.FC = () => {
 
             const response = await retryRequest(() =>
                 fetch(
-                    `http://localhost:5002/api/payments/history?${queryParams}`,
+                    `${API_BASE_URL}/payments/history?${queryParams}`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -336,7 +337,7 @@ const PaymentManagement: React.FC = () => {
 
             // Gọi API lấy dữ liệu theo tháng
             const response = await fetch(
-                `/api/payments/report/monthly?month=${exportMonth}&year=${exportYear}`,
+                `${API_BASE_URL}/payments/report/monthly?month=${exportMonth}&year=${exportYear}`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -359,12 +360,12 @@ const PaymentManagement: React.FC = () => {
 
             // Generate PDF
             const fileName = generateMonthlyPaymentReport(result.data);
-            
+
             console.log(`✅ PDF exported successfully: ${fileName}`);
-            
+
             // Đóng modal
             setShowExportModal(false);
-            
+
             // Hiển thị thông báo thành công
             alert(`✅ Đã xuất báo cáo thành công!\nFile: ${fileName}`);
 
@@ -510,9 +511,9 @@ const PaymentManagement: React.FC = () => {
             )
                 .toString()
                 .padStart(2, "0")}-${currentDate
-                .getDate()
-                .toString()
-                .padStart(2, "0")}`;
+                    .getDate()
+                    .toString()
+                    .padStart(2, "0")}`;
             setter(formattedCurrentDate);
             return;
         }
@@ -554,19 +555,18 @@ const PaymentManagement: React.FC = () => {
                         className="flex items-center gap-2 px-4 py-2 text-gray-700 transition-colors duration-200 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
                     >
                         <RefreshCw
-                            className={`h-4 w-4 ${
-                                loading ||
-                                transactionsLoading ||
-                                retryingRequests
+                            className={`h-4 w-4 ${loading ||
+                                    transactionsLoading ||
+                                    retryingRequests
                                     ? "animate-spin"
                                     : ""
-                            }`}
+                                }`}
                         />
                         {retryingRequests
                             ? "Đang thử lại..."
                             : loading || transactionsLoading
-                            ? "Đang tải..."
-                            : "Làm mới"}
+                                ? "Đang tải..."
+                                : "Làm mới"}
                     </button>
                     <button className="flex items-center gap-2 px-4 py-2 text-white transition-colors duration-200 bg-purple-600 rounded-lg hover:bg-purple-700"
                         onClick={() => setShowExportModal(true)}
@@ -863,36 +863,35 @@ const PaymentManagement: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span
-                                                className={`inline-flex px-2 text-xs font-semibold leading-5 rounded-full ${
-                                                    transaction.status ===
-                                                    "PAID"
+                                                className={`inline-flex px-2 text-xs font-semibold leading-5 rounded-full ${transaction.status ===
+                                                        "PAID"
                                                         ? "text-green-800 bg-green-100"
                                                         : transaction.status ===
-                                                              "PENDING" ||
-                                                          transaction.status ===
-                                                              "PROCESSING"
-                                                        ? "text-yellow-800 bg-yellow-100"
-                                                        : transaction.status ===
-                                                          "CANCELLED"
-                                                        ? "text-gray-800 bg-gray-100"
-                                                        : "text-red-800 bg-red-100"
-                                                }`}
+                                                            "PENDING" ||
+                                                            transaction.status ===
+                                                            "PROCESSING"
+                                                            ? "text-yellow-800 bg-yellow-100"
+                                                            : transaction.status ===
+                                                                "CANCELLED"
+                                                                ? "text-gray-800 bg-gray-100"
+                                                                : "text-red-800 bg-red-100"
+                                                    }`}
                                             >
                                                 {transaction.status === "PAID"
                                                     ? "Thành công"
                                                     : transaction.status ===
-                                                      "PENDING"
-                                                    ? "Đang xử lý"
-                                                    : transaction.status ===
-                                                      "PROCESSING"
-                                                    ? "Đang xử lý"
-                                                    : transaction.status ===
-                                                      "CANCELLED"
-                                                    ? "Đã hủy"
-                                                    : transaction.status ===
-                                                      "EXPIRED"
-                                                    ? "Hết hạn"
-                                                    : "Thất bại"}
+                                                        "PENDING"
+                                                        ? "Đang xử lý"
+                                                        : transaction.status ===
+                                                            "PROCESSING"
+                                                            ? "Đang xử lý"
+                                                            : transaction.status ===
+                                                                "CANCELLED"
+                                                                ? "Đã hủy"
+                                                                : transaction.status ===
+                                                                    "EXPIRED"
+                                                                    ? "Hết hạn"
+                                                                    : "Thất bại"}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
@@ -947,11 +946,10 @@ const PaymentManagement: React.FC = () => {
                                                 onClick={() =>
                                                     fetchTransactions(page)
                                                 }
-                                                className={`px-3 py-1 text-sm border rounded ${
-                                                    page === currentPage
+                                                className={`px-3 py-1 text-sm border rounded ${page === currentPage
                                                         ? "bg-purple-600 text-white border-purple-600"
                                                         : "border-gray-300 hover:bg-gray-50"
-                                                }`}
+                                                    }`}
                                             >
                                                 {page}
                                             </button>

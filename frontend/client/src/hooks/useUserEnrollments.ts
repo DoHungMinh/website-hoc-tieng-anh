@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from "@/utils/constants";
 
 interface CourseInfo {
   _id: string;
@@ -60,7 +61,7 @@ export const useUserEnrollments = () => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch('http://localhost:5002/api/enrollment', {
+      const response = await fetch(`${API_BASE_URL}/enrollment`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -72,7 +73,7 @@ export const useUserEnrollments = () => {
       }
 
       const data = await response.json();
-      
+
       setEnrollments(data.enrollments || []);
       setStats(data);
     } catch (err) {
