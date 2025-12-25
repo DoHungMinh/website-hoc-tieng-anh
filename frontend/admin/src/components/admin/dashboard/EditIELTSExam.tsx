@@ -2,9 +2,23 @@ import { useState } from 'react';
 import { Save, ArrowLeft, AlertCircle } from 'lucide-react';
 import { API_BASE_URL } from "@/utils/constants";
 
+interface Exam {
+  _id: string;
+  title: string;
+  type: 'reading' | 'listening';
+  difficulty: string;
+  duration: number;
+  totalQuestions: number;
+  status: 'draft' | 'published';
+  createdAt: string;
+  updatedAt: string;
+  description?: string;
+  [key: string]: any; // Allow other properties for flexibility
+}
+
 interface EditIELTSExamProps {
-  examData: any; // eslint-disable-line @typescript-eslint/no-explicit-any
-  onSave: (updatedData: any) => void; // eslint-disable-line @typescript-eslint/no-explicit-any
+  examData: Exam;
+  onSave: (updatedData: Exam) => void;
   onCancel: () => void;
 }
 
@@ -151,7 +165,7 @@ const EditIELTSExam = ({ examData, onSave, onCancel }: EditIELTSExamProps) => {
             </label>
             <select
               value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value as 'draft' | 'published' })}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
               <option value="draft">Bản nháp</option>
