@@ -4,7 +4,7 @@ import { Assessment, IAssessment } from '../models/Assessment';
 import { IELTSExam } from '../models/IELTSExam';
 
 export class AnalyticsService {
-  
+
   // Get comprehensive user learning data
   async getUserLearningData(userId: string): Promise<{
     user: IUser;
@@ -32,12 +32,12 @@ export class AnalyticsService {
         .lean();
 
       // Calculate additional stats
-      const stats = await this.calculateUserStats(userId, progress as IProgress, recentAssessments);
+      const stats = await this.calculateUserStats(userId, progress as unknown as IProgress, recentAssessments as unknown as IAssessment[]);
 
       return {
-        user: user as IUser,
-        progress: progress as IProgress,
-        recentAssessments: recentAssessments as IAssessment[],
+        user: user as unknown as IUser,
+        progress: progress as unknown as IProgress,
+        recentAssessments: recentAssessments as unknown as IAssessment[],
         stats
       };
     } catch (error) {
@@ -63,12 +63,12 @@ export class AnalyticsService {
       }
 
       // Compare with previous assessments
-      const comparison = await this.compareWithPreviousAssessments(userId, assessment as IAssessment);
+      const comparison = await this.compareWithPreviousAssessments(userId, assessment as unknown as IAssessment);
 
       return {
-        user: user as IUser,
-        assessment: assessment as IAssessment,
-        progress: progress as IProgress,
+        user: user as unknown as IUser,
+        assessment: assessment as unknown as IAssessment,
+        progress: progress as unknown as IProgress,
         comparison
       };
     } catch (error) {
@@ -93,12 +93,12 @@ export class AnalyticsService {
       }
 
       // Generate learning path recommendations
-      const learningPath = await this.generateLearningPath(user as IUser, progress as IProgress);
-      const nextActivities = await this.suggestNextActivities(user as IUser, progress as IProgress);
+      const learningPath = await this.generateLearningPath(user as unknown as IUser, progress as unknown as IProgress);
+      const nextActivities = await this.suggestNextActivities(user as unknown as IUser, progress as unknown as IProgress);
 
       return {
-        user: user as IUser,
-        progress: progress as IProgress,
+        user: user as unknown as IUser,
+        progress: progress as unknown as IProgress,
         learningPath,
         nextActivities
       };
@@ -110,15 +110,15 @@ export class AnalyticsService {
 
   // Calculate user statistics
   private async calculateUserStats(
-    userId: string, 
-    progress: IProgress, 
+    userId: string,
+    progress: IProgress,
     assessments: IAssessment[]
   ): Promise<any> {
     const completedAssessments = assessments.filter(a => a.status === 'completed');
-    
+
     // Calculate average scores
-    const avgScore = completedAssessments.length > 0 
-      ? completedAssessments.reduce((sum, a) => sum + (a.results?.percentage || 0), 0) / completedAssessments.length
+    const avgScore = completedAssessments.length > 0
+      ? completedAssessments.reduce((sum: number, a: any) => sum + (a.results?.percentage || 0), 0) / completedAssessments.length
       : 0;
 
     // Calculate improvement trend
@@ -165,9 +165,9 @@ export class AnalyticsService {
       status: 'completed',
       type: currentAssessment.type
     })
-    .sort({ completedAt: -1 })
-    .limit(3)
-    .lean();
+      .sort({ completedAt: -1 })
+      .limit(3)
+      .lean();
 
     if (previousAssessments.length === 0) {
       return { isFirstAttempt: true };
@@ -176,14 +176,14 @@ export class AnalyticsService {
     const latest = previousAssessments[0];
     const currentScore = currentAssessment.results?.percentage || 0;
     const previousScore = latest.results?.percentage || 0;
-    
+
     return {
       isFirstAttempt: false,
       scoreChange: currentScore - previousScore,
       improvement: currentScore > previousScore,
       previousAttempts: previousAssessments.length,
-      bestScore: Math.max(...previousAssessments.map((a: IAssessment) => a.results?.percentage || 0)),
-      averageScore: previousAssessments.reduce((sum: number, a: IAssessment) => sum + (a.results?.percentage || 0), 0) / previousAssessments.length
+      bestScore: Math.max(...previousAssessments.map((a: any) => a.results?.percentage || 0)),
+      averageScore: previousAssessments.reduce((sum: number, a: any) => sum + (a.results?.percentage || 0), 0) / previousAssessments.length
     };
   }
 
@@ -191,13 +191,13 @@ export class AnalyticsService {
   private async generateLearningPath(user: IUser, progress: IProgress): Promise<any> {
     const currentLevel = user.level;
     const goals = user.learningGoals;
-    
+
     // Analyze gaps in current level
     const gaps = this.identifyLearningGaps(progress);
-    
+
     // Suggest next level progression
     const nextLevel = this.getNextLevel(currentLevel);
-    
+
     return {
       currentLevel,
       nextLevel,
@@ -214,7 +214,7 @@ export class AnalyticsService {
 
     // Based on learning gaps
     const gaps = this.identifyLearningGaps(progress);
-    
+
     if (gaps.vocabulary) {
       activities.push({
         type: 'vocabulary',
@@ -254,25 +254,25 @@ export class AnalyticsService {
   // Helper methods
   private calculateImprovementTrend(assessments: IAssessment[]): string {
     if (assessments.length < 2) return 'insufficient_data';
-    
+
     const recent = assessments.slice(0, 3);
     const older = assessments.slice(3, 6);
-    
+
     const recentAvg = recent.reduce((sum, a) => sum + (a.results?.percentage || 0), 0) / recent.length;
-    const olderAvg = older.length > 0 
-      ? older.reduce((sum, a) => sum + (a.results?.percentage || 0), 0) / older.length 
+    const olderAvg = older.length > 0
+      ? older.reduce((sum, a) => sum + (a.results?.percentage || 0), 0) / older.length
       : recentAvg;
-    
+
     if (recentAvg > olderAvg + 5) return 'improving';
     if (recentAvg < olderAvg - 5) return 'declining';
     return 'stable';
   }
 
   private calculateStudyFrequency(progress: IProgress): string {
-    const daysPerWeek = progress.weeklyActivity.length > 0 
-      ? progress.weeklyActivity[0].days.length 
+    const daysPerWeek = progress.weeklyActivity.length > 0
+      ? progress.weeklyActivity[0].days.length
       : 0;
-    
+
     if (daysPerWeek >= 6) return 'very_high';
     if (daysPerWeek >= 4) return 'high';
     if (daysPerWeek >= 2) return 'medium';
@@ -281,37 +281,37 @@ export class AnalyticsService {
 
   private identifyStrongestSkill(assessments: IAssessment[]): string {
     if (assessments.length === 0) return 'unknown';
-    
+
     const skills = ['grammar', 'vocabulary', 'reading', 'listening'];
     const skillAvgs = skills.map(skill => {
       const scores = assessments
         .map(a => a.results?.skillBreakdown[skill as keyof typeof a.results.skillBreakdown]?.percentage || 0)
         .filter(score => score > 0);
-      
+
       return {
         skill,
         average: scores.length > 0 ? scores.reduce((sum, score) => sum + score, 0) / scores.length : 0
       };
     });
-    
+
     return skillAvgs.reduce((max, current) => current.average > max.average ? current : max).skill;
   }
 
   private identifyWeakestSkill(assessments: IAssessment[]): string {
     if (assessments.length === 0) return 'unknown';
-    
+
     const skills = ['grammar', 'vocabulary', 'reading', 'listening'];
     const skillAvgs = skills.map(skill => {
       const scores = assessments
         .map(a => a.results?.skillBreakdown[skill as keyof typeof a.results.skillBreakdown]?.percentage || 0)
         .filter(score => score > 0);
-      
+
       return {
         skill,
         average: scores.length > 0 ? scores.reduce((sum, score) => sum + score, 0) / scores.length : 0
       };
     });
-    
+
     return skillAvgs.reduce((min, current) => current.average < min.average ? current : min).skill;
   }
 
@@ -323,21 +323,21 @@ export class AnalyticsService {
     const vocabProgress = progress.vocabulary.learned / progress.vocabulary.target;
     const listeningProgress = progress.listening.hoursCompleted / progress.listening.target;
     const testProgress = progress.testsCompleted.completed / progress.testsCompleted.target;
-    
+
     const milestones = [
       { type: 'vocabulary', progress: vocabProgress, target: progress.vocabulary.target },
       { type: 'listening', progress: listeningProgress, target: progress.listening.target },
       { type: 'tests', progress: testProgress, target: progress.testsCompleted.target }
     ];
-    
-    return milestones.reduce((closest, current) => 
+
+    return milestones.reduce((closest, current) =>
       current.progress < 1 && current.progress > closest.progress ? current : closest
     );
   }
 
   private identifyLearningGaps(progress: IProgress): any {
     const gaps: any = {};
-    
+
     if (progress.vocabulary.learned < progress.vocabulary.target) {
       gaps.vocabulary = {
         current: progress.vocabulary.learned,
@@ -345,7 +345,7 @@ export class AnalyticsService {
         needed: progress.vocabulary.target - progress.vocabulary.learned
       };
     }
-    
+
     if (progress.listening.hoursCompleted < progress.listening.target) {
       gaps.listening = {
         current: progress.listening.hoursCompleted,
@@ -353,7 +353,7 @@ export class AnalyticsService {
         needed: progress.listening.target - progress.listening.hoursCompleted
       };
     }
-    
+
     if (progress.testsCompleted.completed < progress.testsCompleted.target) {
       gaps.assessment = {
         current: progress.testsCompleted.completed,
@@ -361,7 +361,7 @@ export class AnalyticsService {
         needed: progress.testsCompleted.target - progress.testsCompleted.completed
       };
     }
-    
+
     return gaps;
   }
 
@@ -375,25 +375,25 @@ export class AnalyticsService {
     const vocabCompletion = Math.min(progress.vocabulary.learned / progress.vocabulary.target, 1);
     const listeningCompletion = Math.min(progress.listening.hoursCompleted / progress.listening.target, 1);
     const testCompletion = Math.min(progress.testsCompleted.completed / progress.testsCompleted.target, 1);
-    
+
     return Math.round((vocabCompletion + listeningCompletion + testCompletion) / 3 * 100);
   }
 
   private getRecommendedFocus(gaps: any): string[] {
     const focus = [];
-    
+
     if (gaps.vocabulary && gaps.vocabulary.needed > 20) {
       focus.push('vocabulary');
     }
-    
+
     if (gaps.listening && gaps.listening.needed > 5) {
       focus.push('listening');
     }
-    
+
     if (gaps.assessment && gaps.assessment.needed > 2) {
       focus.push('assessment');
     }
-    
+
     return focus.length > 0 ? focus : ['review'];
   }
 
@@ -402,10 +402,10 @@ export class AnalyticsService {
     const levelHours = {
       'A1': 90, 'A2': 180, 'B1': 350, 'B2': 500, 'C1': 700, 'C2': 1000
     };
-    
+
     const currentLevelHours = levelHours[currentLevel as keyof typeof levelHours] || 100;
     const remaining = Math.max(currentLevelHours - totalStudyTime, 0);
-    
+
     // Assuming 3 hours/week study rate
     return Math.ceil(remaining / 3);
   }
