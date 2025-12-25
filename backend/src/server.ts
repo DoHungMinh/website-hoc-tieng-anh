@@ -376,6 +376,15 @@ io.on("connection", (socket: any) => {
 // Error handling middleware
 app.use(errorHandler);
 
+// Root route
+app.get("/", (req: Request, res: Response) => {
+    res.status(200).json({
+        status: "success",
+        message: "Welcome to English Learning Platform API",
+        documentation: "/api-docs" // Reserved for future Swagger docs
+    });
+});
+
 // 404 handler
 app.use("*", (req: Request, res: Response) => {
     res.status(404).json({
