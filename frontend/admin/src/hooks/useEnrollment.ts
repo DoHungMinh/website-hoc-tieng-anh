@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/stores/authStore';
+import { API_BASE_URL as API_BASE } from "@/utils/constants";
 
 interface Enrollment {
   _id: string;
@@ -39,7 +40,7 @@ interface EnrollmentStats {
   completedCourses: number;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5002/api';
+
 const CACHE_DURATION = 30000; // 30 seconds cache
 
 export const useEnrollment = () => {
@@ -124,10 +125,10 @@ export const useEnrollment = () => {
       }
 
       const data = await response.json();
-      
+
       // Refresh enrollments after successful enrollment
       await fetchEnrollments();
-      
+
       return {
         success: true,
         enrollment: data.enrollment,
@@ -146,8 +147,8 @@ export const useEnrollment = () => {
 
   // Update lesson progress
   const updateLessonProgress = async (
-    courseId: string, 
-    lessonId: string, 
+    courseId: string,
+    lessonId: string,
     lessonType: 'vocabulary' | 'grammar' | 'lesson'
   ) => {
     if (!token) {
@@ -173,10 +174,10 @@ export const useEnrollment = () => {
       }
 
       const data = await response.json();
-      
+
       // Refresh enrollments to get updated progress
       await fetchEnrollments();
-      
+
       return {
         success: true,
         enrollment: data.enrollment,

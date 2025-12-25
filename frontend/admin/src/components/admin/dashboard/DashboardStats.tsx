@@ -141,7 +141,10 @@ const DashboardStats: React.FC = () => {
         // Setup Socket.IO connection for real-time updates
         const setupSocket = () => {
             try {
-                const socket = io("http://localhost:5002", {
+                // Extract base URL for socket connection (remove /api suffix)
+                const socketUrl = API_BASE_URL.replace(/\/api$/, "");
+
+                const socket = io(socketUrl, {
                     transports: ["websocket", "polling"],
                     timeout: 5000,
                     reconnection: true,
@@ -918,9 +921,9 @@ const DashboardStats: React.FC = () => {
                                                         ) {
                                                             setRevenueTimeframe(
                                                                 newValue as
-                                                                    | "week"
-                                                                    | "month"
-                                                                    | "year"
+                                                                | "week"
+                                                                | "month"
+                                                                | "year"
                                                             );
                                                             // Removed success logging
                                                         } else {
@@ -995,9 +998,9 @@ const DashboardStats: React.FC = () => {
                                         ) {
                                             setUserGrowthPeriod(
                                                 newValue as
-                                                    | "week"
-                                                    | "month"
-                                                    | "year"
+                                                | "week"
+                                                | "month"
+                                                | "year"
                                             );
                                             console.log(
                                                 "User growth period changed successfully"
@@ -1064,9 +1067,9 @@ const DashboardStats: React.FC = () => {
                                         ) {
                                             setRevenueTimeframe(
                                                 newValue as
-                                                    | "week"
-                                                    | "month"
-                                                    | "year"
+                                                | "week"
+                                                | "month"
+                                                | "year"
                                             );
                                             // Removed success logging
                                         } else {

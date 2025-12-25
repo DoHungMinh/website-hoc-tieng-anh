@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL as API_BASE } from "@/utils/constants";
 import {
   Search,
   Plus,
@@ -13,8 +14,6 @@ import {
   RefreshCw
 } from 'lucide-react';
 import AvatarDisplay from '@/components/common/AvatarDisplay';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5002/api';
 
 interface User {
   _id: string;
