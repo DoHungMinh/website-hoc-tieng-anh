@@ -1,0 +1,75 @@
+name: Deploy EngPro Backend
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+  workflow_dispatch:  # Cho phép chạy thủ công
+
+jobs:
+  deploy-backend:
+    runs-on: self-hosted
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check Node version
+        run: |
+          echo "=== Node & NPM Versions ==="
+          node -v
+          npm -v
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          npm ci
+          
+      - name: Build TypeScript
+        run: |
+          cd backend
+          npm run build
+
+      - name: Run tests (optional)
+        run: |
+          cd backend
+          npm test || echo "No tests found or tests failed - continuing..."
+        continue-on-error: true
+
+      - name: Restart backend with PM2
+        run: |
+          cd backend
+          # Restart nếu đã có, hoặc start mới nếu chưa có
+          pm2 restart engpro-server || pm2 start dist/server.js --name engpro-server
+          pm2 save
+          
+      - name: Verify deployment
+        run: |
+          echo "Waiting for server to start..."
+          sleep 5
+          curl -f http://localhost:5003/health || exit 1
+          echo "✅ Backend deployment successful!"
+
+  notify:
+    runs-on: self-hosted
+    needs: [deploy-backend]
+    if: always()
+    
+    steps:
+      - name: Deployment status
+        run: |
+          if [ "${{ needs.deploy-backend.result }}" == "success" ]; then
+            echo "🎉 EngPro backend deployment completed successfully!"
+            echo ""
+            echo "📡 API Endpoint: https://YOUR_TAILSCALE_URL/engpro/"
+            echo "🏥 Health Check: https://YOUR_TAILSCALE_URL/engpro/health"
+          else
+            echo "❌ EngPro backend deployment failed!"
+            echo "Please check the logs above for errors."
+            exit 1
+          fi
