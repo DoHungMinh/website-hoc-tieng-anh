@@ -46,6 +46,9 @@ const io = new Server(server, {
             "http://localhost:5174",
             "http://localhost:3000",
             "http://localhost:3001",
+            "https://eng-pro.vercel.app",
+            "https://engpro.site",
+            "https://www.engpro.site"
         ],
         methods: ["GET", "POST"],
     },
@@ -163,6 +166,9 @@ app.use(
             "http://localhost:5174",
             "http://localhost:3000",
             "http://localhost:3001",
+            "https://eng-pro.vercel.app",
+            "https://engpro.site",
+            "https://www.engpro.site"
         ],
         credentials: true,
     })
