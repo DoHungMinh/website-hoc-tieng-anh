@@ -1,10 +1,10 @@
 import { useEffect, useState, Suspense, memo } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Layout from "../components/layout/Layout";
 import AccountDisabledNotification from "../components/common/AccountDisabledNotification";
 import { AuthDebugger } from "../components/auth/AuthDebugger";
 import PageLoader from "../components/common/PageLoader";
-import { useAuthStore } from "../stores/authStore";
+
 import { syncTokens } from "../utils/tokenSync";
 import { useActivityHeartbeat } from "../hooks/useActivityHeartbeat";
 import { setupGlobalErrorInterceptor } from "../utils/errorInterceptor";
@@ -24,10 +24,6 @@ const HIDE_FOOTER_ROUTES = ["/login", "/register", "/admin", "/placement-test"];
  */
 const RootLayout = memo(() => {
     const location = useLocation();
-    const navigate = useNavigate();
-    // Atomic selectors - chỉ re-render khi giá trị cụ thể thay đổi
-    const user = useAuthStore((state) => state.user);
-    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
     // Account disabled state
     const [accountDisabledMessage, setAccountDisabledMessage] = useState<

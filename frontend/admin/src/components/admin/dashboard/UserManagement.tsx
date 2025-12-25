@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Search, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  Power, 
-  PowerOff, 
+import {
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  Power,
+  PowerOff,
   Users,
   UserCheck,
   Globe,
   RefreshCw
 } from 'lucide-react';
 import AvatarDisplay from '@/components/common/AvatarDisplay';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5002/api';
 
 interface User {
   _id: string;
@@ -83,7 +85,7 @@ const UserManagement: React.FC = () => {
         onlineStatus: onlineFilter
       });
 
-      const response = await fetch(`http://localhost:5002/api/user?${params}`, {
+      const response = await fetch(`${API_BASE}/user?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -106,7 +108,7 @@ const UserManagement: React.FC = () => {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5002/api/user/stats', {
+      const response = await fetch(`${API_BASE}/user/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -117,22 +119,22 @@ const UserManagement: React.FC = () => {
       if (data.success) {
         // Calculate online admin and regular users from backend data
         const baseStats = data.data;
-        
+
         // Try to get detailed user info to calculate online stats by role
-        const allUsersResponse = await fetch('http://localhost:5002/api/user?page=1&limit=1000', {
+        const allUsersResponse = await fetch(`${API_BASE}/user?page=1&limit=1000`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
-        
+
         if (allUsersResponse.ok) {
           const allUsersData = await allUsersResponse.json();
           if (allUsersData.success) {
             const allUsers = allUsersData.data.users;
             const onlineAdminUsers = allUsers.filter((user: User) => user.role === 'admin' && user.isOnline).length;
             const onlineRegularUsers = allUsers.filter((user: User) => user.role === 'user' && user.isOnline).length;
-            
+
             setStats({
               ...baseStats,
               onlineAdminUsers,
@@ -164,14 +166,14 @@ const UserManagement: React.FC = () => {
   const toggleAccountStatus = async (userId: string, currentStatus: string) => {
     // Prevent multiple requests for the same user
     if (updatingUsers.has(userId)) return;
-    
+
     try {
       setUpdatingUsers(prev => new Set([...prev, userId]));
-      
+
       const token = localStorage.getItem('token');
       const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
-      
-      const response = await fetch(`http://localhost:5002/api/user/${userId}/account-status`, {
+
+      const response = await fetch(`${API_BASE}/user/${userId}/account-status`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -183,9 +185,9 @@ const UserManagement: React.FC = () => {
       const data = await response.json();
       if (data.success) {
         // Update local state immediately without refetching
-        setUsers(prevUsers => 
-          prevUsers.map(user => 
-            user._id === userId 
+        setUsers(prevUsers =>
+          prevUsers.map(user =>
+            user._id === userId
               ? { ...user, accountStatus: newStatus as 'active' | 'disabled' }
               : user
           )
@@ -194,11 +196,11 @@ const UserManagement: React.FC = () => {
         // Update stats immediately
         setStats(prevStats => ({
           ...prevStats,
-          activeUsers: newStatus === 'active' 
-            ? prevStats.activeUsers + 1 
+          activeUsers: newStatus === 'active'
+            ? prevStats.activeUsers + 1
             : prevStats.activeUsers - 1,
-          disabledUsers: newStatus === 'disabled' 
-            ? prevStats.disabledUsers + 1 
+          disabledUsers: newStatus === 'disabled'
+            ? prevStats.disabledUsers + 1
             : prevStats.disabledUsers - 1
         }));
 
@@ -225,7 +227,7 @@ const UserManagement: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5002/api/user/${userId}`, {
+      const response = await fetch(`${API_BASE}/user/${userId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -237,8 +239,8 @@ const UserManagement: React.FC = () => {
       if (data.success) {
         // Remove user from local state immediately
         const deletedUser = users.find(user => user._id === userId);
-        
-        setUsers(prevUsers => 
+
+        setUsers(prevUsers =>
           prevUsers.filter(user => user._id !== userId)
         );
 
@@ -247,20 +249,20 @@ const UserManagement: React.FC = () => {
           setStats(prevStats => ({
             ...prevStats,
             totalUsers: prevStats.totalUsers - 1,
-            activeUsers: deletedUser.accountStatus === 'active' 
-              ? prevStats.activeUsers - 1 
+            activeUsers: deletedUser.accountStatus === 'active'
+              ? prevStats.activeUsers - 1
               : prevStats.activeUsers,
-            disabledUsers: deletedUser.accountStatus === 'disabled' 
-              ? prevStats.disabledUsers - 1 
+            disabledUsers: deletedUser.accountStatus === 'disabled'
+              ? prevStats.disabledUsers - 1
               : prevStats.disabledUsers,
-            onlineUsers: deletedUser.isOnline 
-              ? prevStats.onlineUsers - 1 
+            onlineUsers: deletedUser.isOnline
+              ? prevStats.onlineUsers - 1
               : prevStats.onlineUsers,
-            adminUsers: deletedUser.role === 'admin' 
-              ? prevStats.adminUsers - 1 
+            adminUsers: deletedUser.role === 'admin'
+              ? prevStats.adminUsers - 1
               : prevStats.adminUsers,
-            regularUsers: deletedUser.role === 'user' 
-              ? prevStats.regularUsers - 1 
+            regularUsers: deletedUser.role === 'user'
+              ? prevStats.regularUsers - 1
               : prevStats.regularUsers
           }));
         }
@@ -283,17 +285,17 @@ const UserManagement: React.FC = () => {
     if (!lastSeen) {
       return 'Chưa đăng nhập';
     }
-    
+
     const lastSeenDate = new Date(lastSeen);
     const createdDate = new Date(createdAt);
     const now = new Date();
-    
+
     // Nếu lastSeen gần bằng với createdAt (trong vòng 1 phút), nghĩa là chưa đăng nhập
     const timeDiffCreatedLastSeen = Math.abs(lastSeenDate.getTime() - createdDate.getTime());
     if (timeDiffCreatedLastSeen < 60000) { // 1 phút
       return 'Chưa đăng nhập';
     }
-    
+
     const diffMs = now.getTime() - lastSeenDate.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
@@ -314,7 +316,7 @@ const UserManagement: React.FC = () => {
           <p className="text-gray-600">Quản lý tài khoản và trạng thái người dùng</p>
         </div>
         <div className="flex space-x-3">
-          <button 
+          <button
             onClick={() => {
               fetchUsers();
               fetchStats();
@@ -324,7 +326,7 @@ const UserManagement: React.FC = () => {
             <RefreshCw className="h-4 w-4" />
             Làm mới
           </button>
-          <button 
+          <button
             onClick={() => setShowCreateModal(true)}
             className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200"
           >
@@ -402,7 +404,7 @@ const UserManagement: React.FC = () => {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
-          <select 
+          <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 min-w-[140px]"
@@ -411,7 +413,7 @@ const UserManagement: React.FC = () => {
             <option value="user">Người dùng</option>
             <option value="admin">Admin</option>
           </select>
-          <select 
+          <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 min-w-[140px]"
@@ -420,7 +422,7 @@ const UserManagement: React.FC = () => {
             <option value="active">Hoạt động</option>
             <option value="disabled">Bị khóa</option>
           </select>
-          <select 
+          <select
             value={onlineFilter}
             onChange={(e) => setOnlineFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 min-w-[140px]"
@@ -470,11 +472,11 @@ const UserManagement: React.FC = () => {
                     <tr key={user._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <AvatarDisplay 
-                            src={user.avatar} 
+                          <AvatarDisplay
+                            src={user.avatar}
                             name={user.fullName}
-                            size="md" 
-                            showOnlineStatus={false} 
+                            size="md"
+                            showOnlineStatus={false}
                           />
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
@@ -486,20 +488,18 @@ const UserManagement: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          user.role === 'admin' 
-                            ? 'bg-purple-100 text-purple-800' 
-                            : 'bg-green-100 text-green-800'
-                        }`}>
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'admin'
+                          ? 'bg-purple-100 text-purple-800'
+                          : 'bg-green-100 text-green-800'
+                          }`}>
                           {user.role === 'admin' ? 'Admin' : 'Người dùng'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          user.accountStatus === 'active' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.accountStatus === 'active'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                          }`}>
                           {user.accountStatus === 'active' ? 'Hoạt động' : 'Bị khóa'}
                         </span>
                       </td>
@@ -526,7 +526,7 @@ const UserManagement: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center space-x-2">
-                          <button 
+                          <button
                             onClick={() => {
                               setViewingUser(user);
                               setShowViewModal(true);
@@ -536,7 +536,7 @@ const UserManagement: React.FC = () => {
                           >
                             <Eye className="h-4 w-4" />
                           </button>
-                          <button 
+                          <button
                             onClick={() => {
                               setEditingUser(user);
                               setShowEditModal(true);
@@ -546,14 +546,13 @@ const UserManagement: React.FC = () => {
                           >
                             <Edit className="h-4 w-4" />
                           </button>
-                          <button 
+                          <button
                             onClick={() => toggleAccountStatus(user._id, user.accountStatus)}
                             disabled={updatingUsers.has(user._id)}
-                            className={`p-1 rounded ${
-                              user.accountStatus === 'active'
-                                ? 'text-red-600 hover:text-red-900'
-                                : 'text-green-600 hover:text-green-900'
-                            } ${updatingUsers.has(user._id) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`p-1 rounded ${user.accountStatus === 'active'
+                              ? 'text-red-600 hover:text-red-900'
+                              : 'text-green-600 hover:text-green-900'
+                              } ${updatingUsers.has(user._id) ? 'opacity-50 cursor-not-allowed' : ''}`}
                             title={user.accountStatus === 'active' ? 'Khóa tài khoản' : 'Kích hoạt tài khoản'}
                           >
                             {updatingUsers.has(user._id) ? (
@@ -564,7 +563,7 @@ const UserManagement: React.FC = () => {
                               <Power className="h-4 w-4" />
                             )}
                           </button>
-                          <button 
+                          <button
                             onClick={() => deleteUser(user._id)}
                             className="text-red-600 hover:text-red-900 p-1 rounded"
                             title="Xóa người dùng"
@@ -620,11 +619,10 @@ const UserManagement: React.FC = () => {
                           <button
                             key={page}
                             onClick={() => setCurrentPage(page)}
-                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                              currentPage === page
-                                ? 'z-10 bg-purple-50 border-purple-500 text-purple-600'
-                                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                            }`}
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === page
+                              ? 'z-10 bg-purple-50 border-purple-500 text-purple-600'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                              }`}
                           >
                             {page}
                           </button>
@@ -648,25 +646,25 @@ const UserManagement: React.FC = () => {
 
       {/* Create User Modal */}
       {showCreateModal && (
-        <CreateUserModal 
+        <CreateUserModal
           onClose={() => setShowCreateModal(false)}
           onSuccess={(newUser) => {
             // Add new user to local state
             setUsers(prevUsers => [newUser, ...prevUsers]);
-            
+
             // Update stats
             setStats(prevStats => ({
               ...prevStats,
               totalUsers: prevStats.totalUsers + 1,
               activeUsers: prevStats.activeUsers + 1, // New users are always active
-              adminUsers: newUser.role === 'admin' 
-                ? prevStats.adminUsers + 1 
+              adminUsers: newUser.role === 'admin'
+                ? prevStats.adminUsers + 1
                 : prevStats.adminUsers,
-              regularUsers: newUser.role === 'user' 
-                ? prevStats.regularUsers + 1 
+              regularUsers: newUser.role === 'user'
+                ? prevStats.regularUsers + 1
                 : prevStats.regularUsers
             }));
-            
+
             setShowCreateModal(false);
           }}
         />
@@ -674,7 +672,7 @@ const UserManagement: React.FC = () => {
 
       {/* View User Modal */}
       {showViewModal && viewingUser && (
-        <ViewUserModal 
+        <ViewUserModal
           user={viewingUser}
           onClose={() => {
             setShowViewModal(false);
@@ -685,7 +683,7 @@ const UserManagement: React.FC = () => {
 
       {/* Edit User Modal */}
       {showEditModal && editingUser && (
-        <EditUserModal 
+        <EditUserModal
           user={editingUser}
           onClose={() => {
             setShowEditModal(false);
@@ -693,26 +691,26 @@ const UserManagement: React.FC = () => {
           }}
           onSuccess={(updatedUser) => {
             // Update user in local state
-            setUsers(prevUsers => 
-              prevUsers.map(user => 
+            setUsers(prevUsers =>
+              prevUsers.map(user =>
                 user._id === updatedUser._id ? updatedUser : user
               )
             );
-            
+
             // Update stats if role changed
             const oldUser = editingUser;
             if (oldUser && oldUser.role !== updatedUser.role) {
               setStats(prevStats => ({
                 ...prevStats,
-                adminUsers: updatedUser.role === 'admin' 
+                adminUsers: updatedUser.role === 'admin'
                   ? prevStats.adminUsers + (oldUser.role === 'admin' ? 0 : 1)
                   : prevStats.adminUsers - (oldUser.role === 'admin' ? 1 : 0),
-                regularUsers: updatedUser.role === 'user' 
+                regularUsers: updatedUser.role === 'user'
                   ? prevStats.regularUsers + (oldUser.role === 'user' ? 0 : 1)
                   : prevStats.regularUsers - (oldUser.role === 'user' ? 1 : 0)
               }));
             }
-            
+
             setShowEditModal(false);
             setEditingUser(null);
           }}
@@ -743,7 +741,7 @@ const CreateUserModal: React.FC<{
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5002/api/user', {
+      const response = await fetch(`${API_BASE}/user`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -792,7 +790,7 @@ const CreateUserModal: React.FC<{
               type="email"
               required
               value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
@@ -802,7 +800,7 @@ const CreateUserModal: React.FC<{
               type="password"
               required
               value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
@@ -812,7 +810,7 @@ const CreateUserModal: React.FC<{
               type="text"
               required
               value={formData.fullName}
-              onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
@@ -821,7 +819,7 @@ const CreateUserModal: React.FC<{
             <input
               type="tel"
               value={formData.phone}
-              onChange={(e) => setFormData({...formData, phone: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
@@ -829,7 +827,7 @@ const CreateUserModal: React.FC<{
             <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
             <select
               value={formData.role}
-              onChange={(e) => setFormData({...formData, role: e.target.value as 'user' | 'admin'})}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value as 'user' | 'admin' })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="user">Người dùng</option>
@@ -840,7 +838,7 @@ const CreateUserModal: React.FC<{
             <label className="block text-sm font-medium text-gray-700 mb-1">Trình độ</label>
             <select
               value={formData.level}
-              onChange={(e) => setFormData({...formData, level: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, level: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="A1">A1</option>
@@ -886,18 +884,18 @@ const EditUserModal: React.FC<{
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     setLoading(true);
 
     try {
       const token = localStorage.getItem('token');
-      
+
       // Chỉ update role
       const updateData = {
         role: formData.role
       };
-      
-      const response = await fetch(`http://localhost:5002/api/user/${user._id}`, {
+
+      const response = await fetch(`${API_BASE}/user/${user._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -933,7 +931,7 @@ const EditUserModal: React.FC<{
             <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
             <select
               value={formData.role}
-              onChange={(e) => setFormData({...formData, role: e.target.value as 'user' | 'admin'})}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value as 'user' | 'admin' })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="user">Người dùng</option>
@@ -971,16 +969,16 @@ const ViewUserModal: React.FC<{
     if (!lastSeen) {
       return 'Chưa đăng nhập';
     }
-    
+
     const lastSeenDate = new Date(lastSeen);
     const createdDate = new Date(createdAt);
     const now = new Date();
-    
+
     const timeDiffCreatedLastSeen = Math.abs(lastSeenDate.getTime() - createdDate.getTime());
     if (timeDiffCreatedLastSeen < 60000) { // 1 phút
       return 'Chưa đăng nhập';
     }
-    
+
     const diffMs = now.getTime() - lastSeenDate.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
@@ -996,70 +994,67 @@ const ViewUserModal: React.FC<{
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Thông tin người dùng</h3>
-        
+
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Họ và tên</label>
             <p className="mt-1 text-sm text-gray-900">{user.fullName}</p>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Email</label>
             <p className="mt-1 text-sm text-gray-900">{user.email}</p>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Số điện thoại</label>
             <p className="mt-1 text-sm text-gray-900">{user.phone || 'Chưa có'}</p>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Trình độ</label>
             <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">
               {user.level || 'Chưa xác định'}
             </span>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Vai trò</label>
-            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-              user.role === 'admin'
-                ? 'bg-purple-100 text-purple-800'
-                : 'bg-blue-100 text-blue-800'
-            }`}>
+            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.role === 'admin'
+              ? 'bg-purple-100 text-purple-800'
+              : 'bg-blue-100 text-blue-800'
+              }`}>
               {user.role === 'admin' ? 'Admin' : 'Người dùng'}
             </span>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Trạng thái tài khoản</label>
-            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-              user.accountStatus === 'active'
-                ? 'bg-green-100 text-green-800'
-                : 'bg-red-100 text-red-800'
-            }`}>
+            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.accountStatus === 'active'
+              ? 'bg-green-100 text-green-800'
+              : 'bg-red-100 text-red-800'
+              }`}>
               {user.accountStatus === 'active' ? 'Hoạt động' : 'Bị khóa'}
             </span>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Trạng thái online</label>
-            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-              user.isOnline
-                ? 'bg-green-100 text-green-800'
-                : 'bg-gray-100 text-gray-800'
-            }`}>
+            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.isOnline
+              ? 'bg-green-100 text-green-800'
+              : 'bg-gray-100 text-gray-800'
+              }`}>
               {user.isOnline ? 'Đang online' : 'Offline'}
             </span>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Lần cuối hoạt động</label>
             <p className="mt-1 text-sm text-gray-900">
               {formatLastSeen(user.lastSeen, user.createdAt)}
             </p>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Ngày tạo tài khoản</label>
             <p className="mt-1 text-sm text-gray-900">
@@ -1069,7 +1064,7 @@ const ViewUserModal: React.FC<{
         </div>
 
         <div className="mt-6 flex justify-end">
-          <button 
+          <button
             onClick={onClose}
             className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
           >

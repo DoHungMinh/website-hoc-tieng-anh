@@ -238,6 +238,7 @@ app.get("/health", (req: Request, res: Response) => {
 
 // API Routes - All routes are now consolidated in one file
 app.use("/api", allRoutes);
+app.use("/", allRoutes); // Support requests without /api prefix (e.g. from Nginx rewrites or misconfigured clients)
 
 // PayOS Routes
 const payOSRoutes = require("../payos/payos-routes");
