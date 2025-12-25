@@ -61,7 +61,7 @@ export const useInfiniteCarousel = <T extends HTMLElement>(
           widths[i] = parseFloat(gsap.getProperty(el, 'width', 'px') as string);
           xPercents[i] = snapFn(
             (parseFloat(gsap.getProperty(el, 'x', 'px') as string) / widths[i]) * 100 +
-              (gsap.getProperty(el, 'xPercent') as number)
+            (gsap.getProperty(el, 'xPercent') as number)
           );
         });
       };
@@ -71,7 +71,7 @@ export const useInfiniteCarousel = <T extends HTMLElement>(
         (xPercents[length - 1] / 100) * widths[length - 1] -
         startX +
         items[length - 1].offsetWidth *
-          (gsap.getProperty(items[length - 1], 'scaleX') as number) +
+        (gsap.getProperty(items[length - 1], 'scaleX') as number) +
         (loopConfig.paddingRight || 0);
 
       populateWidths();
@@ -203,42 +203,48 @@ export const useInfiniteCarousel = <T extends HTMLElement>(
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const items = gsap.utils.toArray<HTMLElement>(
-      containerRef.current.querySelectorAll('.carousel-item')
-    );
+    // Small delay to ensure DOM is fully rendered (fixes production issues)
+    const initTimeout = setTimeout(() => {
+      if (!containerRef.current) return;
 
-    if (items.length === 0) return;
+      const items = gsap.utils.toArray<HTMLElement>(
+        containerRef.current.querySelectorAll('.carousel-item')
+      );
 
-    // Calculate item width based on container
-    const containerWidth = containerRef.current.offsetWidth;
-    const itemsVisible = config.itemsVisible ?? 5; // Default show 5 items
-    const itemWidth = containerWidth / itemsVisible;
+      if (items.length === 0) return;
 
-    gsap.set(items, {
-      x: (i) => i * itemWidth,
-    });
+      // Calculate item width based on container
+      const containerWidth = containerRef.current.offsetWidth;
+      const itemsVisible = config.itemsVisible ?? 5; // Default show 5 items
+      const itemWidth = containerWidth / itemsVisible;
 
-    // paddingRight creates gap between last and first item when looping
-    const paddingRight = config.paddingRight ?? itemWidth;
+      gsap.set(items, {
+        x: (i) => i * itemWidth,
+      });
 
-    loopRef.current = horizontalLoop(items, {
-      speed: config.speed ?? 0.5,
-      paused: config.paused ?? false,
-      draggable: config.draggable ?? true,
-      repeat: config.repeat ?? -1,
-      reversed: config.reversed ?? false,
-      paddingRight: paddingRight,
-      snap: config.snap ?? 1,
-    });
+      // paddingRight creates gap between last and first item when looping
+      const paddingRight = config.paddingRight ?? itemWidth;
+
+      loopRef.current = horizontalLoop(items, {
+        speed: config.speed ?? 0.5,
+        paused: config.paused ?? false,
+        draggable: config.draggable ?? true,
+        repeat: config.repeat ?? -1,
+        reversed: config.reversed ?? false,
+        paddingRight: paddingRight,
+        snap: config.snap ?? 1,
+      });
+    }, 100);
 
     return () => {
+      clearTimeout(initTimeout);
       if (loopRef.current) {
         loopRef.current.kill();
         loopRef.current = null;
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [horizontalLoop]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [horizontalLoop, config.speed, config.itemsVisible, config.reversed, config.draggable]);
 
   const pause = useCallback(() => {
     loopRef.current?.pause();
