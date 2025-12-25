@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useAuthStore } from "@/stores/authStore";
+import { API_BASE_URL } from "@/utils/constants";
 
 export const useActivityHeartbeat = () => {
     // Atomic selectors để tối ưu performance
@@ -20,7 +21,7 @@ export const useActivityHeartbeat = () => {
 
         try {
             const response = await fetch(
-                "http://localhost:5002/api/user/heartbeat",
+                `${API_BASE_URL}/user/heartbeat`,
                 {
                     method: "POST",
                     headers: {

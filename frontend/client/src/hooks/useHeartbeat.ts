@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/stores/authStore";
+import { API_BASE_URL } from "@/utils/constants";
 
 export const useHeartbeat = () => {
     // Atomic selectors để tối ưu performance
@@ -17,7 +18,7 @@ export const useHeartbeat = () => {
         const sendHeartbeat = async () => {
             try {
                 const response = await fetch(
-                    "http://localhost:5002/api/user/heartbeat",
+                    `${API_BASE_URL}/user/heartbeat`,
                     {
                         method: "POST",
                         headers: {
@@ -70,7 +71,7 @@ export const useHeartbeat = () => {
                     { type: "application/json" }
                 );
                 navigator.sendBeacon(
-                    "http://localhost:5002/api/user/offline",
+                    `${API_BASE_URL}/user/offline`,
                     data
                 );
             } catch (error) {

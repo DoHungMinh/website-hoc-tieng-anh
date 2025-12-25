@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '../../common/Toast';
 import ConfirmModal from '../../common/ConfirmModal';
+import { API_BASE_URL } from '@/utils/constants';
 
 import ProfileSidebar, { tabs } from './ProfileSidebar';
 import ProfileSection from './ProfileSection';
@@ -14,15 +15,15 @@ import styles from './UserProfile.module.css';
 
 const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
   const navigate = useNavigate();
-  
+
   // Atomic selectors để tối ưu performance
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const setUser = useAuthStore((state) => state.setUser);
   const token = useAuthStore((state) => state.token);
-  
+
   const { toasts, removeToast, success, error } = useToast();
-  
+
   // UI State
   const [activeTab, setActiveTab] = useState<ProfileTab>('profile');
   const [isEditing, setIsEditing] = useState(false);
@@ -30,12 +31,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  
+
   // Password visibility state
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   // Form state
   const [editForm, setEditForm] = useState<EditFormData>({
     fullName: user?.fullName || '',
@@ -46,7 +47,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
     learningGoal: user?.learningGoal || '',
     level: user?.level || 'Beginner'
   });
-  
+
   const [passwordForm, setPasswordForm] = useState<PasswordFormData>({
     currentPassword: '',
     newPassword: '',
@@ -59,7 +60,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
 
     setIsLoadingProfile(true);
     try {
-      const response = await fetch('http://localhost:5002/api/user/profile', {
+      const response = await fetch(`${API_BASE_URL}/user/profile`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -131,7 +132,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
     if (!user || !token) return;
 
     try {
-      const response = await fetch('http://localhost:5002/api/user/profile', {
+      const response = await fetch(`${API_BASE_URL}/user/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -177,7 +178,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
     }
 
     try {
-      const response = await fetch('http://localhost:5002/api/user/change-password', {
+      const response = await fetch(`${API_BASE_URL}/user/change-password`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -221,7 +222,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
       const formData = new FormData();
       formData.append('avatar', file);
 
-      const response = await fetch(`http://localhost:5002/api/user/${user.id}/avatar`, {
+      const response = await fetch(`${API_BASE_URL}/user/${user.id}/avatar`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData,
@@ -251,7 +252,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
     setShowDeleteConfirm(false);
 
     try {
-      const response = await fetch(`http://localhost:5002/api/user/${user.id}/avatar`, {
+      const response = await fetch(`${API_BASE_URL}/user/${user.id}/avatar`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -337,7 +338,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
             <div className={styles.contentHeader}>
               <h2 className={styles.contentTitle}>{getActiveTabTitle()}</h2>
             </div>
-            
+
             <div className={styles.contentBody}>
               {isLoadingProfile ? (
                 <div className={styles.loading}>

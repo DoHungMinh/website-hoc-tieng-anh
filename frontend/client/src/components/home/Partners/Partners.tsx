@@ -62,7 +62,7 @@ const Partners = memo(() => {
     itemsVisible: itemsVisible,
   });
 
-  const { ref: subtitleRef } = useTextReveal({
+  const { ref: subtitleRef } = useTextReveal<HTMLParagraphElement>({
     type: 'words,lines',
     duration: 0.8,
     stagger: 0.08,
