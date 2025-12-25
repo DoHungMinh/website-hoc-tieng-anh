@@ -168,6 +168,7 @@ app.use(
             "http://localhost:3000",
             "http://localhost:3001",
             "https://eng-pro.vercel.app",
+            "https://engpro-admin.vercel.app",
             "https://engpro.site",
             "https://www.engpro.site"
         ],
