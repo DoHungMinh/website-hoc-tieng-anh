@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { api } from '@/services/api';
+import { API_BASE_URL } from '@/utils/constants';
 
 interface IELTSQuestion {
   _id: string;
@@ -43,9 +43,20 @@ const TestInterface: React.FC = () => {
   const fetchTestData = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/api/ielts/test/${testId}`);
-      setTest(response.data);
-      setTimeRemaining(response.data.timeLimit * 60); // Convert minutes to seconds
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/ielts/test/${testId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch test data');
+      }
+
+      const data = await response.json();
+      setTest(data.data); // Assuming response structure { success: true, data: ... }
+      setTimeRemaining(data.data.timeLimit * 60); // Convert minutes to seconds
       setError('');
     } catch (err: unknown) {
       setError('Failed to load test data');
@@ -183,7 +194,7 @@ const TestInterface: React.FC = () => {
         <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
           <h1 className="text-3xl font-bold text-gray-800 mb-4">{test.title}</h1>
           <p className="text-gray-600 mb-6">{test.description}</p>
-          
+
           <div className="bg-blue-50 rounded-lg p-6 mb-6">
             <h3 className="text-lg font-semibold text-blue-800 mb-4">Test Information</h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
@@ -242,7 +253,7 @@ const TestInterface: React.FC = () => {
               Passage {currentPassageIndex + 1} of {test.passages.length}
             </span>
           </div>
-          
+
           <div className="flex items-center space-x-4">
             <div className={`text-lg font-mono ${timeRemaining < 300 ? 'text-red-600' : 'text-gray-700'}`}>
               ⏰ {formatTime(timeRemaining)}
@@ -263,7 +274,7 @@ const TestInterface: React.FC = () => {
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-gray-800">{currentPassage.title}</h2>
-              
+
               {/* Audio controls for listening passages */}
               {currentPassage.audioUrl && (
                 <div className="flex items-center space-x-2">
@@ -284,7 +295,7 @@ const TestInterface: React.FC = () => {
                 </div>
               )}
             </div>
-            
+
             <div className="prose max-w-none text-gray-700 leading-relaxed">
               {currentPassage.content.split('\n').map((paragraph, index) => (
                 <p key={index} className="mb-4">{paragraph}</p>
@@ -295,14 +306,14 @@ const TestInterface: React.FC = () => {
           {/* Right side - Questions */}
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h3 className="text-xl font-bold text-gray-800 mb-6">Questions</h3>
-            
+
             <div className="space-y-6">
               {currentPassage.questions.map((question) => (
                 <div key={question._id} className="border-b border-gray-200 pb-4">
                   <h4 className="text-lg font-semibold text-gray-800 mb-3">
                     {question.questionNumber}. {question.questionText}
                   </h4>
-                  
+
                   {question.questionType === 'multiple-choice' && question.options ? (
                     <div className="space-y-2">
                       {question.options.map((option, optionIndex) => (
@@ -339,29 +350,27 @@ const TestInterface: React.FC = () => {
           <button
             onClick={() => setCurrentPassageIndex(prev => Math.max(0, prev - 1))}
             disabled={currentPassageIndex === 0}
-            className={`px-6 py-3 rounded-lg font-semibold ${
-              currentPassageIndex === 0
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-gray-600 text-white hover:bg-gray-700'
-            }`}
+            className={`px-6 py-3 rounded-lg font-semibold ${currentPassageIndex === 0
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : 'bg-gray-600 text-white hover:bg-gray-700'
+              }`}
           >
             ← Previous Passage
           </button>
-          
+
           <div className="text-center">
             <span className="text-sm text-gray-600">
               Questions answered: {Object.keys(answers).length} / {test.passages.reduce((total, passage) => total + passage.questions.length, 0)}
             </span>
           </div>
-          
+
           <button
             onClick={() => setCurrentPassageIndex(prev => Math.min(test.passages.length - 1, prev + 1))}
             disabled={currentPassageIndex === test.passages.length - 1}
-            className={`px-6 py-3 rounded-lg font-semibold ${
-              currentPassageIndex === test.passages.length - 1
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
+            className={`px-6 py-3 rounded-lg font-semibold ${currentPassageIndex === test.passages.length - 1
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
           >
             Next Passage →
           </button>
