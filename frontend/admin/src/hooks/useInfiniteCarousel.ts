@@ -41,7 +41,7 @@ export const useInfiniteCarousel = <T extends HTMLElement>(
         repeat: loopConfig.repeat ?? -1,
         paused: loopConfig.paused,
         defaults: { ease: 'none' },
-        onReverseComplete: () => tl.totalTime(tl.rawTime() + tl.duration() * 100),
+        onReverseComplete: () => { tl.totalTime(tl.rawTime() + tl.duration() * 100); },
       }) as CarouselTimeline;
 
       const length = items.length;
@@ -61,7 +61,7 @@ export const useInfiniteCarousel = <T extends HTMLElement>(
           widths[i] = parseFloat(gsap.getProperty(el, 'width', 'px') as string);
           xPercents[i] = snapFn(
             (parseFloat(gsap.getProperty(el, 'x', 'px') as string) / widths[i]) * 100 +
-              (gsap.getProperty(el, 'xPercent') as number)
+            (gsap.getProperty(el, 'xPercent') as number)
           );
         });
       };
@@ -71,7 +71,7 @@ export const useInfiniteCarousel = <T extends HTMLElement>(
         (xPercents[length - 1] / 100) * widths[length - 1] -
         startX +
         items[length - 1].offsetWidth *
-          (gsap.getProperty(items[length - 1], 'scaleX') as number) +
+        (gsap.getProperty(items[length - 1], 'scaleX') as number) +
         (loopConfig.paddingRight || 0);
 
       populateWidths();
@@ -163,7 +163,7 @@ export const useInfiniteCarousel = <T extends HTMLElement>(
           }
         };
 
-        const syncIndex = () => tl.updateIndex();
+        const syncIndex = () => { tl.updateIndex(); };
 
         draggable = Draggable.create(proxy, {
           trigger: containerRef.current,
@@ -237,7 +237,7 @@ export const useInfiniteCarousel = <T extends HTMLElement>(
         loopRef.current = null;
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [horizontalLoop]);
 
   const pause = useCallback(() => {
