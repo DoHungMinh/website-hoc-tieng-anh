@@ -8,6 +8,7 @@ const HomePage = lazy(() => import("./pages/HomePage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
 const CoursesPage = lazy(() => import("./pages/CoursesPage"));
+const CourseNewPage = lazy(() => import("./pages/CourseNewPage"));
 const PracticePage = lazy(() => import("./pages/PracticePage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const PlacementTestPage = lazy(() => import("./pages/PlacementTestPage"));
@@ -55,6 +56,10 @@ const router = createBrowserRouter([
             {
                 path: "aichat",
                 element: <ChatPage />,
+            },
+            {
+                path: "coursenew",
+                element: <CourseNewPage />,
             },
 
             // ============ PROTECTED ROUTES (require authentication) ============

@@ -342,30 +342,6 @@ const Chatbot = () => {
 
               {/* Input */}
               <div className={styles.inputArea}>
-                {/* Mode Toggle */}
-                <div className={styles.modeToggle}>
-                  <div className={styles.modeToggleWrapper}>
-                    <button
-                      onClick={() => setIsVoiceMode(false)}
-                      className={`${styles.modeToggleButton} ${!isVoiceMode ? styles.modeToggleButtonActive : ''}`}
-                    >
-                      <Keyboard size={16} />
-                      <span>Text</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setIsVoiceMode(true);
-                        if (!isExpanded) {
-                          setIsExpanded(true);
-                        }
-                      }}
-                      className={`${styles.modeToggleButton} ${isVoiceMode ? styles.modeToggleButtonActive : ''}`}
-                    >
-                      <Mic size={16} />
-                      <span>Voice</span>
-                    </button>
-                  </div>
-                </div>
 
                 {/* Text Mode Input */}
                 {!isVoiceMode && (

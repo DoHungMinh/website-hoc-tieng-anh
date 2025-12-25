@@ -1,0 +1,292 @@
+/* Course Card Component Styles */
+
+.card {
+    background: #ffffff;
+    border-radius: 28px;
+    position: relative;
+    overflow: visible;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    padding: 10px;
+}
+
+.card:hover {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Card Variants - Different colors for each level */
+.cardA1>.cardContent>.topContent {
+    background: #fce4ec;
+}
+
+.topContent {
+    padding: 20px;
+    border-radius: 28px;
+}
+
+.cardA2>.cardContent>.topContent {
+    background: #e3f2fd;
+}
+
+.cardB1>.cardContent>.topContent {
+    background: #e8f5e9;
+}
+
+.cardB2>.cardContent>.topContent {
+    background: #f3e5f5;
+}
+
+.cardC1>.cardContent>.topContent {
+    background: #fff3e0;
+}
+
+.cardC2>.cardContent>.topContent {
+    background: #fffde7;
+}
+
+.cardContent {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* Flex container for info and icon */
+.cardMain {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+/* Left side - Text info */
+.cardInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Tags */
+.tag {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: capitalize;
+    letter-spacing: 0;
+    margin-bottom: 16px;
+    background: rgba(0, 0, 0, 0.06);
+    color: #1a1a2e;
+}
+
+/* Card Title & Description */
+.cardTitle {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #1a1a2e;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+}
+
+.cardDescription {
+    font-size: 0.9rem;
+    color: #6b7280;
+    line-height: 1.5;
+    margin-bottom: 16px;
+}
+
+/* Right side - Avatar/Icon */
+.avatarWrapper {
+    width: 150px;
+    height: 150px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: float 3s ease-in-out infinite;
+}
+
+.avatarImage {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* Stats */
+.stats {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: #4b5563;
+}
+
+.statIcon {
+    font-size: 1rem;
+    color: #9ca3af;
+}
+
+.statDivider {
+    color: #d1d5db;
+}
+
+/* Progress */
+.progressSection {
+    margin-bottom: 20px;
+}
+
+.progressHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.progressLabel {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.progressValue {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1a1a2e;
+}
+
+.progressBar {
+    height: 6px;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    background: #1a1a2e;
+}
+
+/* Card Footer */
+.cardFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ffffff;
+    padding: 10px 10px 0 10px;
+}
+
+.footerInfo {
+    font-size: 0.95rem;
+    color: #4b5563;
+}
+
+.footerInfoLabel {
+    color: #6b7280;
+}
+
+.footerInfoValue {
+    font-weight: 500;
+    color: #1a1a2e;
+}
+
+/* Action Buttons */
+.actionButton {
+    padding: 12px 28px;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.continueButton {
+    background: #1a1a2e;
+    color: white;
+}
+
+.continueButton:hover {
+    background: #2d2d44;
+    transform: scale(1.05);
+}
+
+.applyButton {
+    background: transparent;
+    border: 2px solid #1a1a2e;
+    color: #1a1a2e;
+}
+
+.applyButton:hover {
+    background: #1a1a2e;
+    color: white;
+    transform: scale(1.05);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .avatarWrapper {
+        width: 120px;
+        height: 120px;
+    }
+
+    .cardMain {
+        gap: 16px;
+    }
+
+    .cardFooter {
+        padding: 16px 10px 0 10px;
+    }
+
+    .topContent {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .cardTitle {
+        font-size: 1.25rem;
+    }
+
+    .cardDescription {
+        font-size: 0.85rem;
+    }
+
+    .stats {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .avatarWrapper {
+        width: 80px;
+        height: 80px;
+    }
+
+    .cardMain {
+        gap: 12px;
+    }
+
+    .topContent {
+        padding: 12px;
+    }
+}
