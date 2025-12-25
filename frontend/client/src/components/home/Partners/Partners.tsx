@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { Handshake } from 'lucide-react';
 import styles from './Partners.module.css';
 import { useInfiniteCarousel } from '../../../hooks/useInfiniteCarousel';
@@ -21,11 +21,45 @@ const PARTNERS = [
  * Displays trusted partner logos with infinite carousel animation
  */
 const Partners = memo(() => {
+  // Responsive itemsVisible configuration
+  const [itemsVisible, setItemsVisible] = useState(5);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      if (width < 480) {
+        setItemsVisible(3);
+      } else if (width < 768) {
+        setItemsVisible(4);
+      } else if (width < 1024) {
+        setItemsVisible(5);
+      } else {
+        setItemsVisible(6);
+      }
+    };
+
+    // Initial check
+    handleResize();
+
+    // Add debounce to prevent excessive updates
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const debouncedResize = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleResize, 200);
+    };
+
+    window.addEventListener('resize', debouncedResize);
+    return () => {
+      window.removeEventListener('resize', debouncedResize);
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
   const { containerRef, pause, play } = useInfiniteCarousel<HTMLDivElement>({
     speed: 0.6,
     draggable: true,
     reversed: false,
-    itemsVisible: 10, // Số lượng logo hiển thị cùng lúc (tăng = gap nhỏ hơn, giảm = gap lớn hơn)
+    itemsVisible: itemsVisible,
   });
 
   const { ref: subtitleRef } = useTextReveal({
@@ -57,7 +91,7 @@ const Partners = memo(() => {
         </div>
 
         {/* Partner Logos - Infinite Carousel */}
-        <div 
+        <div
           ref={containerRef}
           className={styles.logos}
           onMouseEnter={pause}
