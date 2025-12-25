@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import CourseCard, { CourseCardProps } from '../../components/course/CourseCard';
 import styles from './CourseNewPage.module.css';
 
@@ -96,6 +97,7 @@ const courseLevels: CourseLevelData[] = [
 ];
 
 const CourseNewPage = () => {
+    const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
 
     const filteredCourses = courseLevels.filter(
@@ -105,10 +107,9 @@ const CourseNewPage = () => {
             course.tag.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const handleCourseClick = (courseId: string) => {
-        console.log('Navigate to course:', courseId);
-        // TODO: Navigate to course detail page
-    };
+    const handleCourseClick = useCallback((levelId: string) => {
+        navigate(`/level/${levelId}`);
+    }, [navigate]);
 
     return (
         <div className={styles.container}>

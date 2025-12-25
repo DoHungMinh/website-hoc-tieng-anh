@@ -1,0 +1,528 @@
+/* Course Learning Page Styles */
+
+.container {
+    min-height: 100vh;
+    background: #f9fafb;
+}
+
+/* Header */
+.header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 60px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.backButton {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f3f4f6;
+    border: none;
+    border-radius: 10px;
+    color: #4b5563;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.backButton:hover {
+    background: #e5e7eb;
+    color: #1a1a2e;
+}
+
+.headerInfo {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+}
+
+.levelBadge {
+    padding: 6px 14px;
+    background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.title {
+    font-size: 1.35rem;
+    font-weight: 500;
+    color: #1a1a2e;
+    margin: 0;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 8px;
+    padding: 16px 60px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #f3f4f6;
+    border: none;
+    border-radius: 10px;
+    color: #6b7280;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tab:hover {
+    background: #e5e7eb;
+}
+
+.activeTab {
+    background: #1a1a2e;
+    color: white;
+}
+
+.tabIcon {
+    font-size: 1.1rem;
+}
+
+.tabCount {
+    padding: 2px 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    font-size: 0.8rem;
+}
+
+.activeTab .tabCount {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Content */
+.content {
+    padding: 32px 60px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Vocabulary Grid */
+.vocabularyGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+}
+
+.vocabCard {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.vocabCard:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.vocabCard.expanded {
+    border-color: #7c3aed;
+    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.1);
+}
+
+.vocabHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.vocabWord h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin: 0 0 4px 0;
+}
+
+.pronunciation {
+    font-size: 0.9rem;
+    color: #7c3aed;
+    font-style: italic;
+}
+
+/* Word with Audio */
+.wordWithAudio {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.audioButton {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.audioButton:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.audioButton:disabled {
+    opacity: 0.8;
+    cursor: not-allowed;
+}
+
+.audioButton.playing {
+    animation: pulse 1s infinite;
+}
+
+.audioWave {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid #22c55e;
+    animation: wave 1s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+@keyframes wave {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}
+
+.expandIcon {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f3f4f6;
+    border-radius: 8px;
+    color: #6b7280;
+    font-size: 1.2rem;
+    font-weight: 300;
+}
+
+.vocabMeaning {
+    font-size: 1rem;
+    color: #4b5563;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.vocabExample {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.exampleLabel,
+.detailLabel {
+    font-size: 0.8rem;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.vocabExample p {
+    font-size: 0.95rem;
+    color: #6b7280;
+    margin: 0;
+    font-style: italic;
+}
+
+/* Grammar List */
+.grammarList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.grammarCard {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.grammarCard:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.grammarCard.expanded {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1);
+}
+
+.grammarHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.grammarHeader h3 {
+    font-size: 1.15rem;
+    font-weight: 500;
+    color: #1a1a2e;
+    margin: 0;
+}
+
+.grammarStructure {
+    margin-top: 12px;
+}
+
+.grammarStructure code {
+    display: inline-block;
+    padding: 8px 16px;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 8px;
+    color: #0284c7;
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 0.9rem;
+}
+
+.grammarDetails {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.grammarExplanation p,
+.grammarExample p {
+    font-size: 0.95rem;
+    color: #4b5563;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.grammarExample p {
+    font-style: italic;
+    color: #6b7280;
+}
+
+/* Empty State */
+.emptyState {
+    text-align: center;
+    padding: 80px 20px;
+}
+
+.emptyIcon {
+    font-size: 4rem;
+    margin-bottom: 16px;
+}
+
+.emptyState h3 {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #1a1a2e;
+    margin: 0 0 8px 0;
+}
+
+.emptyState p {
+    font-size: 1rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+/* Error State */
+.errorState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+    min-height: 60vh;
+}
+
+.errorState p {
+    font-size: 1.1rem;
+    color: #6b7280;
+    margin: 0 0 20px 0;
+}
+
+.errorState button {
+    padding: 14px 28px;
+    background: #1a1a2e;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.errorState button:hover {
+    background: #2d2d44;
+}
+
+/* Access Denied */
+.accessDenied {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+    min-height: 60vh;
+}
+
+.accessIcon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+}
+
+.accessDenied h2 {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #1a1a2e;
+    margin: 0 0 12px 0;
+}
+
+.accessDenied p {
+    font-size: 1rem;
+    color: #6b7280;
+    margin: 0 0 28px 0;
+    max-width: 400px;
+}
+
+.accessActions {
+    display: flex;
+    gap: 12px;
+}
+
+.accessActions button {
+    padding: 14px 28px;
+    background: #1a1a2e;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.accessActions button:hover {
+    background: #2d2d44;
+}
+
+.secondaryBtn {
+    background: #f3f4f6 !important;
+    color: #4b5563 !important;
+}
+
+.secondaryBtn:hover {
+    background: #e5e7eb !important;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .header {
+        padding: 16px 30px;
+    }
+
+    .tabs {
+        padding: 12px 30px;
+    }
+
+    .content {
+        padding: 24px 30px;
+    }
+}
+
+@media (max-width: 768px) {
+    .header {
+        padding: 14px 20px;
+    }
+
+    .title {
+        font-size: 1.1rem;
+    }
+
+    .tabs {
+        padding: 12px 20px;
+        overflow-x: auto;
+    }
+
+    .tab {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    .content {
+        padding: 20px;
+    }
+
+    .vocabularyGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .header {
+        padding: 12px 16px;
+    }
+
+    .headerInfo {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .tabs {
+        padding: 10px 16px;
+    }
+
+    .content {
+        padding: 16px;
+    }
+
+    .vocabCard,
+    .grammarCard {
+        padding: 16px;
+    }
+}

@@ -42,6 +42,9 @@ export function useLenis(options?: LenisOptions) {
 
     lenisRef.current = lenis;
 
+    // Expose lenis to window for global access (e.g., scroll to top)
+    (window as Window & { lenis?: Lenis }).lenis = lenis;
+
     // Animation frame loop
     function raf(time: number) {
       lenis.raf(time);
@@ -57,12 +60,13 @@ export function useLenis(options?: LenisOptions) {
       }
       lenis.destroy();
       lenisRef.current = null;
+      (window as Window & { lenis?: Lenis }).lenis = undefined;
     };
   }, []);
 
   // Memoized scrollTo function
   const scrollTo = useCallback((
-    target: string | number | HTMLElement, 
+    target: string | number | HTMLElement,
     scrollOptions?: { offset?: number; duration?: number }
   ) => {
     lenisRef.current?.scrollTo(target, scrollOptions);

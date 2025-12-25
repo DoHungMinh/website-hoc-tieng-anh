@@ -1,0 +1,184 @@
+/* Skill Course Card Styles */
+
+.card {
+    background: #ffffff;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* Card Header with Gradient */
+.cardHeader {
+    padding: 20px;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.headerTop {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.title {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #1a1a2e;
+    margin: 0;
+    line-height: 1.3;
+    flex: 1;
+}
+
+.materials {
+    font-size: 0.75rem;
+    color: #4b5563;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 4px 10px;
+    border-radius: 12px;
+    white-space: nowrap;
+}
+
+.tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #1a1a2e;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 4px 10px;
+    border-radius: 12px;
+    margin-top: 12px;
+    align-self: flex-start;
+}
+
+/* Variant Gradients */
+.variantPink {
+    background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%);
+}
+
+.variantYellow {
+    background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+}
+
+.variantGreen {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+}
+
+.variantBlue {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+}
+
+.variantPurple {
+    background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+}
+
+.variantOrange {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+}
+
+/* Card Body */
+.cardBody {
+    padding: 16px 20px 20px;
+}
+
+.courseType {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-bottom: 8px;
+}
+
+.courseTypeIcon {
+    font-size: 0.9rem;
+}
+
+.description {
+    font-size: 0.875rem;
+    color: #4b5563;
+    line-height: 1.5;
+    margin: 0 0 12px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Labels */
+.labels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    padding: 4px 10px;
+    background: #f3f4f6;
+    border-radius: 8px;
+}
+
+/* Status */
+.status {
+    display: flex;
+    align-items: center;
+}
+
+.statusBadge {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.status_not_started {
+    color: #6b7280;
+}
+
+.status_in_progress {
+    color: #3b82f6;
+}
+
+.status_completed {
+    color: #22c55e;
+}
+
+.status_paused {
+    color: #f59e0b;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .cardHeader {
+        padding: 16px;
+        min-height: 90px;
+    }
+
+    .title {
+        font-size: 1rem;
+    }
+
+    .cardBody {
+        padding: 14px 16px 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .title {
+        font-size: 0.95rem;
+    }
+
+    .description {
+        font-size: 0.8rem;
+    }
+}

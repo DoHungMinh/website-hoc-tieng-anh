@@ -1,5 +1,13 @@
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import Lenis from 'lenis';
+
+// Extend Window interface for TypeScript
+declare global {
+  interface Window {
+    lenis?: Lenis;
+  }
+}
 
 /**
  * Custom hook to scroll to top on route change
@@ -8,25 +16,23 @@ import { useLocation } from 'react-router-dom';
  * Features:
  * - Scrolls to top instantly on route change
  * - Handles both window and Lenis smooth scroll
- * - Ignores hash changes (anchor links)
- * - Preserves scroll on back/forward navigation via browser
+ * - Uses useLayoutEffect to run before browser paint
  */
 export const useScrollToTop = () => {
   const { pathname } = useLocation();
 
-  useEffect(() => {
-    // Scroll to top instantly (not smooth, to avoid visual delay)
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: 'instant',
-    });
-
-    // Also reset Lenis scroll if available
-    const lenis = (window as Window & { lenis?: { scrollTo: (target: number, options?: { immediate?: boolean }) => void } }).lenis;
-    if (lenis) {
-      lenis.scrollTo(0, { immediate: true });
+  useLayoutEffect(() => {
+    // Reset Lenis scroll if available (must be done first)
+    if (window.lenis) {
+      window.lenis.scrollTo(0, { immediate: true });
     }
+
+    // Also use native scroll as fallback
+    window.scrollTo(0, 0);
+
+    // Force scroll position for stubborn cases
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   }, [pathname]);
 };
 

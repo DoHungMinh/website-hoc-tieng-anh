@@ -7,8 +7,10 @@ import ProtectedRoute from "./components/common/ProtectedRoute";
 const HomePage = lazy(() => import("./pages/HomePage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
-const CoursesPage = lazy(() => import("./pages/CoursesPage"));
 const CourseNewPage = lazy(() => import("./pages/CourseNewPage"));
+const LevelDetailPage = lazy(() => import("./pages/LevelDetailPage"));
+const CourseDetailPage = lazy(() => import("./pages/CourseDetailPage"));
+const CourseLearningPage = lazy(() => import("./pages/CourseLearningPage"));
 const PracticePage = lazy(() => import("./pages/PracticePage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const PlacementTestPage = lazy(() => import("./pages/PlacementTestPage"));
@@ -47,7 +49,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "courses",
-                element: <CoursesPage />,
+                element: <CourseNewPage />,
             },
             {
                 path: "practice",
@@ -58,8 +60,20 @@ const router = createBrowserRouter([
                 element: <ChatPage />,
             },
             {
-                path: "coursenew",
-                element: <CourseNewPage />,
+                path: "level/:level",
+                element: <LevelDetailPage />,
+            },
+            {
+                path: "course/:courseId",
+                element: <CourseDetailPage />,
+            },
+            {
+                path: "learn/:courseId",
+                element: (
+                    <ProtectedRoute>
+                        <CourseLearningPage />
+                    </ProtectedRoute>
+                ),
             },
 
             // ============ PROTECTED ROUTES (require authentication) ============
