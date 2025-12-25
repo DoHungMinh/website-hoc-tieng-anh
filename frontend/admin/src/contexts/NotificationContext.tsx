@@ -1,6 +1,6 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useToast } from '@/hooks/useToast';
-import { ToastContainer } from '../components/Toast';
+import { ToastContainer } from '../components/common/Toast';
 
 interface NotificationContextType {
   success: (title: string, message?: string) => void;
