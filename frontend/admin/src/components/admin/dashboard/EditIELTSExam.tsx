@@ -1,9 +1,24 @@
 import { useState } from 'react';
 import { Save, ArrowLeft, AlertCircle } from 'lucide-react';
+import { API_BASE_URL } from "@/utils/constants";
+
+interface Exam {
+  _id: string;
+  title: string;
+  type: 'reading' | 'listening';
+  difficulty: string;
+  duration: number;
+  totalQuestions: number;
+  status: 'draft' | 'published';
+  createdAt: string;
+  updatedAt: string;
+  description?: string;
+  [key: string]: any; // Allow other properties for flexibility
+}
 
 interface EditIELTSExamProps {
-  examData: any; // eslint-disable-line @typescript-eslint/no-explicit-any
-  onSave: (updatedData: any) => void; // eslint-disable-line @typescript-eslint/no-explicit-any
+  examData: Exam;
+  onSave: (updatedData: Exam) => void;
   onCancel: () => void;
 }
 
@@ -20,7 +35,7 @@ const EditIELTSExam = ({ examData, onSave, onCancel }: EditIELTSExamProps) => {
 
   const difficultyOptions = [
     'Band 4.0-5.0',
-    'Band 5.0-6.0', 
+    'Band 5.0-6.0',
     'Band 6.0-7.0',
     'Band 7.0-8.0',
     'Band 8.0-9.0'
@@ -28,14 +43,14 @@ const EditIELTSExam = ({ examData, onSave, onCancel }: EditIELTSExamProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.title.trim()) {
       alert('Vui lòng nhập tên đề thi');
       return;
     }
 
     setLoading(true);
-    
+
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -43,7 +58,7 @@ const EditIELTSExam = ({ examData, onSave, onCancel }: EditIELTSExamProps) => {
         return;
       }
 
-      const response = await fetch(`/api/ielts/${examData._id}`, {
+      const response = await fetch(`${API_BASE_URL}/ielts/${examData._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -92,7 +107,7 @@ const EditIELTSExam = ({ examData, onSave, onCancel }: EditIELTSExamProps) => {
           <div>
             <h3 className="font-medium text-blue-800 mb-1">Chỉnh sửa cơ bản</h3>
             <p className="text-blue-700 text-sm">
-              Hiện tại chỉ có thể chỉnh sửa thông tin cơ bản của đề thi. 
+              Hiện tại chỉ có thể chỉnh sửa thông tin cơ bản của đề thi.
               Để chỉnh sửa nội dung câu hỏi, vui lòng tạo đề thi mới.
             </p>
           </div>
@@ -150,7 +165,7 @@ const EditIELTSExam = ({ examData, onSave, onCancel }: EditIELTSExamProps) => {
             </label>
             <select
               value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value as 'draft' | 'published' })}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
               <option value="draft">Bản nháp</option>
@@ -181,7 +196,7 @@ const EditIELTSExam = ({ examData, onSave, onCancel }: EditIELTSExamProps) => {
             <Save className="h-5 w-5" />
             {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
           </button>
-          
+
           <button
             type="button"
             onClick={onCancel}

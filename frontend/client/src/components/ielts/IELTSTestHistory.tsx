@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
-import { 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
-  Target, 
+import {
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Target,
   Calendar,
   TrendingUp,
   Eye,
   BarChart3,
   Award
 } from 'lucide-react';
+import { API_BASE_URL } from '@/utils/constants';
 
 interface TestResult {
   _id: string;
@@ -41,14 +42,14 @@ const IELTSTestHistory = ({ onViewDetail }: IELTSTestHistoryProps) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const token = localStorage.getItem('token');
       if (!token) {
         setError('Vui lòng đăng nhập để xem lịch sử làm bài');
         return;
       }
 
-      const response = await fetch(`/api/ielts/results/history?page=${page}&limit=10`, {
+      const response = await fetch(`${API_BASE_URL}/ielts/results/history?page=${page}&limit=10`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -121,9 +122,9 @@ const IELTSTestHistory = ({ onViewDetail }: IELTSTestHistoryProps) => {
     const avgScore = results.reduce((sum, result) => sum + result.score.percentage, 0) / totalTests;
     const avgBandScore = results
       .filter(r => r.score.bandScore)
-      .reduce((sum, result) => sum + (result.score.bandScore || 0), 0) / 
+      .reduce((sum, result) => sum + (result.score.bandScore || 0), 0) /
       results.filter(r => r.score.bandScore).length;
-    
+
     const readingTests = results.filter(r => r.examType === 'reading').length;
     const listeningTests = results.filter(r => r.examType === 'listening').length;
 
@@ -235,11 +236,10 @@ const IELTSTestHistory = ({ onViewDetail }: IELTSTestHistoryProps) => {
                   <h3 className="font-semibold text-gray-900 text-lg">
                     {result.examTitle}
                   </h3>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    result.examType === 'reading' 
-                      ? 'bg-blue-100 text-blue-700' 
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${result.examType === 'reading'
+                      ? 'bg-blue-100 text-blue-700'
                       : 'bg-green-100 text-green-700'
-                  }`}>
+                    }`}>
                     {result.examType === 'reading' ? 'Reading' : 'Listening'}
                   </span>
                 </div>
@@ -249,11 +249,11 @@ const IELTSTestHistory = ({ onViewDetail }: IELTSTestHistoryProps) => {
                     <Calendar className="h-4 w-4 text-gray-400" />
                     <span className="text-gray-600">{formatDate(result.completedAt)}</span>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     {getScoreIcon(result.score.percentage)}
                     <span className="font-medium">
-                      {result.score.correctAnswers}/{result.score.totalQuestions} 
+                      {result.score.correctAnswers}/{result.score.totalQuestions}
                       <span className="text-gray-500 ml-1">({result.score.percentage}%)</span>
                     </span>
                   </div>
@@ -309,11 +309,11 @@ const IELTSTestHistory = ({ onViewDetail }: IELTSTestHistoryProps) => {
             >
               Trước
             </button>
-            
+
             <span className="px-4 py-2 text-sm text-gray-700">
               Trang {currentPage} / {totalPages}
             </span>
-            
+
             <button
               onClick={() => fetchTestHistory(currentPage + 1)}
               disabled={currentPage === totalPages}

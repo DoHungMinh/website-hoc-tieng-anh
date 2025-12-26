@@ -3,6 +3,7 @@ import { ArrowLeft, BookOpen, Clock, Target } from 'lucide-react';
 import IELTSExamCard from './IELTSExamCard';
 import IELTSTest from './IELTSTest';
 import IELTSTestHistory from './IELTSTestHistory';
+import { API_BASE_URL } from '@/utils/constants';
 
 interface IELTSExam {
   _id: string;
@@ -29,13 +30,13 @@ const IELTSExamList: React.FC<IELTSExamListProps> = ({ onBack }) => {
       try {
         setLoading(true);
         console.log('Fetching IELTS exams for practice...');
-        const response = await fetch('/api/ielts?status=published&limit=20');
+        const response = await fetch(`${API_BASE_URL}/ielts?status=published&limit=20`);
         console.log('Response status:', response.status);
-        
+
         if (response.ok) {
           const data = await response.json();
           console.log('Fetched exams data:', data);
-          
+
           if (data.success && Array.isArray(data.data)) {
             setExams(data.data);
           } else {
@@ -118,7 +119,7 @@ const IELTSExamList: React.FC<IELTSExamListProps> = ({ onBack }) => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl p-6 shadow-sm border">
             <div className="flex items-center gap-4">
               <div className="bg-green-100 p-3 rounded-lg">
@@ -130,7 +131,7 @@ const IELTSExamList: React.FC<IELTSExamListProps> = ({ onBack }) => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl p-6 shadow-sm border">
             <div className="flex items-center gap-4">
               <div className="bg-purple-100 p-3 rounded-lg">

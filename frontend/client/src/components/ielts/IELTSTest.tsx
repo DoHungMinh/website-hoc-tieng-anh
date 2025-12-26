@@ -19,15 +19,16 @@ import {
     getBandScoreBackground,
 } from "@/utils/ieltsScoring";
 import { progressService } from "@/services/progressService";
+import { API_BASE_URL } from '@/utils/constants';
 
 interface Question {
     id: string;
     type:
-        | "multiple-choice"
-        | "fill-blank"
-        | "true-false-notgiven"
-        | "matching"
-        | "map-labeling";
+    | "multiple-choice"
+    | "fill-blank"
+    | "true-false-notgiven"
+    | "matching"
+    | "map-labeling";
     question: string;
     options?: string[];
     correctAnswer?: string | number;
@@ -100,7 +101,7 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                     return;
                 }
 
-                const response = await fetch(`/api/ielts/${examId}`);
+                const response = await fetch(`${API_BASE_URL}/ielts/${examId}`);
 
                 if (response.ok) {
                     const data = await response.json();
@@ -413,9 +414,8 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                         correctAnswer: question.correctAnswer,
                         userAnswer: userAnswer,
                         isCorrect: isCorrect,
-                        sectionTitle: `Passage ${passageIndex + 1}: ${
-                            passage.title
-                        }`,
+                        sectionTitle: `Passage ${passageIndex + 1}: ${passage.title
+                            }`,
                     });
                 });
             });
@@ -486,9 +486,8 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                         correctAnswer: question.correctAnswer,
                         userAnswer: userAnswer,
                         isCorrect: isCorrect,
-                        sectionTitle: `Section ${sectionIndex + 1}: ${
-                            section.title
-                        }`,
+                        sectionTitle: `Section ${sectionIndex + 1}: ${section.title
+                            }`,
                     });
                 });
             });
@@ -509,7 +508,7 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                     const timeSpent = Date.now() - testStartTime;
 
                     const response = await fetch(
-                        `/api/ielts/${examData._id}/submit`,
+                        `${API_BASE_URL}/ielts/${examData._id}/submit`,
                         {
                             method: "POST",
                             headers: {
@@ -580,9 +579,9 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
             const prevSectionQuestions =
                 examData?.type === "reading"
                     ? examData.passages?.[currentSection - 1]?.questions
-                          .length || 0
+                        .length || 0
                     : examData?.sections?.[currentSection - 1]?.questions
-                          .length || 0;
+                        .length || 0;
             setCurrentQuestion(prevSectionQuestions - 1);
         }
     };
@@ -713,26 +712,24 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                                                     (question, index) => (
                                                         <div
                                                             key={question.id}
-                                                            className={`border rounded-lg p-4 ${
-                                                                question.isCorrect
+                                                            className={`border rounded-lg p-4 ${question.isCorrect
                                                                     ? "border-green-200 bg-green-50"
                                                                     : question.correctAnswer !==
-                                                                      undefined
-                                                                    ? "border-red-200 bg-red-50"
-                                                                    : "border-gray-200 bg-gray-50"
-                                                            }`}
+                                                                        undefined
+                                                                        ? "border-red-200 bg-red-50"
+                                                                        : "border-gray-200 bg-gray-50"
+                                                                }`}
                                                         >
                                                             <div className="flex items-start justify-between mb-3">
                                                                 <div className="flex items-center gap-3">
                                                                     <div
-                                                                        className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
-                                                                            question.isCorrect
+                                                                        className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${question.isCorrect
                                                                                 ? "bg-green-500"
                                                                                 : question.correctAnswer !==
-                                                                                  undefined
-                                                                                ? "bg-red-500"
-                                                                                : "bg-gray-500"
-                                                                        }`}
+                                                                                    undefined
+                                                                                    ? "bg-red-500"
+                                                                                    : "bg-gray-500"
+                                                                            }`}
                                                                     >
                                                                         {index +
                                                                             1}
@@ -741,7 +738,7 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                                                                         {question.isCorrect ? (
                                                                             <CheckCircle className="h-5 w-5 text-green-500" />
                                                                         ) : question.correctAnswer !==
-                                                                          undefined ? (
+                                                                            undefined ? (
                                                                             <AlertCircle className="h-5 w-5 text-red-500" />
                                                                         ) : (
                                                                             <div className="h-5 w-5"></div>
@@ -777,26 +774,26 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                                                                                 const correctAnswerIndex =
                                                                                     typeof question.correctAnswer ===
                                                                                         "string" &&
-                                                                                    question.correctAnswer.match(
-                                                                                        /^[A-D]$/
-                                                                                    )
+                                                                                        question.correctAnswer.match(
+                                                                                            /^[A-D]$/
+                                                                                        )
                                                                                         ? question.correctAnswer.charCodeAt(
-                                                                                              0
-                                                                                          ) -
-                                                                                          65
+                                                                                            0
+                                                                                        ) -
+                                                                                        65
                                                                                         : question.correctAnswer;
 
                                                                                 // Convert user answer letter to index for comparison
                                                                                 const userAnswerIndex =
                                                                                     typeof question.userAnswer ===
                                                                                         "string" &&
-                                                                                    question.userAnswer.match(
-                                                                                        /^[A-D]$/
-                                                                                    )
+                                                                                        question.userAnswer.match(
+                                                                                            /^[A-D]$/
+                                                                                        )
                                                                                         ? question.userAnswer.charCodeAt(
-                                                                                              0
-                                                                                          ) -
-                                                                                          65
+                                                                                            0
+                                                                                        ) -
+                                                                                        65
                                                                                         : question.userAnswer;
 
                                                                                 const isCorrectOption =
@@ -811,18 +808,17 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                                                                                         key={
                                                                                             optionIndex
                                                                                         }
-                                                                                        className={`p-2 rounded border ${
-                                                                                            isCorrectOption
+                                                                                        className={`p-2 rounded border ${isCorrectOption
                                                                                                 ? "border-green-500 bg-green-100"
                                                                                                 : isUserSelectedOption
-                                                                                                ? "border-red-500 bg-red-100"
-                                                                                                : "border-gray-200"
-                                                                                        }`}
+                                                                                                    ? "border-red-500 bg-red-100"
+                                                                                                    : "border-gray-200"
+                                                                                            }`}
                                                                                     >
                                                                                         <span className="font-medium">
                                                                                             {String.fromCharCode(
                                                                                                 65 +
-                                                                                                    optionIndex
+                                                                                                optionIndex
                                                                                             )}
                                                                                             .{" "}
                                                                                         </span>
@@ -854,154 +850,152 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                                                             {/* True/False/Not Given options */}
                                                             {question.type ===
                                                                 "true-false-notgiven" && (
-                                                                <div className="space-y-2 mb-3">
-                                                                    {[
-                                                                        "TRUE",
-                                                                        "FALSE",
-                                                                        "NOT GIVEN",
-                                                                    ].map(
-                                                                        (
-                                                                            option
-                                                                        ) => {
-                                                                            const displayOption =
-                                                                                option ===
-                                                                                "TRUE"
-                                                                                    ? "True"
-                                                                                    : option ===
-                                                                                      "FALSE"
-                                                                                    ? "False"
-                                                                                    : "Not Given";
+                                                                    <div className="space-y-2 mb-3">
+                                                                        {[
+                                                                            "TRUE",
+                                                                            "FALSE",
+                                                                            "NOT GIVEN",
+                                                                        ].map(
+                                                                            (
+                                                                                option
+                                                                            ) => {
+                                                                                const displayOption =
+                                                                                    option ===
+                                                                                        "TRUE"
+                                                                                        ? "True"
+                                                                                        : option ===
+                                                                                            "FALSE"
+                                                                                            ? "False"
+                                                                                            : "Not Given";
 
-                                                                            // Normalize both answers to uppercase for comparison
-                                                                            let normalizedCorrectAnswer =
-                                                                                "";
-                                                                            if (
-                                                                                typeof question.correctAnswer ===
-                                                                                "string"
-                                                                            ) {
-                                                                                normalizedCorrectAnswer =
-                                                                                    question.correctAnswer.toUpperCase();
-                                                                            } else if (
-                                                                                typeof question.correctAnswer ===
-                                                                                    "number" &&
-                                                                                question.options
-                                                                            ) {
-                                                                                normalizedCorrectAnswer =
-                                                                                    question.options[
-                                                                                        question
-                                                                                            .correctAnswer
-                                                                                    ]?.toUpperCase() ||
+                                                                                // Normalize both answers to uppercase for comparison
+                                                                                let normalizedCorrectAnswer =
                                                                                     "";
-                                                                            }
-
-                                                                            let normalizedUserAnswer =
-                                                                                "";
-                                                                            if (
-                                                                                typeof question.userAnswer ===
-                                                                                "string"
-                                                                            ) {
-                                                                                normalizedUserAnswer =
-                                                                                    question.userAnswer.toUpperCase();
-                                                                            } else if (
-                                                                                typeof question.userAnswer ===
+                                                                                if (
+                                                                                    typeof question.correctAnswer ===
+                                                                                    "string"
+                                                                                ) {
+                                                                                    normalizedCorrectAnswer =
+                                                                                        question.correctAnswer.toUpperCase();
+                                                                                } else if (
+                                                                                    typeof question.correctAnswer ===
                                                                                     "number" &&
-                                                                                question.options
-                                                                            ) {
-                                                                                normalizedUserAnswer =
-                                                                                    question.options[
-                                                                                        question
-                                                                                            .userAnswer
-                                                                                    ]?.toUpperCase() ||
+                                                                                    question.options
+                                                                                ) {
+                                                                                    normalizedCorrectAnswer =
+                                                                                        question.options[
+                                                                                            question
+                                                                                                .correctAnswer
+                                                                                        ]?.toUpperCase() ||
+                                                                                        "";
+                                                                                }
+
+                                                                                let normalizedUserAnswer =
                                                                                     "";
-                                                                            }
+                                                                                if (
+                                                                                    typeof question.userAnswer ===
+                                                                                    "string"
+                                                                                ) {
+                                                                                    normalizedUserAnswer =
+                                                                                        question.userAnswer.toUpperCase();
+                                                                                } else if (
+                                                                                    typeof question.userAnswer ===
+                                                                                    "number" &&
+                                                                                    question.options
+                                                                                ) {
+                                                                                    normalizedUserAnswer =
+                                                                                        question.options[
+                                                                                            question
+                                                                                                .userAnswer
+                                                                                        ]?.toUpperCase() ||
+                                                                                        "";
+                                                                                }
 
-                                                                            const isCorrectOption =
-                                                                                normalizedCorrectAnswer ===
-                                                                                option;
-                                                                            const isUserSelectedOption =
-                                                                                normalizedUserAnswer ===
-                                                                                option;
+                                                                                const isCorrectOption =
+                                                                                    normalizedCorrectAnswer ===
+                                                                                    option;
+                                                                                const isUserSelectedOption =
+                                                                                    normalizedUserAnswer ===
+                                                                                    option;
 
-                                                                            return (
-                                                                                <div
-                                                                                    key={
-                                                                                        option
-                                                                                    }
-                                                                                    className={`p-2 rounded border ${
-                                                                                        isCorrectOption
-                                                                                            ? "border-green-500 bg-green-100"
-                                                                                            : isUserSelectedOption &&
-                                                                                              !isCorrectOption
-                                                                                            ? "border-red-500 bg-red-100"
-                                                                                            : "border-gray-200"
-                                                                                    }`}
-                                                                                >
-                                                                                    {
-                                                                                        displayOption
-                                                                                    }
-                                                                                    {isCorrectOption && (
-                                                                                        <span className="ml-2 text-green-600 font-medium">
-                                                                                            (Đáp
-                                                                                            án
-                                                                                            đúng)
-                                                                                        </span>
-                                                                                    )}
-                                                                                    {isUserSelectedOption &&
-                                                                                        !isCorrectOption && (
-                                                                                            <span className="ml-2 text-red-600 font-medium">
-                                                                                                (Bạn
-                                                                                                đã
-                                                                                                chọn)
+                                                                                return (
+                                                                                    <div
+                                                                                        key={
+                                                                                            option
+                                                                                        }
+                                                                                        className={`p-2 rounded border ${isCorrectOption
+                                                                                                ? "border-green-500 bg-green-100"
+                                                                                                : isUserSelectedOption &&
+                                                                                                    !isCorrectOption
+                                                                                                    ? "border-red-500 bg-red-100"
+                                                                                                    : "border-gray-200"
+                                                                                            }`}
+                                                                                    >
+                                                                                        {
+                                                                                            displayOption
+                                                                                        }
+                                                                                        {isCorrectOption && (
+                                                                                            <span className="ml-2 text-green-600 font-medium">
+                                                                                                (Đáp
+                                                                                                án
+                                                                                                đúng)
                                                                                             </span>
                                                                                         )}
-                                                                                </div>
-                                                                            );
-                                                                        }
-                                                                    )}
-                                                                </div>
-                                                            )}
+                                                                                        {isUserSelectedOption &&
+                                                                                            !isCorrectOption && (
+                                                                                                <span className="ml-2 text-red-600 font-medium">
+                                                                                                    (Bạn
+                                                                                                    đã
+                                                                                                    chọn)
+                                                                                                </span>
+                                                                                            )}
+                                                                                    </div>
+                                                                                );
+                                                                            }
+                                                                        )}
+                                                                    </div>
+                                                                )}
 
                                                             {/* Fill in the blank */}
                                                             {(question.type ===
                                                                 "fill-blank" ||
                                                                 question.type ===
-                                                                    "matching") && (
-                                                                <div className="space-y-2 mb-3">
-                                                                    <div className="p-3 bg-gray-100 rounded">
-                                                                        <div className="text-sm text-gray-600">
-                                                                            Câu
-                                                                            trả
-                                                                            lời
-                                                                            của
-                                                                            bạn:
+                                                                "matching") && (
+                                                                    <div className="space-y-2 mb-3">
+                                                                        <div className="p-3 bg-gray-100 rounded">
+                                                                            <div className="text-sm text-gray-600">
+                                                                                Câu
+                                                                                trả
+                                                                                lời
+                                                                                của
+                                                                                bạn:
+                                                                            </div>
+                                                                            <div
+                                                                                className={`font-medium ${question.isCorrect
+                                                                                        ? "text-green-600"
+                                                                                        : "text-red-600"
+                                                                                    }`}
+                                                                            >
+                                                                                {question.userAnswer ||
+                                                                                    "(Không trả lời)"}
+                                                                            </div>
                                                                         </div>
-                                                                        <div
-                                                                            className={`font-medium ${
-                                                                                question.isCorrect
-                                                                                    ? "text-green-600"
-                                                                                    : "text-red-600"
-                                                                            }`}
-                                                                        >
-                                                                            {question.userAnswer ||
-                                                                                "(Không trả lời)"}
-                                                                        </div>
+                                                                        {question.correctAnswer && (
+                                                                            <div className="p-3 bg-green-100 rounded">
+                                                                                <div className="text-sm text-green-600">
+                                                                                    Đáp
+                                                                                    án
+                                                                                    đúng:
+                                                                                </div>
+                                                                                <div className="font-medium text-green-700">
+                                                                                    {
+                                                                                        question.correctAnswer
+                                                                                    }
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
-                                                                    {question.correctAnswer && (
-                                                                        <div className="p-3 bg-green-100 rounded">
-                                                                            <div className="text-sm text-green-600">
-                                                                                Đáp
-                                                                                án
-                                                                                đúng:
-                                                                            </div>
-                                                                            <div className="font-medium text-green-700">
-                                                                                {
-                                                                                    question.correctAnswer
-                                                                                }
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            )}
+                                                                )}
                                                         </div>
                                                     )
                                                 )}
@@ -1208,11 +1202,10 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
 
                         <div className="text-center mb-8">
                             <div
-                                className={`w-20 h-20 rounded-full bg-gradient-to-r ${
-                                    examData.type === "reading"
+                                className={`w-20 h-20 rounded-full bg-gradient-to-r ${examData.type === "reading"
                                         ? "from-blue-500 to-blue-600"
                                         : "from-purple-500 to-purple-600"
-                                } flex items-center justify-center mx-auto mb-4`}
+                                    } flex items-center justify-center mx-auto mb-4`}
                             >
                                 {examData.type === "reading" ? (
                                     <FileText className="h-10 w-10 text-white" />
@@ -1295,11 +1288,10 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                         <div className="text-center">
                             <button
                                 onClick={handleStartTest}
-                                className={`bg-gradient-to-r ${
-                                    examData.type === "reading"
+                                className={`bg-gradient-to-r ${examData.type === "reading"
                                         ? "from-blue-600 to-blue-700"
                                         : "from-purple-600 to-purple-700"
-                                } hover:shadow-lg text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105`}
+                                    } hover:shadow-lg text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105`}
                             >
                                 Bắt đầu làm bài
                             </button>
@@ -1455,8 +1447,8 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                                                         value={index}
                                                         checked={
                                                             answers[
-                                                                currentQuestionData
-                                                                    .id
+                                                            currentQuestionData
+                                                                .id
                                                             ] === index
                                                         }
                                                         onChange={() =>
@@ -1497,49 +1489,49 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                             {/* True/False/Not Given */}
                             {currentQuestionData.type ===
                                 "true-false-notgiven" && (
-                                <div className="space-y-3">
-                                    {["TRUE", "FALSE", "NOT GIVEN"].map(
-                                        (option, index) => {
-                                            const displayOption =
-                                                option === "TRUE"
-                                                    ? "True"
-                                                    : option === "FALSE"
-                                                    ? "False"
-                                                    : "Not Given";
-                                            return (
-                                                <label
-                                                    key={index}
-                                                    className="flex items-center gap-3 cursor-pointer"
-                                                >
-                                                    <input
-                                                        type="radio"
-                                                        name={
-                                                            currentQuestionData.id
-                                                        }
-                                                        value={option}
-                                                        checked={
-                                                            answers[
+                                    <div className="space-y-3">
+                                        {["TRUE", "FALSE", "NOT GIVEN"].map(
+                                            (option, index) => {
+                                                const displayOption =
+                                                    option === "TRUE"
+                                                        ? "True"
+                                                        : option === "FALSE"
+                                                            ? "False"
+                                                            : "Not Given";
+                                                return (
+                                                    <label
+                                                        key={index}
+                                                        className="flex items-center gap-3 cursor-pointer"
+                                                    >
+                                                        <input
+                                                            type="radio"
+                                                            name={
+                                                                currentQuestionData.id
+                                                            }
+                                                            value={option}
+                                                            checked={
+                                                                answers[
                                                                 currentQuestionData
                                                                     .id
-                                                            ] === option
-                                                        }
-                                                        onChange={() =>
-                                                            handleAnswer(
-                                                                currentQuestionData.id,
-                                                                option
-                                                            )
-                                                        }
-                                                        className="text-blue-600 focus:ring-blue-500"
-                                                    />
-                                                    <span className="text-gray-700">
-                                                        {displayOption}
-                                                    </span>
-                                                </label>
-                                            );
-                                        }
-                                    )}
-                                </div>
-                            )}
+                                                                ] === option
+                                                            }
+                                                            onChange={() =>
+                                                                handleAnswer(
+                                                                    currentQuestionData.id,
+                                                                    option
+                                                                )
+                                                            }
+                                                            className="text-blue-600 focus:ring-blue-500"
+                                                        />
+                                                        <span className="text-gray-700">
+                                                            {displayOption}
+                                                        </span>
+                                                    </label>
+                                                );
+                                            }
+                                        )}
+                                    </div>
+                                )}
                         </div>
 
                         {/* Navigation */}

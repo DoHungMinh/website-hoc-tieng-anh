@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { 
-  ArrowLeft, 
-  Upload, 
-  Plus, 
-  Trash2, 
-  Save, 
-  Eye, 
+import {
+  ArrowLeft,
+  Upload,
+  Plus,
+  Trash2,
+  Save,
+  Eye,
   FileText,
   Volume2,
   Clock,
@@ -14,6 +14,7 @@ import {
   CheckCircle,
   BookOpen
 } from 'lucide-react';
+import { API_BASE_URL } from "@/utils/constants";
 
 interface Question {
   id: string;
@@ -92,7 +93,7 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onCancel, onSuccess }
 
   const difficultyOptions = [
     'Band 4.0-5.0',
-    'Band 5.0-6.0', 
+    'Band 5.0-6.0',
     'Band 6.0-7.0',
     'Band 7.0-8.0',
     'Band 8.0-9.0'
@@ -182,11 +183,11 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onCancel, onSuccess }
         passages: prev.passages!.map(passage =>
           passage.id === passageId
             ? {
-                ...passage,
-                questions: passage.questions.map(q =>
-                  q.id === questionId ? { ...q, ...updates } : q
-                )
-              }
+              ...passage,
+              questions: passage.questions.map(q =>
+                q.id === questionId ? { ...q, ...updates } : q
+              )
+            }
             : passage
         )
       }));
@@ -196,11 +197,11 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onCancel, onSuccess }
         sections: prev.sections!.map(section =>
           section.id === sectionId
             ? {
-                ...section,
-                questions: section.questions.map(q =>
-                  q.id === questionId ? { ...q, ...updates } : q
-                )
-              }
+              ...section,
+              questions: section.questions.map(q =>
+                q.id === questionId ? { ...q, ...updates } : q
+              )
+            }
             : section
         )
       }));
@@ -209,41 +210,43 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onCancel, onSuccess }
 
   const handleAudioUpload = async (sectionId: string, file: File) => {
     setUploadingAudio(sectionId);
-    
+
     try {
       const formData = new FormData();
       formData.append('audio', file);
       formData.append('examId', 'temp');
       formData.append('sectionId', sectionId);
-      
-      const response = await fetch('/api/ielts/upload-audio', {
+
+      formData.append('sectionId', sectionId);
+
+      const response = await fetch(`${API_BASE_URL}/ielts/upload-audio`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: formData
       });
-      
+
       if (!response.ok) {
         throw new Error('Upload failed');
       }
-      
+
       const data = await response.json();
-      
+
       setExamData(prev => ({
         ...prev,
         sections: prev.sections!.map(section =>
           section.id === sectionId
-            ? { 
-                ...section, 
-                audioFile: file, 
-                audioUrl: data.data.audioUrl,
-                audioPublicId: data.data.audioPublicId
-              }
+            ? {
+              ...section,
+              audioFile: file,
+              audioUrl: data.data.audioUrl,
+              audioPublicId: data.data.audioPublicId
+            }
             : section
         )
       }));
-      
+
       setUploadingAudio(null);
     } catch (error) {
       console.error('Upload failed:', error);
@@ -277,10 +280,12 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onCancel, onSuccess }
           questions: section.questions
         }))
       };
-      
+
       console.log('Sending exam data:', cleanExamData);
-      
-      const response = await fetch('/api/ielts', {
+
+      console.log('Sending exam data:', cleanExamData);
+
+      const response = await fetch(`${API_BASE_URL}/ielts`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -288,15 +293,15 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onCancel, onSuccess }
         },
         body: JSON.stringify(cleanExamData)
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Server error:', errorData);
         throw new Error(errorData.message || 'Failed to create exam');
       }
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         alert('Tạo đề thi thành công!');
         if (onSuccess) {
@@ -322,7 +327,7 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onCancel, onSuccess }
           <ArrowLeft className="h-5 w-5" />
           Quay lại danh sách đề thi
         </button>
-        
+
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-green-800 to-lime-600 bg-clip-text text-transparent">
@@ -330,7 +335,7 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onCancel, onSuccess }
             </h1>
             <p className="text-gray-600 mt-2">Tạo và cấu hình đề thi Reading hoặc Listening</p>
           </div>
-          
+
           <div className="flex gap-3">
             <button
               onClick={() => setActiveTab('preview')}
@@ -360,11 +365,10 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onCancel, onSuccess }
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as 'info' | 'content' | 'preview')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
-              activeTab === tab.id
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-300 ${activeTab === tab.id
                 ? 'bg-white text-green-700 shadow-sm'
                 : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
-            }`}
+              }`}
           >
             <tab.icon className="h-4 w-4" />
             {tab.label}
@@ -376,7 +380,7 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onCancel, onSuccess }
       {activeTab === 'info' && (
         <div className="bg-white rounded-2xl shadow-lg p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Thông tin cơ bản</h2>
-          
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Left Column */}
             <div className="space-y-6">
@@ -393,11 +397,10 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onCancel, onSuccess }
                     <button
                       key={type.value}
                       onClick={() => handleExamTypeChange(type.value as 'reading' | 'listening')}
-                      className={`flex items-center gap-3 px-6 py-4 rounded-xl border-2 transition-all duration-300 ${
-                        examType === type.value
+                      className={`flex items-center gap-3 px-6 py-4 rounded-xl border-2 transition-all duration-300 ${examType === type.value
                           ? 'border-green-500 bg-green-50 text-green-700'
                           : 'border-gray-200 hover:border-gray-300 text-gray-600'
-                      }`}
+                        }`}
                     >
                       <type.icon className="h-5 w-5" />
                       <span className="font-medium">{type.label}</span>
@@ -511,7 +514,7 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onCancel, onSuccess }
               {examData.passages?.map((passage, passageIndex) => (
                 <div key={passage.id} className="bg-white rounded-2xl shadow-lg p-8 mb-8">
                   <h3 className="text-xl font-bold text-gray-900 mb-6">Passage {passageIndex + 1}</h3>
-                  
+
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Passage Content */}
                     <div className="space-y-4">
@@ -534,7 +537,7 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onCancel, onSuccess }
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Nội dung Passage
@@ -613,7 +616,7 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onCancel, onSuccess }
               {examData.sections?.map((section, sectionIndex) => (
                 <div key={section.id} className="bg-white rounded-2xl shadow-lg p-8 mb-8">
                   <h3 className="text-xl font-bold text-gray-900 mb-6">Section {sectionIndex + 1}</h3>
-                  
+
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Section Info & Audio */}
                     <div className="space-y-6">
@@ -789,7 +792,7 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onCancel, onSuccess }
       {activeTab === 'preview' && (
         <div className="bg-white rounded-2xl shadow-lg p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Xem trước đề thi</h2>
-          
+
           {/* Exam Info */}
           <div className="bg-gradient-to-r from-green-50 to-lime-50 rounded-xl p-6 mb-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -828,7 +831,7 @@ const CreateIELTSExam: React.FC<CreateIELTSExamProps> = ({ onCancel, onSuccess }
           <div className="space-y-6">
             <h3 className="text-xl font-bold text-gray-900">{examData.title}</h3>
             <p className="text-gray-600">{examData.description}</p>
-            
+
             {examType === 'reading' ? (
               <div className="space-y-6">
                 {examData.passages?.map((passage, index) => (
@@ -900,7 +903,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({ question, index, isListenin
           onChange={(e) => {
             const newType = e.target.value as Question['type'];
             const updates: Partial<Question> = { type: newType };
-            
+
             // Auto-set options and reset correctAnswer when type changes
             if (newType === 'true-false-notgiven') {
               updates.options = ['TRUE', 'FALSE', 'NOT GIVEN'];
@@ -916,7 +919,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({ question, index, isListenin
               updates.options = undefined;
               updates.correctAnswer = '';
             }
-            
+
             onUpdate(updates);
           }}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none"

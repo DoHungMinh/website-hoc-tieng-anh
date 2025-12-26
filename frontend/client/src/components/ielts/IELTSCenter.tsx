@@ -16,6 +16,7 @@ import IELTSTest from "./IELTSTest";
 import IELTSExamCard from "./IELTSExamCard";
 import IELTSTestHistory from "./IELTSTestHistory";
 import { useCachedFetch } from "@/utils/apiCache";
+import { API_BASE_URL } from "@/utils/constants";
 
 interface IELTSExam {
     _id: string;
@@ -44,7 +45,7 @@ const IELTSCenter = () => {
 
                 // Sử dụng cache với TTL 10 phút cho IELTS exams
                 const data = await fetchWithCache(
-                    "/api/ielts?limit=6&status=published",
+                    `${API_BASE_URL}/ielts?limit=6&status=published`,
                     undefined,
                     "ielts-exams-home",
                     10 * 60 * 1000 // 10 phút

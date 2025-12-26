@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { 
-  CheckCircle2, 
-  Target, 
+import {
+  CheckCircle2,
+  Target,
   Calendar,
   BarChart3,
   ArrowRight,
   BookOpen,
   Headphones
 } from 'lucide-react';
+import { API_BASE_URL } from '@/utils/constants';
 
 interface TestResult {
   _id: string;
@@ -38,14 +39,14 @@ const RecentTestHistory = ({ onViewAll, onViewDetail }: RecentTestHistoryProps) 
     try {
       setLoading(true);
       setError(null);
-      
+
       const token = localStorage.getItem('token');
       if (!token) {
         setError('Vui lòng đăng nhập để xem lịch sử làm bài');
         return;
       }
 
-      const response = await fetch(`/api/ielts/results/history?page=1&limit=5`, {
+      const response = await fetch(`${API_BASE_URL}/ielts/results/history?page=1&limit=5`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -191,7 +192,7 @@ const RecentTestHistory = ({ onViewAll, onViewDetail }: RecentTestHistoryProps) 
                     {result.examTitle}
                   </h4>
                 </div>
-                
+
                 <div className="flex items-center gap-3 text-xs text-gray-600">
                   <div className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />

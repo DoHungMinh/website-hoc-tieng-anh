@@ -44,7 +44,7 @@ const vocabularyCourses: Course[] = [
     rating: 4.8,
     description: 'Học 500+ từ vựng thiết yếu cho cuộc sống hàng ngày với phương pháp ghi nhớ thông minh',
     features: ['Học từ theo chủ đề', 'Flashcard thông minh', 'Game ôn tập', 'Phát âm chuẩn'],
-    thumbnail: '/api/placeholder/300/200',
+    thumbnail: 'https://placehold.co/300x200',
     whatYouLearn: [
       'Nắm vững 500+ từ vựng cơ bản hàng ngày',
       'Sử dụng từ vựng trong các tình huống thực tế',
@@ -110,7 +110,7 @@ const vocabularyCourses: Course[] = [
       name: 'Cô Minh Anh',
       title: 'Chuyên gia giảng dạy từ vựng',
       experience: '8 năm kinh nghiệm giảng dạy, Thạc sĩ Ngôn ngữ Anh',
-      avatar: '/api/placeholder/64/64'
+      avatar: 'https://placehold.co/64x64'
     }
   },
   {
@@ -127,7 +127,7 @@ const vocabularyCourses: Course[] = [
     description: 'Mở rộng vốn từ vựng với 800+ từ mới cho giao tiếp và công việc cơ bản',
     features: ['Từ vựng theo tình huống', 'Thực hành hội thoại', 'Quiz tương tác', 'Theo dõi tiến độ'],
     isPopular: true,
-    thumbnail: '/api/placeholder/300/200',
+    thumbnail: 'https://placehold.co/300x200',
     whatYouLearn: [
       'Mở rộng vốn từ với 800+ từ vựng mới',
       'Giao tiếp tự tin trong các tình huống thông dụng',
@@ -184,7 +184,7 @@ const vocabularyCourses: Course[] = [
       name: 'Thầy Đức Minh',
       title: 'Giảng viên tiếng Anh giao tiếp',
       experience: '10 năm kinh nghiệm, Chứng chỉ TESOL',
-      avatar: '/api/placeholder/64/64'
+      avatar: 'https://placehold.co/64x64'
     }
   },
   // Add more vocabulary courses B1-C2
@@ -201,7 +201,7 @@ const vocabularyCourses: Course[] = [
     rating: 4.9,
     description: 'Nâng cao vốn từ với 1200+ từ vựng chuyên sâu cho công việc và học tập',
     features: ['Từ vựng chuyên ngành', 'Collocations', 'Idioms phổ biến', 'Writing exercises'],
-    thumbnail: '/api/placeholder/300/200',
+    thumbnail: 'https://placehold.co/300x200',
     whatYouLearn: [
       'Nắm vững 1200+ từ vựng trung cấp',
       'Sử dụng collocations và idioms tự nhiên',
@@ -240,7 +240,7 @@ const vocabularyCourses: Course[] = [
       name: 'Thầy Quang Minh',
       title: 'Chuyên gia từ vựng Business English',
       experience: '15 năm kinh nghiệm, MBA từ Úc',
-      avatar: '/api/placeholder/64/64'
+      avatar: 'https://placehold.co/64x64'
     }
   },
   {
@@ -256,7 +256,7 @@ const vocabularyCourses: Course[] = [
     rating: 4.8,
     description: 'Làm chủ 1500+ từ vựng phức tạp cho IELTS, công việc và học thuật',
     features: ['Academic vocabulary', 'Business English', 'Advanced collocations', 'Critical thinking'],
-    thumbnail: '/api/placeholder/300/200',
+    thumbnail: 'https://placehold.co/300x200',
     whatYouLearn: [
       'Thành thạo 1500+ từ vựng nâng cao',
       'Sử dụng ngôn ngữ học thuật chính xác',
@@ -295,7 +295,7 @@ const vocabularyCourses: Course[] = [
       name: 'Cô Sarah Johnson',
       title: 'Giảng viên IELTS và Academic English',
       experience: '12 năm kinh nghiệm, PhD Linguistics',
-      avatar: '/api/placeholder/64/64'
+      avatar: 'https://placehold.co/64x64'
     }
   },
   {
@@ -311,7 +311,7 @@ const vocabularyCourses: Course[] = [
     rating: 4.9,
     description: 'Thành thạo 2000+ từ vựng chuyên nghiệp và học thuật cao cấp',
     features: ['Research vocabulary', 'Professional terms', 'Nuanced expressions', 'Advanced writing'],
-    thumbnail: '/api/placeholder/300/200',
+    thumbnail: 'https://placehold.co/300x200',
     whatYouLearn: [
       'Làm chủ 2000+ từ vựng chuyên sâu',
       'Sử dụng register phù hợp từng ngữ cảnh',
@@ -341,7 +341,7 @@ const vocabularyCourses: Course[] = [
       name: 'Prof. Michael Chen',
       title: 'Professor of Applied Linguistics',
       experience: '20 năm kinh nghiệm, Cambridge examiner',
-      avatar: '/api/placeholder/64/64'
+      avatar: 'https://placehold.co/64x64'
     }
   },
   {
@@ -357,7 +357,7 @@ const vocabularyCourses: Course[] = [
     rating: 5.0,
     description: 'Đạt trình độ native với 3000+ từ vựng tinh tế và sophisticated expressions',
     features: ['Literary vocabulary', 'Sophisticated expressions', 'Cultural nuances', 'Masterclass content'],
-    thumbnail: '/api/placeholder/300/200',
+    thumbnail: 'https://placehold.co/300x200',
     whatYouLearn: [
       'Thành thạo 3000+ từ vựng sophisticated',
       'Hiểu cultural references và allusions',
@@ -387,7 +387,7 @@ const vocabularyCourses: Course[] = [
       name: 'Dr. Elizabeth Taylor',
       title: 'Literary Scholar và Language Expert',
       experience: 'Oxford PhD, 25 years experience',
-      avatar: '/api/placeholder/64/64'
+      avatar: 'https://placehold.co/64x64'
     }
   },
   // Idioms course - Special vocabulary course
@@ -405,7 +405,7 @@ const vocabularyCourses: Course[] = [
     description: 'Học 300+ thành ngữ tiếng Anh phổ biến với ý nghĩa, cách dùng và ví dụ thực tế',
     features: ['300+ idioms phổ biến', 'Ví dụ trong ngữ cảnh', 'Audio pronunciation', 'Practice exercises'],
     isPopular: true,
-    thumbnail: '/api/placeholder/300/200',
+    thumbnail: 'https://placehold.co/300x200',
     whatYouLearn: [
       'Nắm vững 300+ thành ngữ tiếng Anh thông dụng nhất',
       'Hiểu ý nghĩa và nguồn gốc của các idioms',
@@ -492,7 +492,7 @@ const vocabularyCourses: Course[] = [
       name: 'Cô Emma Williams',
       title: 'Native Speaker và Idioms Specialist',
       experience: '18 năm giảng dạy, Chuyên gia văn hóa Anh-Mỹ',
-      avatar: '/api/placeholder/64/64'
+      avatar: 'https://placehold.co/64x64'
     }
   }
 ];
@@ -511,7 +511,7 @@ const grammarCourses: Course[] = [
     rating: 4.7,
     description: 'Nắm vững các cấu trúc ngữ pháp cơ bản nhất với bài tập tương tác',
     features: ['Present tenses', 'Basic sentence structure', 'Interactive exercises', 'Instant feedback'],
-    thumbnail: '/api/placeholder/300/200',
+    thumbnail: 'https://placehold.co/300x200',
     whatYouLearn: [
       'Hiểu và sử dụng thì hiện tại đơn và hiện tại tiếp diễn',
       'Xây dựng câu cơ bản đúng ngữ pháp',
@@ -559,7 +559,7 @@ const grammarCourses: Course[] = [
       name: 'Cô Thu Hà',
       title: 'Chuyên gia ngữ pháp tiếng Anh',
       experience: '7 năm kinh nghiệm, Thạc sĩ Ngôn ngữ học',
-      avatar: '/api/placeholder/64/64'
+      avatar: 'https://placehold.co/64x64'
     }
   },
   {
@@ -576,7 +576,7 @@ const grammarCourses: Course[] = [
     description: 'Mở rộng kiến thức ngữ pháp với các thì và cấu trúc phức tạp hơn',
     features: ['Past & Future tenses', 'Conditional sentences', 'Modal verbs', 'Error correction'],
     isPopular: true,
-    thumbnail: '/api/placeholder/300/200',
+    thumbnail: 'https://placehold.co/300x200',
     whatYouLearn: [
       'Thành thạo các thì quá khứ và tương lai',
       'Sử dụng modal verbs (can, could, should, must)',
@@ -624,7 +624,7 @@ const grammarCourses: Course[] = [
       name: 'Thầy Hoàng Nam',
       title: 'Giảng viên ngữ pháp cao cấp',
       experience: '12 năm kinh nghiệm, Chứng chỉ CELTA',
-      avatar: '/api/placeholder/64/64'
+      avatar: 'https://placehold.co/64x64'
     }
   },
   // Add more grammar courses B1-C2
@@ -641,7 +641,7 @@ const grammarCourses: Course[] = [
     rating: 4.9,
     description: 'Thành thạo các cấu trúc ngữ pháp phức tạp cho giao tiếp và viết',
     features: ['Complex sentences', 'Passive voice', 'Reported speech', 'Advanced conditionals'],
-    thumbnail: '/api/placeholder/300/200',
+    thumbnail: 'https://placehold.co/300x200',
     whatYouLearn: [
       'Xây dựng câu phức tạp với nhiều mệnh đề',
       'Sử dụng thành thạo câu bị động',
@@ -680,7 +680,7 @@ const grammarCourses: Course[] = [
       name: 'Cô Lan Phương',
       title: 'Chuyên gia ngữ pháp IELTS',
       experience: '14 năm kinh nghiệm, IELTS 8.5',
-      avatar: '/api/placeholder/64/64'
+      avatar: 'https://placehold.co/64x64'
     }
   },
   {
@@ -696,7 +696,7 @@ const grammarCourses: Course[] = [
     rating: 4.8,
     description: 'Hoàn thiện ngữ pháp với các cấu trúc sophisticated cho IELTS và công việc',
     features: ['Subjunctive mood', 'Complex conditionals', 'Advanced linking', 'Style variation'],
-    thumbnail: '/api/placeholder/300/200',
+    thumbnail: 'https://placehold.co/300x200',
     whatYouLearn: [
       'Sử dụng subjunctive mood chính xác',
       'Mixed conditionals và advanced forms',
@@ -735,7 +735,7 @@ const grammarCourses: Course[] = [
       name: 'Dr. James Wilson',
       title: 'Academic Writing Specialist',
       experience: '16 năm kinh nghiệm, Cambridge trainer',
-      avatar: '/api/placeholder/64/64'
+      avatar: 'https://placehold.co/64x64'
     }
   },
   {
@@ -751,7 +751,7 @@ const grammarCourses: Course[] = [
     rating: 4.9,
     description: 'Làm chủ hoàn toàn ngữ pháp tiếng Anh ở trình độ chuyên nghiệp',
     features: ['Formal register', 'Academic writing', 'Stylistic devices', 'Error analysis'],
-    thumbnail: '/api/placeholder/300/200',
+    thumbnail: 'https://placehold.co/300x200',
     whatYouLearn: [
       'Thành thạo formal và academic register',
       'Sử dụng stylistic devices hiệu quả',
@@ -781,7 +781,7 @@ const grammarCourses: Course[] = [
       name: 'Prof. Catherine Brown',
       title: 'Applied Linguistics Professor',
       experience: '22 năm kinh nghiệm, PhD Cambridge',
-      avatar: '/api/placeholder/64/64'
+      avatar: 'https://placehold.co/64x64'
     }
   },
   {
@@ -797,7 +797,7 @@ const grammarCourses: Course[] = [
     rating: 5.0,
     description: 'Đạt trình độ native với các cấu trúc ngữ pháp tinh tế nhất',
     features: ['Nuanced structures', 'Literary devices', 'Regional variations', 'Expert analysis'],
-    thumbnail: '/api/placeholder/300/200',
+    thumbnail: 'https://placehold.co/300x200',
     whatYouLearn: [
       'Thành thạo nuanced grammatical structures',
       'Hiểu regional variations',
@@ -827,7 +827,7 @@ const grammarCourses: Course[] = [
       name: 'Prof. David Crystal',
       title: 'World-renowned Linguist',
       experience: '40+ years, Author of 100+ books',
-      avatar: '/api/placeholder/64/64'
+      avatar: 'https://placehold.co/64x64'
     }
   }
 ];

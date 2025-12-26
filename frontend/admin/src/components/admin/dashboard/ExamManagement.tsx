@@ -16,6 +16,7 @@ import CreateIELTSExam from "./CreateIELTSExam";
 import EditIELTSExam from "./EditIELTSExam";
 import AIIELTSReadingCreator from "./AIIELTSReadingCreator";
 import { AIGeneratedIELTSReading } from "@/services/aiIELTSService";
+import { API_BASE_URL } from "@/utils/constants";
 
 interface Exam {
     _id: string;
@@ -70,7 +71,8 @@ const ExamManagement = () => {
             }
 
             console.log("Fetching exams...");
-            const response = await fetch("/api/ielts?status=all", {
+            console.log("Fetching exams...");
+            const response = await fetch(`${API_BASE_URL}/ielts?status=all`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
@@ -140,7 +142,8 @@ const ExamManagement = () => {
             }
 
             console.log("Fetching stats...");
-            const response = await fetch("/api/ielts/admin/stats", {
+            console.log("Fetching stats...");
+            const response = await fetch(`${API_BASE_URL}/ielts/admin/stats`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
@@ -216,7 +219,7 @@ const ExamManagement = () => {
                 return;
             }
 
-            const response = await fetch(`/api/ielts/${examId}`, {
+            const response = await fetch(`${API_BASE_URL}/ielts/${examId}`, {
                 method: "DELETE",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -257,7 +260,7 @@ const ExamManagement = () => {
                 return;
             }
 
-            const response = await fetch(`/api/ielts/${examId}/status`, {
+            const response = await fetch(`${API_BASE_URL}/ielts/${examId}/status`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -426,9 +429,8 @@ const ExamManagement = () => {
                         className="flex items-center justify-center gap-2 px-4 py-2 text-gray-700 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
                     >
                         <RefreshCw
-                            className={`h-5 w-5 ${
-                                loading || statsLoading ? "animate-spin" : ""
-                            }`}
+                            className={`h-5 w-5 ${loading || statsLoading ? "animate-spin" : ""
+                                }`}
                         />
                         Làm mới
                     </button>
@@ -605,181 +607,177 @@ const ExamManagement = () => {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {loading
                                 ? // Skeleton loading rows
-                                  Array.from({ length: 5 }).map((_, index) => (
-                                      <tr key={index} className="animate-pulse">
-                                          <td className="px-6 py-4 whitespace-nowrap">
-                                              <div className="flex items-center">
-                                                  <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
-                                                  <div className="ml-4">
-                                                      <div className="w-32 h-4 mb-2 bg-gray-200 rounded"></div>
-                                                      <div className="w-24 h-3 bg-gray-200 rounded"></div>
-                                                  </div>
-                                              </div>
-                                          </td>
-                                          <td className="hidden px-6 py-4 whitespace-nowrap md:table-cell">
-                                              <div className="w-16 h-6 bg-gray-200 rounded-full"></div>
-                                          </td>
-                                          <td className="hidden px-6 py-4 whitespace-nowrap lg:table-cell">
-                                              <div className="w-20 h-4 bg-gray-200 rounded"></div>
-                                          </td>
-                                          <td className="hidden px-6 py-4 whitespace-nowrap lg:table-cell">
-                                              <div className="w-16 h-4 bg-gray-200 rounded"></div>
-                                          </td>
-                                          <td className="hidden px-6 py-4 whitespace-nowrap md:table-cell">
-                                              <div className="w-8 h-4 bg-gray-200 rounded"></div>
-                                          </td>
-                                          <td className="px-6 py-4 whitespace-nowrap">
-                                              <div className="w-20 h-6 bg-gray-200 rounded-full"></div>
-                                          </td>
-                                          <td className="hidden px-6 py-4 whitespace-nowrap lg:table-cell">
-                                              <div className="w-24 h-4 bg-gray-200 rounded"></div>
-                                          </td>
-                                          <td className="px-6 py-4 text-right whitespace-nowrap">
-                                              <div className="flex items-center justify-end gap-2">
-                                                  <div className="w-16 h-8 bg-gray-200 rounded"></div>
-                                                  <div className="w-8 h-8 bg-gray-200 rounded"></div>
-                                                  <div className="w-8 h-8 bg-gray-200 rounded"></div>
-                                              </div>
-                                          </td>
-                                      </tr>
-                                  ))
+                                Array.from({ length: 5 }).map((_, index) => (
+                                    <tr key={index} className="animate-pulse">
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="flex items-center">
+                                                <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
+                                                <div className="ml-4">
+                                                    <div className="w-32 h-4 mb-2 bg-gray-200 rounded"></div>
+                                                    <div className="w-24 h-3 bg-gray-200 rounded"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="hidden px-6 py-4 whitespace-nowrap md:table-cell">
+                                            <div className="w-16 h-6 bg-gray-200 rounded-full"></div>
+                                        </td>
+                                        <td className="hidden px-6 py-4 whitespace-nowrap lg:table-cell">
+                                            <div className="w-20 h-4 bg-gray-200 rounded"></div>
+                                        </td>
+                                        <td className="hidden px-6 py-4 whitespace-nowrap lg:table-cell">
+                                            <div className="w-16 h-4 bg-gray-200 rounded"></div>
+                                        </td>
+                                        <td className="hidden px-6 py-4 whitespace-nowrap md:table-cell">
+                                            <div className="w-8 h-4 bg-gray-200 rounded"></div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="w-20 h-6 bg-gray-200 rounded-full"></div>
+                                        </td>
+                                        <td className="hidden px-6 py-4 whitespace-nowrap lg:table-cell">
+                                            <div className="w-24 h-4 bg-gray-200 rounded"></div>
+                                        </td>
+                                        <td className="px-6 py-4 text-right whitespace-nowrap">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <div className="w-16 h-8 bg-gray-200 rounded"></div>
+                                                <div className="w-8 h-8 bg-gray-200 rounded"></div>
+                                                <div className="w-8 h-8 bg-gray-200 rounded"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
                                 : filteredExams.map((exam) => (
-                                      <tr
-                                          key={exam._id}
-                                          className="transition-colors hover:bg-gray-50"
-                                      >
-                                          <td className="px-6 py-4 whitespace-nowrap">
-                                              <div className="flex items-center">
-                                                  <div
-                                                      className={`flex-shrink-0 h-10 w-10 rounded-lg flex items-center justify-center ${
-                                                          exam.type ===
-                                                          "reading"
-                                                              ? "bg-blue-100 text-blue-600"
-                                                              : "bg-purple-100 text-purple-600"
-                                                      }`}
-                                                  >
-                                                      {exam.type ===
-                                                      "reading" ? (
-                                                          <BookOpen className="w-5 h-5" />
-                                                      ) : (
-                                                          <Volume2 className="w-5 h-5" />
-                                                      )}
-                                                  </div>
-                                                  <div className="ml-4">
-                                                      <div className="text-sm font-medium text-gray-900">
-                                                          {exam.title}
-                                                      </div>
-                                                      <div className="text-xs text-gray-500 md:hidden">
-                                                          {exam.type ===
-                                                          "reading"
-                                                              ? "Reading"
-                                                              : "Listening"}{" "}
-                                                          •{" "}
-                                                          {exam.totalQuestions}{" "}
-                                                          câu
-                                                      </div>
-                                                      <div className="text-xs text-gray-500 lg:hidden">
-                                                          ID:{" "}
-                                                          {exam._id.slice(-8)}
-                                                      </div>
-                                                  </div>
-                                              </div>
-                                          </td>
-                                          <td className="hidden px-6 py-4 whitespace-nowrap md:table-cell">
-                                              <span
-                                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                      exam.type === "reading"
-                                                          ? "bg-blue-100 text-blue-800"
-                                                          : "bg-purple-100 text-purple-800"
-                                                  }`}
-                                              >
-                                                  {exam.type === "reading"
-                                                      ? "Reading"
-                                                      : "Listening"}
-                                              </span>
-                                          </td>
-                                          <td className="hidden px-6 py-4 text-sm text-gray-900 whitespace-nowrap lg:table-cell">
-                                              {exam.difficulty}
-                                          </td>
-                                          <td className="hidden px-6 py-4 text-sm text-gray-900 whitespace-nowrap lg:table-cell">
-                                              <div className="flex items-center gap-1">
-                                                  <Clock className="w-4 h-4 text-gray-400" />
-                                                  {exam.duration} phút
-                                              </div>
-                                          </td>
-                                          <td className="hidden px-6 py-4 text-sm text-gray-900 whitespace-nowrap md:table-cell">
-                                              {exam.totalQuestions}
-                                          </td>
-                                          <td className="px-6 py-4 whitespace-nowrap">
-                                              <span
-                                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                      exam.status ===
-                                                      "published"
-                                                          ? "bg-green-100 text-green-800"
-                                                          : "bg-yellow-100 text-yellow-800"
-                                                  }`}
-                                              >
-                                                  {exam.status === "published"
-                                                      ? "Đã xuất bản"
-                                                      : "Bản nháp"}
-                                              </span>
-                                          </td>
-                                          <td className="hidden px-6 py-4 text-sm text-gray-500 whitespace-nowrap lg:table-cell">
-                                              {new Date(
-                                                  exam.createdAt
-                                              ).toLocaleDateString("vi-VN")}
-                                          </td>
-                                          <td className="px-6 py-4 text-sm font-medium text-right whitespace-nowrap">
-                                              <div className="flex items-center justify-end gap-2">
-                                                  <button
-                                                      onClick={() =>
-                                                          handleToggleStatus(
-                                                              exam._id,
-                                                              exam.status
-                                                          )
-                                                      }
-                                                      className={`px-3 py-1 rounded-lg text-xs font-medium ${
-                                                          exam.status ===
-                                                          "published"
-                                                              ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-                                                              : "bg-green-100 text-green-800 hover:bg-green-200"
-                                                      } transition-colors`}
-                                                      title={
-                                                          exam.status ===
-                                                          "published"
-                                                              ? "Ẩn đề thi"
-                                                              : "Xuất bản đề thi"
-                                                      }
-                                                  >
-                                                      {exam.status ===
-                                                      "published"
-                                                          ? "Ẩn"
-                                                          : "Xuất bản"}
-                                                  </button>
-                                                  <button
-                                                      onClick={() =>
-                                                          handleEditExam(exam)
-                                                      }
-                                                      className="p-2 text-green-600 transition-colors rounded-lg hover:text-green-700 hover:bg-green-50"
-                                                      title="Chỉnh sửa"
-                                                  >
-                                                      <Edit className="w-4 h-4" />
-                                                  </button>
-                                                  <button
-                                                      onClick={() =>
-                                                          handleDeleteExam(
-                                                              exam._id
-                                                          )
-                                                      }
-                                                      className="p-2 text-red-600 transition-colors rounded-lg hover:text-red-700 hover:bg-red-50"
-                                                      title="Xóa"
-                                                  >
-                                                      <Trash2 className="w-4 h-4" />
-                                                  </button>
-                                              </div>
-                                          </td>
-                                      </tr>
-                                  ))}
+                                    <tr
+                                        key={exam._id}
+                                        className="transition-colors hover:bg-gray-50"
+                                    >
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="flex items-center">
+                                                <div
+                                                    className={`flex-shrink-0 h-10 w-10 rounded-lg flex items-center justify-center ${exam.type ===
+                                                        "reading"
+                                                        ? "bg-blue-100 text-blue-600"
+                                                        : "bg-purple-100 text-purple-600"
+                                                        }`}
+                                                >
+                                                    {exam.type ===
+                                                        "reading" ? (
+                                                        <BookOpen className="w-5 h-5" />
+                                                    ) : (
+                                                        <Volume2 className="w-5 h-5" />
+                                                    )}
+                                                </div>
+                                                <div className="ml-4">
+                                                    <div className="text-sm font-medium text-gray-900">
+                                                        {exam.title}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500 md:hidden">
+                                                        {exam.type ===
+                                                            "reading"
+                                                            ? "Reading"
+                                                            : "Listening"}{" "}
+                                                        •{" "}
+                                                        {exam.totalQuestions}{" "}
+                                                        câu
+                                                    </div>
+                                                    <div className="text-xs text-gray-500 lg:hidden">
+                                                        ID:{" "}
+                                                        {exam._id.slice(-8)}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="hidden px-6 py-4 whitespace-nowrap md:table-cell">
+                                            <span
+                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${exam.type === "reading"
+                                                    ? "bg-blue-100 text-blue-800"
+                                                    : "bg-purple-100 text-purple-800"
+                                                    }`}
+                                            >
+                                                {exam.type === "reading"
+                                                    ? "Reading"
+                                                    : "Listening"}
+                                            </span>
+                                        </td>
+                                        <td className="hidden px-6 py-4 text-sm text-gray-900 whitespace-nowrap lg:table-cell">
+                                            {exam.difficulty}
+                                        </td>
+                                        <td className="hidden px-6 py-4 text-sm text-gray-900 whitespace-nowrap lg:table-cell">
+                                            <div className="flex items-center gap-1">
+                                                <Clock className="w-4 h-4 text-gray-400" />
+                                                {exam.duration} phút
+                                            </div>
+                                        </td>
+                                        <td className="hidden px-6 py-4 text-sm text-gray-900 whitespace-nowrap md:table-cell">
+                                            {exam.totalQuestions}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span
+                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${exam.status ===
+                                                    "published"
+                                                    ? "bg-green-100 text-green-800"
+                                                    : "bg-yellow-100 text-yellow-800"
+                                                    }`}
+                                            >
+                                                {exam.status === "published"
+                                                    ? "Đã xuất bản"
+                                                    : "Bản nháp"}
+                                            </span>
+                                        </td>
+                                        <td className="hidden px-6 py-4 text-sm text-gray-500 whitespace-nowrap lg:table-cell">
+                                            {new Date(
+                                                exam.createdAt
+                                            ).toLocaleDateString("vi-VN")}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm font-medium text-right whitespace-nowrap">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button
+                                                    onClick={() =>
+                                                        handleToggleStatus(
+                                                            exam._id,
+                                                            exam.status
+                                                        )
+                                                    }
+                                                    className={`px-3 py-1 rounded-lg text-xs font-medium ${exam.status ===
+                                                        "published"
+                                                        ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                                                        : "bg-green-100 text-green-800 hover:bg-green-200"
+                                                        } transition-colors`}
+                                                    title={
+                                                        exam.status ===
+                                                            "published"
+                                                            ? "Ẩn đề thi"
+                                                            : "Xuất bản đề thi"
+                                                    }
+                                                >
+                                                    {exam.status ===
+                                                        "published"
+                                                        ? "Ẩn"
+                                                        : "Xuất bản"}
+                                                </button>
+                                                <button
+                                                    onClick={() =>
+                                                        handleEditExam(exam)
+                                                    }
+                                                    className="p-2 text-green-600 transition-colors rounded-lg hover:text-green-700 hover:bg-green-50"
+                                                    title="Chỉnh sửa"
+                                                >
+                                                    <Edit className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() =>
+                                                        handleDeleteExam(
+                                                            exam._id
+                                                        )
+                                                    }
+                                                    className="p-2 text-red-600 transition-colors rounded-lg hover:text-red-700 hover:bg-red-50"
+                                                    title="Xóa"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
                         </tbody>
                     </table>
                 </div>
@@ -794,8 +792,8 @@ const ExamManagement = () => {
                         </h3>
                         <p className="mb-6 text-gray-500">
                             {searchTerm ||
-                            filterType !== "all" ||
-                            filterLevel !== "all"
+                                filterType !== "all" ||
+                                filterLevel !== "all"
                                 ? "Không tìm thấy đề thi phù hợp với bộ lọc."
                                 : "Chưa có đề thi nào được tạo."}
                         </p>
