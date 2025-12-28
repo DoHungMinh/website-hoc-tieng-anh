@@ -1,6 +1,6 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PlayCircle, CheckCircle, Star, Clock } from 'lucide-react';
-import VideoListeningLibrary from '../video/VideoListeningLibrary';
 import RecentTestHistory from '../ielts/RecentTestHistory';
 import YouTubePlayer from '../YouTubePlayer';
 
@@ -22,7 +22,8 @@ interface PracticeItem {
 }
 
 const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
-  const [showVideoListening, setShowVideoListening] = useState(false);
+  const navigate = useNavigate(); // Hook for navigation
+
   const [youtubePlayer, setYoutubePlayer] = useState<{
     isOpen: boolean;
     playlistId: string;
@@ -33,9 +34,6 @@ const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
     title: ''
   });
 
-  if (showVideoListening) {
-    return <VideoListeningLibrary onBack={() => setShowVideoListening(false)} />;
-  }
   const practiceItems: PracticeItem[] = [
     {
       title: 'VIDEO LISTENING EXERCISE',
@@ -45,6 +43,15 @@ const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
       image: 'https://images.pexels.com/photos/3184338/pexels-photo-3184338.jpeg?auto=compress&cs=tinysrgb&w=400',
       isIELTS: true,
       description: 'Luyện nghe tiếng Anh qua video YouTube với bài tập điền từ vào chỗ trống - Miễn phí & hiệu quả'
+    },
+    {
+      title: 'Luyện thi IELTS (Reading & Listening)',
+      level: 'Real Test',
+      duration: '60 phút',
+      rating: 5.0,
+      image: 'https://images.pexels.com/photos/3769714/pexels-photo-3769714.jpeg?auto=compress&cs=tinysrgb&w=400',
+      isIELTS: true,
+      description: 'Kho đề thi IELTS Reading & Listening chính thức có chấm điểm và giải thích chi tiết'
     },
     {
       title: 'Bài tập từ vựng cơ bản',
@@ -76,10 +83,10 @@ const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
   ];
 
   return (
-    <section id="practice" className="py-20 bg-gradient-to-br from-green-50 to-lime-50">
+    <section id="practice" className="py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-800 to-lime-600 bg-clip-text text-transparent mb-6">
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 font-display tracking-tight">
             Luyện tập hàng ngày
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
@@ -95,11 +102,11 @@ const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
               {practiceItems.map((item, index) => (
                 <div
                   key={index}
-                  className={`bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 group flex flex-col h-full ${item.isIELTS ? 'ring-2 ring-green-500 relative' : ''
+                  className={`bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group flex flex-col h-full ${item.isIELTS ? 'ring-1 ring-black relative' : ''
                     }`}
                 >
                   {item.isIELTS && (
-                    <div className="absolute top-2 right-2 z-10 bg-gradient-to-r from-green-500 to-lime-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                    <div className="absolute top-3 right-3 z-10 bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wider shadow-sm">
                       HOT
                     </div>
                   )}
@@ -114,11 +121,7 @@ const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
                       <PlayCircle className="h-8 w-8 text-white" />
                     </button>
                     <div className="absolute bottom-4 left-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${item.level === 'Beginner' ? 'bg-green-500 text-white' :
-                          item.level === 'Intermediate' ? 'bg-lime-500 text-green-900' :
-                            item.level === 'Advanced' ? 'bg-orange-500 text-white' :
-                              item.level === 'Expert' ? 'bg-red-500 text-white' :
-                                'bg-gradient-to-r from-green-500 to-lime-500 text-white'
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${item.level === 'All Levels' || item.level === 'Real Test' ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-900 text-white'
                         }`}>
                         {item.level}
                       </span>
@@ -140,15 +143,20 @@ const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
                         {item.duration}
                       </div>
                       <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 text-yellow-500" />
+                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                         {item.rating}
                       </div>
                     </div>
 
                     <button
                       onClick={() => {
-                        if (item.isIELTS) {
-                          setShowVideoListening(true);
+                        if (item.title === 'VIDEO LISTENING EXERCISE') {
+                          navigate('/practice/video-listening');
+                        } else if (item.title === 'Luyện thi IELTS (Reading & Listening)') {
+                          navigate('/practice/ielts-test');
+                        } else if (item.isIELTS) {
+                          // Default fallback
+                          navigate('/practice/ielts-test');
                         } else if (item.courseType === 'vocabulary') {
                           onNavigate?.('courses');
                         } else if (item.youtubePlaylistId) {
@@ -161,13 +169,13 @@ const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
                           window.open(item.youtubeUrl, '_blank');
                         }
                       }}
-                      className={`w-full py-3 rounded-xl font-medium transition-all duration-300 flex items-center justify-center gap-2 mt-auto ${item.isIELTS
-                          ? 'bg-gradient-to-r from-green-600 to-lime-600 hover:from-green-700 hover:to-lime-700 text-white shadow-lg hover:shadow-xl'
-                          : 'bg-gradient-to-r from-green-600 to-lime-600 hover:from-green-700 hover:to-lime-700 text-white'
+                      className={`w-full py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2 mt-auto border-2 ${item.isIELTS
+                        ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700 hover:border-indigo-700 shadow-md hover:shadow-xl'
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-indigo-600 hover:text-indigo-600 hover:bg-indigo-50'
                         }`}
                     >
                       <CheckCircle className="h-5 w-5" />
-                      {item.isIELTS ? 'Vào Video Listening' : 'Tiếp tục học'}
+                      {item.title === 'VIDEO LISTENING EXERCISE' ? 'Vào Video Listening' : item.isIELTS ? 'Làm bài thi ngay' : 'Tiếp tục học'}
                     </button>
                   </div>
                 </div>
@@ -179,7 +187,7 @@ const Practice: React.FC<PracticeProps> = ({ onNavigate }) => {
           <div className="xl:col-span-1">
             <div className="sticky top-8">
               <RecentTestHistory
-                onViewAll={() => setShowVideoListening(true)}
+                onViewAll={() => navigate('/practice/ielts-test')}
               />
             </div>
           </div>

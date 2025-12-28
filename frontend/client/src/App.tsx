@@ -12,6 +12,9 @@ const LevelDetailPage = lazy(() => import("./pages/LevelDetailPage"));
 const CourseDetailPage = lazy(() => import("./pages/CourseDetailPage"));
 const CourseLearningPage = lazy(() => import("./pages/CourseLearningPage"));
 const PracticePage = lazy(() => import("./pages/PracticePage"));
+const VideoListeningPage = lazy(() => import("./pages/VideoListeningPage"));
+const IELTSTestPage = lazy(() => import("./pages/IELTSTestPage"));
+const IELTSTestTakingPage = lazy(() => import("./pages/IELTSTestTakingPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const PlacementTestPage = lazy(() => import("./pages/PlacementTestPage"));
 const ChatPage = lazy(() => import("./pages/Chat/Chat"));
@@ -54,6 +57,18 @@ const router = createBrowserRouter([
             {
                 path: "practice",
                 element: <PracticePage />,
+            },
+            {
+                path: "practice/video-listening",
+                element: <VideoListeningPage />,
+            },
+            {
+                path: "practice/ielts-test",
+                element: <IELTSTestPage />,
+            },
+            {
+                path: "practice/ielts-test/taking",
+                element: <IELTSTestTakingPage />,
             },
             {
                 path: "aichat",

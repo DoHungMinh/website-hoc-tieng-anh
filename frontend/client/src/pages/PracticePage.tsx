@@ -2,19 +2,31 @@ import { lazy, Suspense, memo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import PageLoader from "@/components/common/PageLoader";
 
-const IELTSExamListComponent = lazy(() => import("@/components/ielts/IELTSExamList"));
+const Practice = lazy(() => import("@/components/learning/Practice"));
 
 /**
- * Practice Page - IELTS Exam List
+ * Practice Page - Practice Hub
  */
 const PracticePage = memo(() => {
     const navigate = useNavigate();
 
-    const handleBack = useCallback(() => navigate("/"), [navigate]);
+    const handleNavigate = useCallback((page: string) => {
+        const routeMap: Record<string, string> = {
+            home: "/",
+            login: "/login",
+            register: "/register",
+            courses: "/courses",
+            practice: "/practice",
+            dashboard: "/dashboard",
+            profile: "/profile",
+            "placement-test": "/placement-test",
+        };
+        navigate(routeMap[page] || "/");
+    }, [navigate]);
 
     return (
         <Suspense fallback={<PageLoader />}>
-            <IELTSExamListComponent onBack={handleBack} />
+            <Practice onNavigate={handleNavigate} />
         </Suspense>
     );
 });
