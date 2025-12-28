@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Clock, Target } from 'lucide-react';
 import IELTSExamCard from './IELTSExamCard';
-import IELTSTest from './IELTSTest';
 import IELTSTestHistory from './IELTSTestHistory';
 import { API_BASE_URL } from '@/utils/constants';
 
@@ -20,9 +20,9 @@ interface IELTSExamListProps {
 }
 
 const IELTSExamList: React.FC<IELTSExamListProps> = ({ onBack }) => {
+  const navigate = useNavigate();
   const [exams, setExams] = useState<IELTSExam[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showTest, setShowTest] = useState(false);
 
   // Fetch published IELTS exams
   useEffect(() => {
@@ -61,37 +61,19 @@ const IELTSExamList: React.FC<IELTSExamListProps> = ({ onBack }) => {
   const handleStartExam = (examId: string, type: 'reading' | 'listening') => {
     // Store exam info for the test component
     sessionStorage.setItem('currentExam', JSON.stringify({ examId, type }));
-    setShowTest(true);
+    navigate('/practice/ielts-test/taking');
   };
-
-  const handleBackToList = () => {
-    setShowTest(false);
-    sessionStorage.removeItem('currentExam');
-  };
-
-  // If showing test, render IELTSTest component
-  if (showTest) {
-    return <IELTSTest onBackToCenter={handleBackToList} />;
-  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {onBack && (
-                <button
-                  onClick={onBack}
-                  className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                  Quay lại
-                </button>
-              )}
+
               <div className="flex items-center gap-3">
-                <div className="bg-gradient-to-r from-blue-600 to-green-600 p-3 rounded-xl">
+                <div className="bg-indigo-600 p-3 rounded-xl shadow-lg shadow-indigo-200">
                   <BookOpen className="h-6 w-6 text-white" />
                 </div>
                 <div>
@@ -110,7 +92,7 @@ const IELTSExamList: React.FC<IELTSExamListProps> = ({ onBack }) => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-xl p-6 shadow-sm border">
             <div className="flex items-center gap-4">
-              <div className="bg-blue-100 p-3 rounded-lg">
+              <div className="bg-blue-50 p-3 rounded-lg">
                 <BookOpen className="h-6 w-6 text-blue-600" />
               </div>
               <div>
@@ -122,8 +104,8 @@ const IELTSExamList: React.FC<IELTSExamListProps> = ({ onBack }) => {
 
           <div className="bg-white rounded-xl p-6 shadow-sm border">
             <div className="flex items-center gap-4">
-              <div className="bg-green-100 p-3 rounded-lg">
-                <Target className="h-6 w-6 text-green-600" />
+              <div className="bg-emerald-50 p-3 rounded-lg">
+                <Target className="h-6 w-6 text-emerald-600" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{exams.filter(e => e.type === 'listening').length}</p>
@@ -134,7 +116,7 @@ const IELTSExamList: React.FC<IELTSExamListProps> = ({ onBack }) => {
 
           <div className="bg-white rounded-xl p-6 shadow-sm border">
             <div className="flex items-center gap-4">
-              <div className="bg-purple-100 p-3 rounded-lg">
+              <div className="bg-purple-50 p-3 rounded-lg">
                 <Clock className="h-6 w-6 text-purple-600" />
               </div>
               <div>
@@ -159,7 +141,7 @@ const IELTSExamList: React.FC<IELTSExamListProps> = ({ onBack }) => {
 
               {loading ? (
                 <div className="flex justify-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
                 </div>
               ) : (
                 <>

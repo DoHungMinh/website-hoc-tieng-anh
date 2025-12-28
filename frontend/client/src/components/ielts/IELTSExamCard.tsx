@@ -14,34 +14,31 @@ interface IELTSExamCardProps {
 }
 
 const IELTSExamCard: React.FC<IELTSExamCardProps> = ({ exam, onStartExam }) => {
-  console.log('IELTSExamCard rendering with exam:', exam);
-
   const getDifficultyColor = (difficulty: string) => {
     if (difficulty.includes('4.0') || difficulty.includes('5.0')) {
-      return 'bg-green-100 text-green-800';
+      return 'bg-emerald-50 text-emerald-700';
     }
     if (difficulty.includes('6.0') || difficulty.includes('7.0')) {
-      return 'bg-yellow-100 text-yellow-800';
+      return 'bg-amber-50 text-amber-700';
     }
-    return 'bg-red-100 text-red-800';
+    return 'bg-rose-50 text-rose-700';
   };
 
   const getTypeIcon = () => {
-    return exam.type === 'reading' 
-      ? <FileText className="h-5 w-5 text-blue-600" />
-      : <Volume2 className="h-5 w-5 text-purple-600" />;
+    return exam.type === 'reading'
+      ? <FileText className="h-5 w-5 text-white" />
+      : <Volume2 className="h-5 w-5 text-white" />;
   };
 
   const getTypeColor = () => {
     return exam.type === 'reading'
-      ? 'from-blue-500 to-blue-600'
-      : 'from-purple-500 to-purple-600';
+      ? 'from-blue-600 to-indigo-600'
+      : 'from-purple-600 to-pink-600';
   };
 
   return (
-    <div 
-      className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
-      style={{ border: '2px solid red', minHeight: '200px' }} // Debug CSS
+    <div
+      className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 overflow-hidden group"
     >
       {/* Header */}
       <div className={`bg-gradient-to-r ${getTypeColor()} p-6 text-white`}>
@@ -52,7 +49,7 @@ const IELTSExamCard: React.FC<IELTSExamCardProps> = ({ exam, onStartExam }) => {
               IELTS {exam.type === 'reading' ? 'Reading' : 'Listening'}
             </span>
           </div>
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(exam.difficulty)} text-gray-800`}>
+          <span className={`px-2 py-1 rounded-full text-xs font-bold ${getDifficultyColor(exam.difficulty)}`}>
             {exam.difficulty}
           </span>
         </div>
@@ -70,22 +67,22 @@ const IELTSExamCard: React.FC<IELTSExamCardProps> = ({ exam, onStartExam }) => {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="text-center">
-            <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg mx-auto mb-2">
-              <Clock className="h-5 w-5 text-green-600" />
+            <div className="flex items-center justify-center w-10 h-10 bg-indigo-50 rounded-lg mx-auto mb-2">
+              <Clock className="h-5 w-5 text-indigo-600" />
             </div>
             <p className="text-xs text-gray-500">Thời gian</p>
             <p className="text-sm font-bold text-gray-900">{exam.duration} phút</p>
           </div>
           <div className="text-center">
-            <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg mx-auto mb-2">
-              <Target className="h-5 w-5 text-blue-600" />
+            <div className="flex items-center justify-center w-10 h-10 bg-emerald-50 rounded-lg mx-auto mb-2">
+              <Target className="h-5 w-5 text-emerald-600" />
             </div>
             <p className="text-xs text-gray-500">Câu hỏi</p>
             <p className="text-sm font-bold text-gray-900">{exam.totalQuestions}</p>
           </div>
           <div className="text-center">
-            <div className="flex items-center justify-center w-10 h-10 bg-purple-100 rounded-lg mx-auto mb-2">
-              <Users className="h-5 w-5 text-purple-600" />
+            <div className="flex items-center justify-center w-10 h-10 bg-amber-50 rounded-lg mx-auto mb-2">
+              <Users className="h-5 w-5 text-amber-600" />
             </div>
             <p className="text-xs text-gray-500">Mức độ</p>
             <p className="text-sm font-bold text-gray-900">
@@ -97,7 +94,7 @@ const IELTSExamCard: React.FC<IELTSExamCardProps> = ({ exam, onStartExam }) => {
         {/* Action Button */}
         <button
           onClick={() => onStartExam(exam._id, exam.type)}
-          className={`w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r ${getTypeColor()} hover:shadow-lg text-white font-semibold rounded-lg transition-all duration-300 group-hover:scale-[1.02]`}
+          className={`w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-gradient-to-r ${getTypeColor()} hover:shadow-lg text-white font-bold tracking-wide rounded-xl transition-all duration-300 group-hover:scale-[1.02]`}
         >
           <Play className="h-5 w-5" />
           Bắt đầu làm bài

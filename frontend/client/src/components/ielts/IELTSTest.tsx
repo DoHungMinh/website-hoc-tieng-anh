@@ -713,22 +713,22 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                                                         <div
                                                             key={question.id}
                                                             className={`border rounded-lg p-4 ${question.isCorrect
-                                                                    ? "border-green-200 bg-green-50"
-                                                                    : question.correctAnswer !==
-                                                                        undefined
-                                                                        ? "border-red-200 bg-red-50"
-                                                                        : "border-gray-200 bg-gray-50"
+                                                                ? "border-green-200 bg-green-50"
+                                                                : question.correctAnswer !==
+                                                                    undefined
+                                                                    ? "border-red-200 bg-red-50"
+                                                                    : "border-gray-200 bg-gray-50"
                                                                 }`}
                                                         >
                                                             <div className="flex items-start justify-between mb-3">
                                                                 <div className="flex items-center gap-3">
                                                                     <div
                                                                         className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${question.isCorrect
-                                                                                ? "bg-green-500"
-                                                                                : question.correctAnswer !==
-                                                                                    undefined
-                                                                                    ? "bg-red-500"
-                                                                                    : "bg-gray-500"
+                                                                            ? "bg-green-500"
+                                                                            : question.correctAnswer !==
+                                                                                undefined
+                                                                                ? "bg-red-500"
+                                                                                : "bg-gray-500"
                                                                             }`}
                                                                     >
                                                                         {index +
@@ -809,10 +809,10 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                                                                                             optionIndex
                                                                                         }
                                                                                         className={`p-2 rounded border ${isCorrectOption
-                                                                                                ? "border-green-500 bg-green-100"
-                                                                                                : isUserSelectedOption
-                                                                                                    ? "border-red-500 bg-red-100"
-                                                                                                    : "border-gray-200"
+                                                                                            ? "border-green-500 bg-green-100"
+                                                                                            : isUserSelectedOption
+                                                                                                ? "border-red-500 bg-red-100"
+                                                                                                : "border-gray-200"
                                                                                             }`}
                                                                                     >
                                                                                         <span className="font-medium">
@@ -924,11 +924,11 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                                                                                             option
                                                                                         }
                                                                                         className={`p-2 rounded border ${isCorrectOption
-                                                                                                ? "border-green-500 bg-green-100"
-                                                                                                : isUserSelectedOption &&
-                                                                                                    !isCorrectOption
-                                                                                                    ? "border-red-500 bg-red-100"
-                                                                                                    : "border-gray-200"
+                                                                                            ? "border-green-500 bg-green-100"
+                                                                                            : isUserSelectedOption &&
+                                                                                                !isCorrectOption
+                                                                                                ? "border-red-500 bg-red-100"
+                                                                                                : "border-gray-200"
                                                                                             }`}
                                                                                     >
                                                                                         {
@@ -972,8 +972,8 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                                                                             </div>
                                                                             <div
                                                                                 className={`font-medium ${question.isCorrect
-                                                                                        ? "text-green-600"
-                                                                                        : "text-red-600"
+                                                                                    ? "text-green-600"
+                                                                                    : "text-red-600"
                                                                                     }`}
                                                                             >
                                                                                 {question.userAnswer ||
@@ -1190,27 +1190,19 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
             <div className="min-h-screen bg-gray-50 py-12">
                 <div className="max-w-4xl mx-auto px-4">
                     <div className="bg-white rounded-2xl shadow-xl p-8">
-                        <div className="flex items-center gap-4 mb-6">
-                            <button
-                                onClick={handleBackToCenter}
-                                className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
-                            >
-                                <ArrowLeft className="h-5 w-5" />
-                                Quay lại
-                            </button>
-                        </div>
+
 
                         <div className="text-center mb-8">
                             <div
-                                className={`w-20 h-20 rounded-full bg-gradient-to-r ${examData.type === "reading"
-                                        ? "from-blue-500 to-blue-600"
-                                        : "from-purple-500 to-purple-600"
+                                className={`w-20 h-20 rounded-full ${examData.type === "reading"
+                                        ? "bg-indigo-100 text-indigo-600"
+                                        : "bg-purple-100 text-purple-600"
                                     } flex items-center justify-center mx-auto mb-4`}
                             >
                                 {examData.type === "reading" ? (
-                                    <FileText className="h-10 w-10 text-white" />
+                                    <FileText className="h-10 w-10" />
                                 ) : (
-                                    <Headphones className="h-10 w-10 text-white" />
+                                    <Headphones className="h-10 w-10" />
                                 )}
                             </div>
                             <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -1222,8 +1214,8 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                            <div className="text-center p-4 bg-gray-50 rounded-xl">
-                                <Clock className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                            <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                <Clock className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
                                 <div className="text-lg font-bold text-gray-900">
                                     {examData.duration} phút
                                 </div>
@@ -1231,8 +1223,8 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                                     Thời gian
                                 </div>
                             </div>
-                            <div className="text-center p-4 bg-gray-50 rounded-xl">
-                                <BookOpen className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                            <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                <BookOpen className="h-8 w-8 text-indigo-600 mx-auto mb-2" />
                                 <div className="text-lg font-bold text-gray-900">
                                     {getTotalSections()}
                                 </div>
@@ -1242,8 +1234,8 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                                         : "Sections"}
                                 </div>
                             </div>
-                            <div className="text-center p-4 bg-gray-50 rounded-xl">
-                                <CheckCircle className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                            <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                <CheckCircle className="h-8 w-8 text-indigo-600 mx-auto mb-2" />
                                 <div className="text-lg font-bold text-gray-900">
                                     {examData.totalQuestions}
                                 </div>
@@ -1251,8 +1243,8 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                                     Câu hỏi
                                 </div>
                             </div>
-                            <div className="text-center p-4 bg-gray-50 rounded-xl">
-                                <Star className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+                            <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                <Star className="h-8 w-8 text-amber-500 mx-auto mb-2" />
                                 <div className="text-lg font-bold text-gray-900">
                                     {examData.difficulty}
                                 </div>
@@ -1262,11 +1254,12 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                             </div>
                         </div>
 
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-8">
-                            <h3 className="font-bold text-yellow-800 mb-3">
+                        <div className="bg-amber-50 border border-amber-100 rounded-xl p-6 mb-8">
+                            <h3 className="font-bold text-amber-900 mb-3 flex items-center gap-2">
+                                <AlertCircle className="h-5 w-5 text-amber-600" />
                                 Hướng dẫn làm bài:
                             </h3>
-                            <ul className="list-disc list-inside space-y-2 text-yellow-700">
+                            <ul className="list-disc list-inside space-y-2 text-amber-800 ml-1">
                                 <li>
                                     Đọc kỹ đề bài và câu hỏi trước khi trả lời
                                 </li>
@@ -1288,10 +1281,7 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                         <div className="text-center">
                             <button
                                 onClick={handleStartTest}
-                                className={`bg-gradient-to-r ${examData.type === "reading"
-                                        ? "from-blue-600 to-blue-700"
-                                        : "from-purple-600 to-purple-700"
-                                    } hover:shadow-lg text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105`}
+                                className={`bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-md`}
                             >
                                 Bắt đầu làm bài
                             </button>

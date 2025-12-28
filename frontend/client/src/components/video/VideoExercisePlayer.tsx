@@ -52,7 +52,7 @@ const VideoExercisePlayer: React.FC<VideoExercisePlayerProps> = ({ video, onBack
   const canAutoPauseRef = useRef(true);
 
   // Parse SRT data - Load real subtitle cho video "The Wind and the Sun"
-  const subtitles = video.youtubeId === 'l0Z8A4u3CtI' 
+  const subtitles = video.youtubeId === 'l0Z8A4u3CtI'
     ? parseSRT(windAndSunSRT)
     : []; // Các video khác sẽ cần load SRT riêng
 
@@ -128,14 +128,14 @@ const VideoExercisePlayer: React.FC<VideoExercisePlayerProps> = ({ video, onBack
           setCurrentBlankIndex((prevBlankIndex) => {
             if (prevBlankIndex < blanksOnly.length && canAutoPauseRef.current) {
               const currentBlank = blanksOnly[prevBlankIndex];
-              
+
               // Chỉ pause nếu:
               // 1. Time đã đến endTime
               // 2. Time trong window 1 giây sau endTime
               // 3. Video đang chạy
               const nearEndTime = time >= currentBlank.endTime && time < currentBlank.endTime + 1;
               const isPlaying = playerRef.current.getPlayerState && playerRef.current.getPlayerState() === window.YT.PlayerState.PLAYING;
-              
+
               if (nearEndTime && isPlaying) {
                 // Auto pause
                 if (playerRef.current.pauseVideo) {
@@ -180,22 +180,22 @@ const VideoExercisePlayer: React.FC<VideoExercisePlayerProps> = ({ video, onBack
     const userAnswer = answers[subtitle.index]?.toLowerCase().trim() || '';
     const correctAnswer = subtitle.answer?.toLowerCase().trim() || '';
     const isCorrect = userAnswer === correctAnswer;
-    
+
     setFeedback({ ...feedback, [subtitle.index]: isCorrect ? 'correct' : 'wrong' });
-    
+
     if (isCorrect) {
       setScore(score + 1);
     }
 
     // Move to next blank NGAY (trước khi resume)
     const nextBlankIndex = currentBlankIndex + 1;
-    
+
     // Auto-resume video sau 2 giây
     setTimeout(() => {
       if (playerRef.current && playerRef.current.playVideo) {
         // Bật lại auto-pause cho blank tiếp theo
         canAutoPauseRef.current = true;
-        
+
         // Update index trước khi play
         if (nextBlankIndex < blanksOnly.length) {
           setCurrentBlankIndex(nextBlankIndex);
@@ -214,7 +214,7 @@ const VideoExercisePlayer: React.FC<VideoExercisePlayerProps> = ({ video, onBack
       const subtitle = subtitles[activeSubtitleIndex];
       playerRef.current.seekTo(subtitle.startTime, true);
       playerRef.current.playVideo();
-      
+
       // Auto pause at end of sentence
       setTimeout(() => {
         if (playerRef.current && playerRef.current.pauseVideo) {
@@ -232,20 +232,20 @@ const VideoExercisePlayer: React.FC<VideoExercisePlayerProps> = ({ video, onBack
 
   if (completed) {
     const completedBlanks = blanksOnly.filter(s => feedback[s.index] === 'correct').length;
-    
+
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-lime-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full text-center">
-          <div className="bg-gradient-to-r from-green-500 to-lime-500 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+          <div className="bg-black rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
             <CheckCircle className="h-12 w-12 text-white" />
           </div>
-          
+
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
             Hoàn thành xuất sắc!
           </h2>
-          
-          <div className="bg-gradient-to-r from-green-100 to-lime-100 rounded-2xl p-6 mb-6">
-            <p className="text-6xl font-bold text-green-700 mb-2">
+
+          <div className="bg-gray-100 rounded-2xl p-6 mb-6 border border-gray-200">
+            <p className="text-6xl font-bold text-gray-900 mb-2 font-display tracking-tight">
               {Math.round((completedBlanks / blanksOnly.length) * 100)}%
             </p>
             <p className="text-gray-600">
@@ -267,12 +267,12 @@ const VideoExercisePlayer: React.FC<VideoExercisePlayerProps> = ({ video, onBack
                   playerRef.current.seekTo(0);
                 }
               }}
-              className="flex-1 bg-gradient-to-r from-green-600 to-lime-600 hover:from-green-700 hover:to-lime-700 text-white py-4 rounded-xl font-medium transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
+              className="flex-1 bg-black hover:bg-gray-800 text-white py-4 rounded-xl font-bold tracking-wide transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
             >
               <RotateCcw className="h-5 w-5" />
               Làm lại
             </button>
-            
+
             <button
               onClick={onBack}
               className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-4 rounded-xl font-medium transition-all duration-300"
@@ -286,14 +286,14 @@ const VideoExercisePlayer: React.FC<VideoExercisePlayerProps> = ({ video, onBack
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-lime-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={onBack}
-              className="flex items-center gap-2 text-green-700 hover:text-green-800 transition-colors group"
+              className="flex items-center gap-2 text-gray-600 hover:text-black transition-colors group"
             >
               <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
               <span className="font-medium">Quay lại</span>
@@ -306,19 +306,19 @@ const VideoExercisePlayer: React.FC<VideoExercisePlayerProps> = ({ video, onBack
             <div className="flex items-center gap-4">
               <div className="text-right">
                 <p className="text-sm text-gray-600">Tiến độ</p>
-                <p className="text-lg font-bold text-green-600">{Math.round(calculateProgress())}%</p>
+                <p className="text-lg font-bold text-gray-900">{Math.round(calculateProgress())}%</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-600">Điểm</p>
-                <p className="text-lg font-bold text-green-600">{score}/{blanksOnly.length}</p>
+                <p className="text-lg font-bold text-gray-900">{score}/{blanksOnly.length}</p>
               </div>
             </div>
           </div>
 
           {/* Progress Bar */}
           <div className="mt-3 bg-gray-200 rounded-full h-2 overflow-hidden">
-            <div 
-              className="bg-gradient-to-r from-green-500 to-lime-500 h-full transition-all duration-500"
+            <div
+              className="bg-black h-full transition-all duration-500"
               style={{ width: `${calculateProgress()}%` }}
             ></div>
           </div>
@@ -331,7 +331,7 @@ const VideoExercisePlayer: React.FC<VideoExercisePlayerProps> = ({ video, onBack
         <div className="w-3/4 bg-gray-900 p-4">
           <div className="w-full h-full rounded-xl overflow-hidden shadow-2xl relative group">
             <div id="youtube-player" className="w-full h-full"></div>
-            
+
             {/* Overlay to block user interaction */}
             <div className="absolute inset-0 z-10 cursor-not-allowed group-hover:bg-black/5 transition-colors">
               {/* Tooltip */}
@@ -350,15 +350,15 @@ const VideoExercisePlayer: React.FC<VideoExercisePlayerProps> = ({ video, onBack
         {/* Transcript Panel - 25% Width (Like Livestream Chat) */}
         <div className="w-1/4 bg-white border-l border-gray-200 flex flex-col">
           {/* Panel Header */}
-          <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-lime-50">
+          <div className="p-4 border-b border-gray-200 bg-gray-50">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                <Volume2 className="h-5 w-5 text-green-600" />
+                <Volume2 className="h-5 w-5 text-black" />
                 Transcript
               </h3>
               <button
                 onClick={handleReplay}
-                className="px-3 py-1.5 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg font-medium transition-all duration-300 flex items-center gap-1 text-xs"
+                className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-black rounded-lg font-medium transition-all duration-300 flex items-center gap-1 text-xs"
               >
                 <Volume2 className="h-3 w-3" />
                 Replay
@@ -370,19 +370,18 @@ const VideoExercisePlayer: React.FC<VideoExercisePlayerProps> = ({ video, onBack
           </div>
 
           {/* Scrollable Transcript */}
-          <div 
+          <div
             ref={transcriptRef}
-            className="flex-1 overflow-y-auto p-4 space-y-3" 
+            className="flex-1 overflow-y-auto p-4 space-y-3"
           >
             {subtitles.map((subtitle) => (
               <div
                 key={subtitle.index}
                 id={`subtitle-${subtitle.index}`}
-                className={`p-3 rounded-lg transition-all duration-300 text-sm ${
-                  activeSubtitleIndex === subtitle.index
-                    ? 'bg-green-50 border-l-4 border-green-500 shadow-sm'
-                    : 'bg-gray-50 border-l-4 border-transparent'
-                }`}
+                className={`p-3 rounded-lg transition-all duration-300 text-sm ${activeSubtitleIndex === subtitle.index
+                  ? 'bg-gray-100 border-l-4 border-black shadow-sm'
+                  : 'bg-gray-50 border-l-4 border-transparent'
+                  }`}
               >
                 <div className="space-y-2">
                   {/* Timing */}
@@ -405,13 +404,12 @@ const VideoExercisePlayer: React.FC<VideoExercisePlayerProps> = ({ video, onBack
                                 onChange={(e) => handleAnswerChange(subtitle.index, e.target.value)}
                                 disabled={feedback[subtitle.index] !== undefined}
                                 placeholder="..."
-                                className={`inline-block mx-1 px-2 py-1 border-2 rounded text-center font-medium transition-all duration-300 text-xs ${
-                                  feedback[subtitle.index] === 'correct'
-                                    ? 'border-green-500 bg-green-50 text-green-700'
-                                    : feedback[subtitle.index] === 'wrong'
+                                className={`inline-block mx-1 px-2 py-1 border-2 rounded text-center font-bold tracking-wider transition-all duration-300 text-xs ${feedback[subtitle.index] === 'correct'
+                                  ? 'border-black bg-gray-100 text-black'
+                                  : feedback[subtitle.index] === 'wrong'
                                     ? 'border-red-500 bg-red-50 text-red-700'
-                                    : 'border-green-300 focus:border-green-600 focus:outline-none'
-                                }`}
+                                    : 'border-gray-300 focus:border-black focus:outline-none'
+                                  }`}
                                 style={{ width: '100px' }}
                               />
                             )}
@@ -421,9 +419,9 @@ const VideoExercisePlayer: React.FC<VideoExercisePlayerProps> = ({ video, onBack
 
                       {/* Feedback */}
                       {feedback[subtitle.index] === 'correct' && (
-                        <div className="flex items-center gap-1.5 text-green-600 text-xs">
+                        <div className="flex items-center gap-1.5 text-black text-xs">
                           <CheckCircle className="h-3.5 w-3.5" />
-                          <span className="font-medium">Chính xác!</span>
+                          <span className="font-bold">Chính xác!</span>
                         </div>
                       )}
 
@@ -434,7 +432,7 @@ const VideoExercisePlayer: React.FC<VideoExercisePlayerProps> = ({ video, onBack
                             <span className="font-medium">Chưa đúng</span>
                           </div>
                           <p className="text-xs text-gray-600">
-                            Đáp án: <span className="font-bold text-green-600">{subtitle.answer}</span>
+                            Đáp án: <span className="font-bold text-black">{subtitle.answer}</span>
                           </p>
                         </div>
                       )}
@@ -444,11 +442,10 @@ const VideoExercisePlayer: React.FC<VideoExercisePlayerProps> = ({ video, onBack
                         <button
                           onClick={() => handleCheck(subtitle)}
                           disabled={!answers[subtitle.index]?.trim()}
-                          className={`w-full px-3 py-2 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-1.5 text-xs ${
-                            answers[subtitle.index]?.trim()
-                              ? 'bg-gradient-to-r from-green-600 to-lime-600 hover:from-green-700 hover:to-lime-700 text-white shadow-md'
-                              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                          }`}
+                          className={`w-full px-3 py-2 rounded-lg font-bold tracking-wide transition-all duration-300 flex items-center justify-center gap-1.5 text-xs ${answers[subtitle.index]?.trim()
+                            ? 'bg-black hover:bg-gray-800 text-white shadow-md'
+                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            }`}
                         >
                           <CheckCircle className="h-3.5 w-3.5" />
                           Kiểm tra

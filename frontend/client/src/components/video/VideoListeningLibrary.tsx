@@ -82,22 +82,16 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-lime-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-green-700 hover:text-green-800 transition-colors mb-6 group"
-          >
-            <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
-            <span className="font-medium">Quay lại</span>
-          </button>
+
 
           <div className="text-center">
             <div className="flex items-center justify-center gap-3 mb-4">
-              <Volume2 className="h-10 w-10 text-green-600" />
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-800 to-lime-600 bg-clip-text text-transparent">
+              <Volume2 className="h-10 w-10 text-indigo-600" />
+              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 font-display tracking-tight">
                 VIDEO LISTENING EXERCISE
               </h1>
             </div>
@@ -109,10 +103,10 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-green-100">
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
             <div className="flex items-center gap-4">
-              <div className="bg-gradient-to-r from-green-500 to-lime-500 rounded-full p-3">
-                <Play className="h-6 w-6 text-white" />
+              <div className="bg-indigo-50 rounded-full p-3">
+                <Play className="h-6 w-6 text-indigo-600" />
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Tổng số video</p>
@@ -121,10 +115,10 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-lime-100">
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
             <div className="flex items-center gap-4">
-              <div className="bg-gradient-to-r from-lime-500 to-green-500 rounded-full p-3">
-                <Target className="h-6 w-6 text-white" />
+              <div className="bg-purple-50 rounded-full p-3">
+                <Target className="h-6 w-6 text-purple-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Tổng bài tập</p>
@@ -135,14 +129,14 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-green-100">
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
             <div className="flex items-center gap-4">
-              <div className="bg-gradient-to-r from-green-600 to-lime-600 rounded-full p-3">
-                <CheckCircle className="h-6 w-6 text-white" />
+              <div className="bg-emerald-50 rounded-full p-3">
+                <CheckCircle className="h-6 w-6 text-emerald-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Hoàn toàn miễn phí</p>
-                <p className="text-2xl font-bold text-green-600">100%</p>
+                <p className="text-2xl font-bold text-emerald-600">100%</p>
               </div>
             </div>
           </div>
@@ -153,7 +147,7 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
           {videoExercises.map((video) => (
             <div
               key={video._id}
-              className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 group cursor-pointer"
+              className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group cursor-pointer"
               onClick={() => setSelectedVideo(video)}
             >
               {/* Thumbnail */}
@@ -184,7 +178,7 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
 
               {/* Content */}
               <div className="p-5">
-                <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-green-700 transition-colors">
+                <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-indigo-600 transition-colors">
                   {video.title}
                 </h3>
 
@@ -193,7 +187,7 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
                   {video.topics.slice(0, 2).map((topic, idx) => (
                     <span
                       key={idx}
-                      className="text-xs px-3 py-1 bg-green-50 text-green-700 rounded-full font-medium"
+                      className="text-xs px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full font-bold"
                     >
                       {topic}
                     </span>
@@ -203,14 +197,14 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
                 {/* Blank Count */}
                 <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
                   <div className="flex items-center gap-2">
-                    <Target className="h-4 w-4 text-green-600" />
+                    <Target className="h-4 w-4 text-indigo-500" />
                     <span className="font-medium">{video.blankCount} câu hỏi</span>
                   </div>
                 </div>
 
                 {/* Start Button */}
                 <button
-                  className="w-full bg-gradient-to-r from-green-600 to-lime-600 hover:from-green-700 hover:to-lime-700 text-white py-3 rounded-xl font-medium transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+                  className="w-full bg-indigo-600 text-white hover:bg-indigo-700 py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
                 >
                   <Play className="h-5 w-5" />
                   Bắt đầu luyện tập
