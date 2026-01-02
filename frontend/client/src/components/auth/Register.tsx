@@ -195,7 +195,7 @@ const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterSuccess,
                 value={formData.email}
                 onChange={handleInputChange}
                 className={`${styles.input} ${errors.email ? styles.inputError : ''}`}
-                placeholder="your.email@example.com"
+                placeholder="Nên nhập email chính xác của bạn để được đảm bảo quyền lợi"
               />
               {errors.email && (
                 <p className={styles.fieldError}>{errors.email}</p>
