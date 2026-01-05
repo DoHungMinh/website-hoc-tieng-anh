@@ -7,7 +7,7 @@ export interface Course {
   type: 'vocabulary' | 'grammar';
   level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
   duration: string;
-  price: number;
+  price?: number;
   originalPrice?: number;
   instructor: string;
   status: 'draft' | 'active' | 'archived';
@@ -179,6 +179,23 @@ class CourseAPI {
 
     if (!response.ok) {
       throw new Error('Failed to fetch course details');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get courses by level WITH enrollment check (requires authentication)
+   */
+  async getCoursesByLevel(level: string, token: string) {
+    const response = await fetch(`${API_BASE_URL}/course/level/${level}?level=${level}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch level courses');
     }
 
     return response.json();

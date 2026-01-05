@@ -50,9 +50,12 @@ const CourseDetailPage = memo(() => {
     const paymentCheckRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-    const { enrollments, fetchEnrollments } = useEnrollment();
+    const { enrollments, levelEnrollments, fetchEnrollments, fetchLevelEnrollments } = useEnrollment();
 
-    // Check if course is enrolled
+    // Check if user has purchased the level package for this course
+    const hasLevelAccess = course ? levelEnrollments?.some(e => e.level === course.level && e.status === 'active') : false;
+    
+    // Check if course is enrolled (old system - for backward compatibility)
     const isEnrolled = enrollments?.some(e => e.courseId?._id === courseId) || false;
 
     // Cleanup payment status check on unmount
@@ -102,8 +105,9 @@ const CourseDetailPage = memo(() => {
     useEffect(() => {
         if (isAuthenticated) {
             fetchEnrollments();
+            fetchLevelEnrollments();
         }
-    }, [isAuthenticated, fetchEnrollments]);
+    }, [isAuthenticated, fetchEnrollments, fetchLevelEnrollments]);
 
     const handleBack = useCallback(() => {
         navigate(-1);
@@ -406,21 +410,10 @@ const CourseDetailPage = memo(() => {
                     </section>
                 </div>
 
-                {/* Right Column - Purchase Card */}
+                {/* Right Column - Course Info */}
                 <div className={styles.sidebar}>
                     <div className={styles.purchaseCard}>
-                        <div className={styles.priceSection}>
-                            <span className={styles.price}>
-                                {course.price.toLocaleString('vi-VN')}đ
-                            </span>
-                            {course.originalPrice && course.originalPrice > course.price && (
-                                <span className={styles.originalPrice}>
-                                    {course.originalPrice.toLocaleString('vi-VN')}đ
-                                </span>
-                            )}
-                        </div>
-
-                        {isEnrolled ? (
+                        {hasLevelAccess || isEnrolled ? (
                             <button
                                 className={styles.enrollButton}
                                 onClick={handleStartLearning}
@@ -428,13 +421,17 @@ const CourseDetailPage = memo(() => {
                                 Tiếp tục học
                             </button>
                         ) : (
-                            <button
-                                className={styles.enrollButton}
-                                onClick={handleEnroll}
-                                disabled={enrolling}
-                            >
-                                {enrolling ? 'Đang xử lý...' : 'Đăng ký ngay'}
-                            </button>
+                            <div className={styles.accessInfo}>
+                                <p className={styles.accessText}>
+                                    Để truy cập khóa học này, bạn cần mua gói cấp độ {course.level}
+                                </p>
+                                <button
+                                    className={styles.viewPackageButton}
+                                    onClick={() => navigate(`/levels/${course.level}`)}
+                                >
+                                    Xem gói {course.level}
+                                </button>
+                            </div>
                         )}
 
                         <div className={styles.courseIncludes}>

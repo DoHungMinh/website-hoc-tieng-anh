@@ -1,9 +1,20 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../stores/authStore';
+import * as levelPackageAPI from '../../services/levelPackageAPI';
 import CourseCard, { CourseCardProps } from '../../components/course/CourseCard';
+import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import styles from './CourseNewPage.module.css';
 
 type CourseLevelData = Omit<CourseCardProps, 'onClick'>;
+
+interface PaymentModalData {
+    orderCode: number;
+    qrCode: string;
+    checkoutUrl: string;
+    amount: number;
+    level: string;
+}
 
 const courseLevels: CourseLevelData[] = [
     {
@@ -98,9 +109,40 @@ const courseLevels: CourseLevelData[] = [
 
 const CourseNewPage = () => {
     const navigate = useNavigate();
+    const { token, isAuthenticated } = useAuthStore();
     const [searchQuery, setSearchQuery] = useState('');
+    const [enrolledLevels, setEnrolledLevels] = useState<Set<string>>(new Set());
+    const [loading, setLoading] = useState(true);
+    const [paymentModal, setPaymentModal] = useState<PaymentModalData | null>(null);
+    const [paymentStatus, setPaymentStatus] = useState<'pending' | 'processing' | 'success' | 'failed'>('pending');
 
-    const filteredCourses = courseLevels.filter(
+    // Fetch user enrollments
+    useEffect(() => {
+        const fetchEnrollments = async () => {
+            if (isAuthenticated && token) {
+                try {
+                    const enrollmentsResponse = await levelPackageAPI.getUserLevelEnrollments(token);
+                    if (enrollmentsResponse.success && enrollmentsResponse.data) {
+                        const enrolled = new Set(enrollmentsResponse.data.map(e => e.level));
+                        setEnrolledLevels(enrolled);
+                    }
+                } catch (error) {
+                    console.error('Lỗi tải enrollments:', error);
+                }
+            }
+            setLoading(false);
+        };
+
+        fetchEnrollments();
+    }, [isAuthenticated, token]);
+
+    // Update courseLevels with real enrollment data
+    const courseLevelsWithEnrollment = courseLevels.map(course => ({
+        ...course,
+        isEnrolled: enrolledLevels.has(course.level),
+    }));
+
+    const filteredCourses = courseLevelsWithEnrollment.filter(
         (course) =>
             course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             course.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -108,8 +150,143 @@ const CourseNewPage = () => {
     );
 
     const handleCourseClick = useCallback((levelId: string) => {
-        navigate(`/level/${levelId}`);
-    }, [navigate]);
+        const course = courseLevelsWithEnrollment.find(c => c.id === levelId);
+        if (!course) return;
+
+        // Nếu đã mua level → vào học ngay
+        if (course.isEnrolled) {
+            navigate(`/level/${levelId}`);
+            return;
+        }
+
+        // Nếu chưa mua → kiểm tra login
+        if (!isAuthenticated || !token) {
+            navigate('/login', { state: { from: `/courses` } });
+            return;
+        }
+
+        // Chưa mua và đã login → mở PayOS payment modal
+        handlePurchase(course);
+    }, [navigate, courseLevelsWithEnrollment, isAuthenticated, token]);
+
+    const handlePurchase = async (course: CourseLevelData) => {
+        if (!token) return;
+
+        try {
+            setPaymentStatus('processing');
+
+            // Gọi API tạo payment link
+            const response = await levelPackageAPI.createLevelPayment(token, course.level);
+
+            if (response.success && response.data) {
+                // Mở modal hiển thị QR code
+                setPaymentModal({
+                    orderCode: response.data.orderCode,
+                    qrCode: response.data.qrCode,
+                    checkoutUrl: response.data.checkoutUrl,
+                    amount: response.data.amount,
+                    level: course.level,
+                });
+
+                // Bắt đầu polling payment status
+                startPaymentPolling(response.data.orderCode, course.id);
+            } else {
+                alert(response.message || 'Không thể tạo thanh toán');
+                setPaymentStatus('failed');
+            }
+        } catch (error) {
+            console.error('Lỗi tạo thanh toán:', error);
+            alert(error instanceof Error ? error.message : 'Lỗi khi tạo thanh toán');
+            setPaymentStatus('failed');
+        }
+    };
+
+    const startPaymentPolling = (orderCode: number, levelId: string) => {
+        const pollInterval = setInterval(async () => {
+            try {
+                if (!token) {
+                    clearInterval(pollInterval);
+                    return;
+                }
+
+                const statusResponse = await levelPackageAPI.checkLevelPaymentStatus(token, orderCode);
+
+                if (statusResponse.status === 'PAID') {
+                    // Thanh toán thành công - Gọi API để confirm và tạo enrollment
+                    try {
+                        const level = paymentModal?.level || courseLevels.find(c => c.id === levelId)?.level;
+                        if (level) {
+                            await levelPackageAPI.confirmLevelPayment(token, orderCode, level);
+                            console.log('✅ Đã tạo level enrollment');
+                        }
+                    } catch (error) {
+                        console.error('Lỗi tạo enrollment:', error);
+                    }
+                    
+                    setPaymentStatus('success');
+                    clearInterval(pollInterval);
+
+                    // Cập nhật lại enrollments
+                    const enrollmentsResponse = await levelPackageAPI.getUserLevelEnrollments(token);
+                    if (enrollmentsResponse.success && enrollmentsResponse.data) {
+                        const enrolled = new Set(enrollmentsResponse.data.map(e => e.level));
+                        setEnrolledLevels(enrolled);
+                    }
+
+                    // Đợi 1.5 giây để hiển thị thông báo thành công
+                    setTimeout(() => {
+                        setPaymentModal(null);
+                        setPaymentStatus('pending');
+                        // Redirect vào trang level để học
+                        navigate(`/level/${levelId}`);
+                    }, 1500);
+                } else if (statusResponse.status === 'CANCELLED' || statusResponse.status === 'NOT_FOUND') {
+                    // Thanh toán thất bại
+                    setPaymentStatus('failed');
+                    clearInterval(pollInterval);
+
+                    setTimeout(() => {
+                        setPaymentModal(null);
+                        setPaymentStatus('pending');
+                    }, 2000);
+                }
+            } catch (error) {
+                console.error('Lỗi kiểm tra payment status:', error);
+            }
+        }, 3000); // Poll mỗi 3 giây
+
+        // Auto clear sau 15 phút
+        setTimeout(() => {
+            clearInterval(pollInterval);
+            if (paymentStatus !== 'success') {
+                setPaymentStatus('failed');
+                setTimeout(() => {
+                    setPaymentModal(null);
+                    setPaymentStatus('pending');
+                }, 2000);
+            }
+        }, 15 * 60 * 1000);
+    };
+
+    const closePaymentModal = () => {
+        setPaymentModal(null);
+        setPaymentStatus('pending');
+    };
+
+    const formatPrice = (price: number) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+        }).format(price);
+    };
+
+    if (loading) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+                <Loader2 style={{ width: '32px', height: '32px', animation: 'spin 1s linear infinite' }} />
+            </div>
+        );
+    }
 
     return (
         <div className={styles.container}>
@@ -159,6 +336,212 @@ const CourseNewPage = () => {
                     />
                 ))}
             </section>
+
+            {/* Payment Modal */}
+            {paymentModal && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999,
+                    padding: '16px'
+                }}>
+                    <div style={{
+                        backgroundColor: 'white',
+                        borderRadius: '16px',
+                        padding: '32px',
+                        maxWidth: '480px',
+                        width: '100%',
+                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+                        animation: 'fadeInScale 0.3s ease-out'
+                    }}>
+                        {paymentStatus === 'pending' || paymentStatus === 'processing' ? (
+                            <>
+                                <h3 style={{
+                                    fontSize: '24px',
+                                    fontWeight: 'bold',
+                                    color: '#111',
+                                    marginBottom: '16px',
+                                    textAlign: 'center'
+                                }}>
+                                    Quét mã QR để thanh toán
+                                </h3>
+                                <p style={{
+                                    color: '#666',
+                                    textAlign: 'center',
+                                    marginBottom: '24px'
+                                }}>
+                                    Vui lòng quét mã QR bằng ứng dụng ngân hàng của bạn
+                                </p>
+
+                                {/* QR Code */}
+                                <div style={{
+                                    backgroundColor: '#f9fafb',
+                                    padding: '24px',
+                                    borderRadius: '12px',
+                                    marginBottom: '24px',
+                                    display: 'flex',
+                                    justifyContent: 'center'
+                                }}>
+                                    <img
+                                        src={paymentModal.qrCode}
+                                        alt="QR Code"
+                                        style={{
+                                            width: '256px',
+                                            height: '256px',
+                                            objectFit: 'contain'
+                                        }}
+                                    />
+                                </div>
+
+                                {/* Payment Info */}
+                                <div style={{
+                                    backgroundColor: '#eff6ff',
+                                    padding: '16px',
+                                    borderRadius: '12px',
+                                    marginBottom: '24px'
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                        <span style={{ color: '#666' }}>Gói cấp độ:</span>
+                                        <span style={{ fontWeight: 600, color: '#111' }}>{paymentModal.level}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                        <span style={{ color: '#666' }}>Số tiền:</span>
+                                        <span style={{ fontWeight: 600, color: '#111' }}>
+                                            {formatPrice(paymentModal.amount)}
+                                        </span>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <span style={{ color: '#666' }}>Mã đơn hàng:</span>
+                                        <span style={{ fontFamily: 'monospace', fontSize: '14px', color: '#111' }}>
+                                            {paymentModal.orderCode}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Loading Indicator */}
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '8px',
+                                    color: '#2563eb',
+                                    marginBottom: '16px'
+                                }}>
+                                    <Loader2 style={{ width: '20px', height: '20px', animation: 'spin 1s linear infinite' }} />
+                                    <span>Đang chờ thanh toán...</span>
+                                </div>
+
+                                {/* Alternative Link */}
+                                <a
+                                    href={paymentModal.checkoutUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                        display: 'block',
+                                        textAlign: 'center',
+                                        color: '#2563eb',
+                                        textDecoration: 'underline',
+                                        marginBottom: '16px'
+                                    }}
+                                >
+                                    Hoặc thanh toán qua trình duyệt
+                                </a>
+
+                                {/* Close Button */}
+                                <button
+                                    onClick={closePaymentModal}
+                                    style={{
+                                        width: '100%',
+                                        backgroundColor: '#e5e7eb',
+                                        color: '#374151',
+                                        padding: '12px',
+                                        borderRadius: '12px',
+                                        fontWeight: 600,
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        transition: 'background-color 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#d1d5db'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#e5e7eb'}
+                                >
+                                    Hủy
+                                </button>
+                            </>
+                        ) : paymentStatus === 'success' ? (
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{
+                                    backgroundColor: '#dcfce7',
+                                    width: '80px',
+                                    height: '80px',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    margin: '0 auto 16px'
+                                }}>
+                                    <CheckCircle style={{ width: '48px', height: '48px', color: '#16a34a' }} />
+                                </div>
+                                <h3 style={{
+                                    fontSize: '24px',
+                                    fontWeight: 'bold',
+                                    color: '#111',
+                                    marginBottom: '8px'
+                                }}>
+                                    Thanh toán thành công!
+                                </h3>
+                                <p style={{ color: '#666' }}>
+                                    Đang chuyển vào trang học...
+                                </p>
+                            </div>
+                        ) : (
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{
+                                    backgroundColor: '#fee2e2',
+                                    width: '80px',
+                                    height: '80px',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    margin: '0 auto 16px'
+                                }}>
+                                    <XCircle style={{ width: '48px', height: '48px', color: '#dc2626' }} />
+                                </div>
+                                <h3 style={{
+                                    fontSize: '24px',
+                                    fontWeight: 'bold',
+                                    color: '#111',
+                                    marginBottom: '8px'
+                                }}>
+                                    Thanh toán thất bại
+                                </h3>
+                                <p style={{ color: '#666', marginBottom: '16px' }}>
+                                    Vui lòng thử lại hoặc liên hệ hỗ trợ
+                                </p>
+                                <button
+                                    onClick={closePaymentModal}
+                                    style={{
+                                        width: '100%',
+                                        backgroundColor: '#e5e7eb',
+                                        color: '#374151',
+                                        padding: '12px',
+                                        borderRadius: '12px',
+                                        fontWeight: 600,
+                                        border: 'none',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    Đóng
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

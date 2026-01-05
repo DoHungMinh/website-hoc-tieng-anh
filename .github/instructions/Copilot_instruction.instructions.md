@@ -27,3 +27,6 @@ Tài liệu này cung cấp bối cảnh kỹ thuật toàn diện của dự á
 
 [cite\_start] khi tôi yêu cầu bạn sửa code trong dự án hãy sửa theo bình thường và chuẩn theo các file  đã được cung cấp hãy cứ làm thật chuyên nghiệp và quy chuẩn theo các nội dung đã được cung cấp ở file 
 [cite\_end]
+
+[cite\_start] Trước khi sửa code của chức năng gì hãy đọc kỹ các file liên quan đến chức năng đó thật kỹ đểu hiểu cấu trúc file và file đó làm gì, bên cạnh đó phải hiếu cấu trúc file đó và các phân chia chức năng trong file đó như thế nào (vd: controller, service, route, model, util...) để khi sửa code không làm ảnh hưởng đến các chức năng khác và giữ được tính module hóa trong dự án (ví dụ minh họa phần sử lý logic là của service trong backend và controller chỉ gọi service chứ không xử lý logic trong controller) kiểu như vậy nhé. 
+[cite\_end]

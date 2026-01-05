@@ -13,6 +13,10 @@ export interface ICourse extends Omit<Document, "_id"> {
   thumbnail?: string;
   studentsCount: number;
   lessonsCount: number;
+  
+  // Level Package Integration
+  order: number; // Thứ tự hiển thị trong level
+  isPublic: boolean; // Hiển thị trong level package (false = soft delete)
   vocabulary?: Array<{
     id: string;
     word: string;
@@ -51,6 +55,8 @@ const CourseSchema = new Schema<ICourse>({
   thumbnail: { type: String },
   studentsCount: { type: Number, default: 0 },
   lessonsCount: { type: Number, default: 0 },
+  order: { type: Number, default: 0 },
+  isPublic: { type: Boolean, default: true },
   vocabulary: [{
     id: String,
     word: String,

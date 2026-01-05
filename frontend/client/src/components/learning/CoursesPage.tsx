@@ -87,7 +87,6 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
     };
 
     const TypeIcon = typeIcons[course.type];
-    const priceVND = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(course.price);
 
     return (
       <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer flex flex-col h-full"
@@ -134,15 +133,7 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
 
           <div className="flex items-center justify-between mt-auto">
             <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-blue-600">{priceVND}</span>
-                {course.originalPrice && course.originalPrice > course.price && (
-                  <span className="text-sm text-gray-500 line-through">
-                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(course.originalPrice)}
-                  </span>
-                )}
-              </div>
-              <span className="text-xs text-gray-500">{course.instructor}</span>
+              <span className="text-sm text-gray-600">{course.instructor}</span>
             </div>
 
             <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2">

@@ -21,7 +21,6 @@ const NAV_ITEMS = [
     { path: "/", label: "Trang chủ", key: "home" },
     { path: "/courses", label: "Khóa học", key: "courses" },
     { path: "/practice", label: "Luyện tập", key: "practice" },
-    { path: "/pricing", label: "Bảng giá", key: "pricing" },
     { path: "/aichat", label: "AI Speaking", key: "voice" },
     { path: "/contact", label: "Liên hệ", key: "contact" },
 ];

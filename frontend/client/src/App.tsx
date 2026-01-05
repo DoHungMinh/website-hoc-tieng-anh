@@ -18,6 +18,7 @@ const IELTSTestTakingPage = lazy(() => import("./pages/IELTSTestTakingPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const PlacementTestPage = lazy(() => import("./pages/PlacementTestPage"));
 const ChatPage = lazy(() => import("./pages/Chat/Chat"));
+const LevelPackagesPage = lazy(() => import("./pages/LevelPackagesPage"));
 
 const PaymentSuccessHandler = lazy(
     () => import("./components/learning/PaymentSuccessHandler")
@@ -53,6 +54,10 @@ const router = createBrowserRouter([
             {
                 path: "courses",
                 element: <CourseNewPage />,
+            },
+            {
+                path: "levels",
+                element: <LevelPackagesPage />,
             },
             {
                 path: "practice",

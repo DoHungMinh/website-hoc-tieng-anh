@@ -15,7 +15,6 @@ import {
   Filter,
   Eye,
   Target,
-  Lightbulb,
   FileText,
   CheckCircle,
   Volume2,
@@ -30,7 +29,8 @@ const CourseManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'vocabulary' | 'grammar'>('all');
-  const [filterLevel, setFilterLevel] = useState<'all' | 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'IDIOMS'>('all');
+  // NEW: Active level tab (replaces filterLevel)
+  const [activeLevel, setActiveLevel] = useState<'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'>('A1');
   const [filterStatus, setFilterStatus] = useState<'all' | 'draft' | 'active' | 'archived'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
@@ -67,17 +67,15 @@ const CourseManagement: React.FC = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterType, filterLevel, filterStatus]);
+  }, [searchTerm, filterType, activeLevel, filterStatus]);
 
   // Generate initial course data
   const getInitialCourse = (): Course => ({
     title: '',
     description: '',
     type: 'vocabulary',
-    level: 'A1',
+    level: activeLevel,
     duration: '',
-    price: 0,
-    originalPrice: 0,
     instructor: '',
     status: 'draft',
     studentsCount: 0,
@@ -186,13 +184,6 @@ const CourseManagement: React.FC = () => {
       'C2': 'bg-purple-100 text-purple-800'
     };
     return colors[level as keyof typeof colors] || 'bg-gray-100 text-gray-800';
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(price);
   };
 
   // Add vocabulary item
@@ -415,7 +406,7 @@ const CourseManagement: React.FC = () => {
     const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       course.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || course.type === filterType;
-    const matchesLevel = filterLevel === 'all' || course.level === filterLevel;
+    const matchesLevel = course.level === activeLevel;
     const matchesStatus = filterStatus === 'all' || course.status === filterStatus;
     return matchesSearch && matchesType && matchesLevel && matchesStatus;
   });
@@ -512,17 +503,6 @@ const CourseManagement: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Giá (VNĐ)</label>
-                  <input
-                    type="number"
-                    value={selectedCourse.price || ''}
-                    onChange={(e) => setSelectedCourse({ ...selectedCourse, price: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="299000"
-                  />
-                </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Thời lượng</label>
                   <input
@@ -992,17 +972,6 @@ const CourseManagement: React.FC = () => {
                 <p className="text-2xl font-bold text-green-600">{selectedCourse.studentsCount.toLocaleString()}</p>
               </div>
 
-              <div className="bg-blue-50 rounded-lg p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <Lightbulb className="h-5 w-5 text-blue-600" />
-                  <span className="font-medium">Giá</span>
-                </div>
-                <p className="text-2xl font-bold text-blue-600">{formatPrice(selectedCourse.price)}</p>
-                {selectedCourse.originalPrice && (
-                  <p className="text-sm text-gray-500 line-through">{formatPrice(selectedCourse.originalPrice)}</p>
-                )}
-              </div>
-
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <CheckCircle className="h-5 w-5 text-gray-600" />
@@ -1092,7 +1061,7 @@ const CourseManagement: React.FC = () => {
           <p className="text-gray-600">Quản lý nội dung và cấu trúc khóa học</p>
         </div>
         <div className="flex gap-3">
-          <AICourseCreator onCourseGenerated={handleAICourseGenerated} />
+          <AICourseCreator onCourseGenerated={handleAICourseGenerated} defaultLevel={activeLevel} />
           <button
             onClick={handleCreate}
             className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors duration-200"
@@ -1100,6 +1069,36 @@ const CourseManagement: React.FC = () => {
             <Plus className="h-4 w-4" />
             Tạo khóa học mới
           </button>
+        </div>
+      </div>
+
+      {/* Level Tabs */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="flex gap-2 overflow-x-auto">
+          {(['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const).map((level) => {
+            const levelCourseCount = courses.filter(c => c.level === level).length;
+            const isActive = activeLevel === level;
+            return (
+              <button
+                key={level}
+                onClick={() => setActiveLevel(level)}
+                className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 whitespace-nowrap ${
+                  isActive
+                    ? 'bg-gradient-to-r from-green-600 to-lime-600 text-white shadow-md'
+                    : 'bg-green-50 text-green-700 hover:bg-green-100'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-bold">{level}</span>
+                  <span className={`text-sm ${
+                    isActive ? 'text-green-100' : 'text-green-600'
+                  }`}>
+                    ({levelCourseCount})
+                  </span>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -1142,20 +1141,6 @@ const CourseManagement: React.FC = () => {
                 <option value="archived">Lưu trữ</option>
               </select>
             </div>
-            <select
-              value={filterLevel}
-              onChange={(e) => setFilterLevel(e.target.value as 'all' | 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'IDIOMS')}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-            >
-              <option value="all">Tất cả cấp độ</option>
-              <option value="A1">A1</option>
-              <option value="A2">A2</option>
-              <option value="B1">B1</option>
-              <option value="B2">B2</option>
-              <option value="C1">C1</option>
-              <option value="C2">C2</option>
-              <option value="IDIOMS">IDIOMS</option>
-            </select>
           </div>
         </div>
       </div>
@@ -1177,9 +1162,6 @@ const CourseManagement: React.FC = () => {
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Loại & Cấp độ
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Giá
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Học viên
@@ -1225,16 +1207,6 @@ const CourseManagement: React.FC = () => {
                             {course.level}
                           </span>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {formatPrice(course.price)}
-                        </div>
-                        {course.originalPrice && (
-                          <div className="text-xs text-gray-500 line-through">
-                            {formatPrice(course.originalPrice)}
-                          </div>
-                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">

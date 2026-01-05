@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useLayoutEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../stores/authStore';
 import { SkillType, SkillCourse } from '../../types/skill';
 import { skillTabs } from '../../data/skillData';
 import { courseAPI, Course } from '../../services/courseAPI';
@@ -52,6 +53,7 @@ const convertToSkillCourse = (course: Course): SkillCourse => {
 const LevelDetailPage = () => {
     const { level = 'a1' } = useParams<{ level: string }>();
     const navigate = useNavigate();
+    const { token, isAuthenticated } = useAuthStore();
     const [activeTab, setActiveTab] = useState<SkillType>('vocabulary');
     const [courses, setCourses] = useState<Course[]>([]);
     const [loading, setLoading] = useState(true);
@@ -68,16 +70,21 @@ const LevelDetailPage = () => {
         document.documentElement.scrollTop = 0;
     }, [level]);
 
-    // Fetch courses from API
+    // Fetch courses from API WITH ENROLLMENT CHECK
     useEffect(() => {
         const fetchCourses = async () => {
             try {
                 setLoading(true);
                 setError(null);
 
-                const response = await courseAPI.getPublicCourses({
-                    level: level.toUpperCase() as 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2',
-                });
+                // Check if user is authenticated
+                if (!isAuthenticated || !token) {
+                    navigate('/login', { state: { from: `/level/${level}` } });
+                    return;
+                }
+
+                // Use new API endpoint with enrollment check
+                const response = await courseAPI.getCoursesByLevel(level.toUpperCase(), token);
 
                 if (response.success && response.data) {
                     setCourses(response.data);
@@ -86,14 +93,14 @@ const LevelDetailPage = () => {
                 }
             } catch (err) {
                 console.error('Error fetching courses:', err);
-                setError('Có lỗi xảy ra khi tải dữ liệu');
+                setError('Có lỗi xảy ra khi tải dữ liệu. Bạn có thể chưa mua gói cấp độ này.');
             } finally {
                 setLoading(false);
             }
         };
 
         fetchCourses();
-    }, [level]);
+    }, [level, isAuthenticated, token, navigate]);
 
     // Group courses by skill type - ONLY courses matching current level
     const coursesBySkill = useMemo(() => {

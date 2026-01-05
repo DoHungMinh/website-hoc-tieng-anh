@@ -633,9 +633,335 @@ const cancelPayment = async (req, res) => {
     }
 };
 
+/**
+ * Tạo payment link cho LEVEL PACKAGE
+ * POST /api/payos/create-level-payment
+ */
+const createLevelPayment = async (req, res) => {
+    try {
+        const { level } = req.body;
+        const userId = req.user?.id;
+        const userEmail = req.user?.email;
+
+        console.log("📝 Tạo level payment request:", { level, userId, userEmail });
+
+        // Validate input
+        if (!level) {
+            return res.status(400).json({
+                success: false,
+                message: "level là bắt buộc (A1, A2, B1, B2, C1, C2)",
+            });
+        }
+
+        if (!userId || !userEmail) {
+            return res.status(401).json({
+                success: false,
+                message: "Người dùng chưa đăng nhập",
+            });
+        }
+
+        // Import models
+        console.log("🔧 Importing models...");
+        const LevelPackage =
+            require("../src/models/LevelPackage").default ||
+            require("../src/models/LevelPackage");
+        const LevelEnrollment =
+            require("../src/models/LevelEnrollment").default ||
+            require("../src/models/LevelEnrollment");
+        console.log("✅ Models imported successfully");
+
+        // Lấy thông tin level package
+        console.log("🔍 Finding level package:", { level, status: 'active' });
+        const levelPackage = await LevelPackage.findOne({ level, status: 'active' });
+        if (!levelPackage) {
+            return res.status(404).json({
+                success: false,
+                message: `Không tìm thấy Level ${level} Package`,
+            });
+        }
+
+        // Kiểm tra xem user đã mua level này chưa
+        console.log("🔍 Kiểm tra level enrollment cho:", { userId, level });
+
+        const existingEnrollment = await LevelEnrollment.findOne({
+            userId: userId,
+            level: level,
+        });
+
+        if (existingEnrollment) {
+            console.log("❌ User đã mua level này:", existingEnrollment);
+            return res.status(400).json({
+                success: false,
+                message: `Bạn đã sở hữu Level ${level} rồi`,
+                enrolledAt: existingEnrollment.enrolledAt,
+            });
+        }
+
+        // Chuẩn bị dữ liệu order cho PayOS
+        const orderData = {
+            level: level,
+            levelName: levelPackage.name,
+            price: levelPackage.price,
+            userId: userId,
+            userEmail: userEmail,
+        };
+
+        // Tạo payment link qua PayOS
+        const paymentResult = await payOSService.createLevelPaymentLink(orderData);
+
+        if (paymentResult.success) {
+            console.log(
+                "✅ Level payment link được tạo thành công:",
+                levelPackage.name
+            );
+
+            res.json({
+                success: true,
+                message: "Tạo payment link thành công",
+                data: paymentResult.data,
+            });
+        } else {
+            console.error("❌ Lỗi tạo level payment link:", paymentResult.message);
+            res.status(500).json({
+                success: false,
+                message: paymentResult.message,
+            });
+        }
+    } catch (error) {
+        console.error("❌ Lỗi API tạo level payment:", error);
+        res.status(500).json({
+            success: false,
+            message: "Lỗi server khi tạo level payment",
+            error:
+                process.env.NODE_ENV === "development"
+                    ? error.message
+                    : undefined,
+        });
+    }
+};
+
+/**
+ * Xử lý khi level payment thành công
+ * POST /api/payos/level-payment-success
+ */
+const handleLevelPaymentSuccess = async (req, res) => {
+    try {
+        const { orderCode, level } = req.body;
+        const userId = req.user?.id;
+
+        console.log(`🎯 Xử lý level payment success: ${orderCode} cho user: ${userId}, level: ${level}`);
+
+        if (!orderCode) {
+            return res.status(400).json({
+                success: false,
+                message: "orderCode là bắt buộc",
+            });
+        }
+
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Người dùng chưa đăng nhập",
+            });
+        }
+
+        // Kiểm tra trạng thái payment từ PayOS
+        const paymentStatus = await payOSService.getPaymentStatus(
+            parseInt(orderCode)
+        );
+
+        if (!paymentStatus.success || paymentStatus.status !== "PAID") {
+            return res.status(400).json({
+                success: false,
+                message: "Thanh toán chưa được xác nhận hoặc chưa thành công",
+            });
+        }
+
+        const paymentData = paymentStatus.data;
+
+        // Parse level từ payment description
+        let targetLevel = level; // Ưu tiên level từ request body
+        if (!targetLevel && paymentData.description) {
+            // Description format: "LEVEL:A1" hoặc chỉ "A1"
+            const levelMatch = paymentData.description.match(/(?:LEVEL:)?([ABC][12])/);
+            if (levelMatch) {
+                targetLevel = levelMatch[1];
+            }
+        }
+
+        if (!targetLevel) {
+            return res.status(400).json({
+                success: false,
+                message: "Không thể xác định level từ payment",
+            });
+        }
+
+        console.log("🎯 Target level:", targetLevel);
+
+        // Import models
+        const LevelPackage =
+            require("../src/models/LevelPackage").default ||
+            require("../src/models/LevelPackage");
+        const LevelEnrollment =
+            require("../src/models/LevelEnrollment").default ||
+            require("../src/models/LevelEnrollment");
+        const { User } = require("../src/models/User");
+
+        // Kiểm tra level package có tồn tại không
+        const levelPackage = await LevelPackage.findOne({ level: targetLevel });
+        if (!levelPackage) {
+            return res.status(404).json({
+                success: false,
+                message: `Không tìm thấy Level ${targetLevel} Package`,
+            });
+        }
+
+        // Kiểm tra user đã enrolled chưa
+        const existingEnrollment = await LevelEnrollment.findOne({
+            userId: userId,
+            level: targetLevel,
+        });
+
+        if (existingEnrollment) {
+            return res.json({
+                success: true,
+                message: `Bạn đã sở hữu Level ${targetLevel} rồi`,
+                enrollment: existingEnrollment,
+            });
+        }
+
+        // Tạo level enrollment mới
+        const newEnrollment = new LevelEnrollment({
+            userId: userId,
+            level: targetLevel,
+            enrolledAt: new Date(),
+            status: "active",
+            orderCode: parseInt(orderCode),
+            paidAmount: paymentData.amount || levelPackage.price,
+            paymentDate: new Date(),
+            lastAccessedAt: new Date(),
+        });
+
+        await newEnrollment.save();
+
+        console.log(
+            `✅ Đã tạo level enrollment thành công cho user ${userId} - level ${targetLevel}`
+        );
+
+        // Lưu vào PaymentHistory để admin có thể theo dõi
+        try {
+            const PaymentHistory = require("./PaymentHistory");
+            const User = require("../src/models/User").User;
+            
+            const user = await User.findById(userId);
+            
+            const paymentHistory = new PaymentHistory({
+                orderCode: parseInt(orderCode),
+                status: "PAID",
+                amount: paymentData.amount || levelPackage.price,
+                description: `Level ${targetLevel} Package - ${levelPackage.name}`,
+                level: targetLevel,
+                levelPackageName: levelPackage.name,
+                userId: userId,
+                userEmail: user?.email || req.user?.email,
+                userFullName: user?.fullName || user?.name || "N/A",
+                paymentMethod: "qr_code",
+                currency: "VND",
+                paidAt: new Date(),
+                webhookReceived: false,
+            });
+            
+            await paymentHistory.save();
+            console.log("✅ Đã lưu payment history cho level enrollment");
+        } catch (historyError) {
+            console.error("⚠️ Lỗi khi lưu payment history:", historyError.message);
+            // Không throw error để không ảnh hưởng đến enrollment
+        }
+
+        // Tăng studentsCount của level package
+        await LevelPackage.findOneAndUpdate(
+            { level: targetLevel },
+            { $inc: { studentsCount: 1 } }
+        );
+
+        // Lấy thông tin user để gửi email
+        const user = await User.findById(userId);
+
+        // Update PaymentHistory
+        try {
+            const PaymentHistory = require("./PaymentHistory");
+            await PaymentHistory.findOneAndUpdate(
+                { orderCode: parseInt(orderCode) },
+                {
+                    $set: {
+                        level: targetLevel,
+                        levelName: levelPackage.name,
+                        userId: userId,
+                        userEmail: user?.email,
+                        userFullName: user?.fullName,
+                        status: "PAID",
+                        paidAt: new Date(),
+                    },
+                },
+                { new: true, upsert: true }
+            );
+            console.log("✅ PaymentHistory updated for level payment");
+        } catch (error) {
+            console.error("❌ Error updating PaymentHistory:", error);
+        }
+
+        // Gửi email thông báo (không chờ)
+        if (user && user.email) {
+            const emailService = require("./email-service");
+            const emailInfo = {
+                userEmail: user.email,
+                levelName: levelPackage.name,
+                level: targetLevel,
+                amount: paymentData.amount || levelPackage.price,
+                paymentDate: new Date(),
+                orderCode: orderCode,
+            };
+
+            emailService
+                .sendLevelPurchaseEmail(emailInfo)
+                .then((emailResult) => {
+                    if (emailResult.success) {
+                        console.log(`📧 Đã gửi email thông báo mua level tới ${user.email}`);
+                    }
+                })
+                .catch((emailError) => {
+                    console.error(`❌ Lỗi gửi email:`, emailError);
+                });
+        }
+
+        return res.json({
+            success: true,
+            message: `Chúc mừng! Bạn đã sở hữu Level ${targetLevel} Package`,
+            enrollment: newEnrollment,
+            levelInfo: {
+                level: targetLevel,
+                name: levelPackage.name,
+                totalCourses: levelPackage.totalCourses,
+            },
+        });
+    } catch (error) {
+        console.error("❌ Lỗi xử lý level payment success:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Lỗi server khi xử lý thanh toán level",
+            error:
+                process.env.NODE_ENV === "development"
+                    ? error.message
+                    : undefined,
+        });
+    }
+};
+
 module.exports = {
     createPayment,
     getPaymentStatus,
     handleWebhook,
     cancelPayment,
+    createLevelPayment,
+    handleLevelPaymentSuccess,
 };

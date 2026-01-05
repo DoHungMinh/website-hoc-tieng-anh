@@ -211,12 +211,12 @@ const PaymentManagement: React.FC = () => {
 
             const successRateData = await successRateResponse.json();
 
-            // Update state with real data
+            // Update state with real data (with default values)
             setStats({
-                todayRevenue: todayData.data.todayRevenue,
-                weekRevenue: weekData.data.weekRevenue,
-                todayTransactions: todayData.data.todayTransactions,
-                successRate: successRateData.data.successRate,
+                todayRevenue: todayData?.data?.todayRevenue ?? 0,
+                weekRevenue: weekData?.data?.weekRevenue ?? 0,
+                todayTransactions: todayData?.data?.todayTransactions ?? 0,
+                successRate: successRateData?.data?.successRate ?? 0,
             });
         } catch (error: any) {
             console.error("Error fetching payment stats:", error);
@@ -390,7 +390,12 @@ const PaymentManagement: React.FC = () => {
     }, [fromDate, toDate]);
 
     // Format currency for display
-    const formatCurrency = (amount: number): string => {
+    const formatCurrency = (amount: number | null | undefined): string => {
+        // Handle null, undefined, or invalid numbers
+        if (amount === null || amount === undefined || isNaN(amount)) {
+            return '0 VNĐ';
+        }
+        
         if (amount >= 1000000) {
             return `${(amount / 1000000).toFixed(1)}M VNĐ`;
         } else if (amount >= 1000) {
@@ -847,8 +852,9 @@ const PaymentManagement: React.FC = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
-                                            {transaction.courseId?.title ||
-                                                "N/A"}
+                                            {transaction.levelPackageName || 
+                                             transaction.courseId?.title ||
+                                             "N/A"}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm font-medium text-gray-900">

@@ -41,6 +41,18 @@ const paymentHistorySchema = new mongoose.Schema({
     index: true
   },
   
+  // Level Package info (for level-based purchases)
+  level: {
+    type: String,
+    required: false,
+    index: true
+  },
+  
+  levelPackageName: {
+    type: String,
+    required: false
+  },
+  
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -125,6 +137,7 @@ const paymentHistorySchema = new mongoose.Schema({
 paymentHistorySchema.index({ status: 1, createdAt: -1 });
 paymentHistorySchema.index({ userId: 1, createdAt: -1 });
 paymentHistorySchema.index({ courseId: 1, createdAt: -1 });
+paymentHistorySchema.index({ level: 1, createdAt: -1 });
 
 // Static methods for statistics
 paymentHistorySchema.statics.getPaymentStats = async function() {

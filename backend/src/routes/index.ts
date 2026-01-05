@@ -12,6 +12,8 @@ import enrollmentRoutes from "./enrollment.routes";
 import paymentRoutes from "./payment.routes";
 import analyticsRoutes from "./analytics.routes";
 import voiceChatRoutes from "./voiceChat.routes";
+import levelPackageRoutes from "./levelPackage.routes";
+import levelEnrollmentRoutes from "./levelEnrollment.routes";
 
 const router = Router();
 
@@ -52,6 +54,12 @@ router.use("/admin/statistics", analyticsRoutes);
 // Voice chat routes
 router.use("/voice", voiceChatRoutes);
 
+// Level Package routes (NEW - Level-based learning)
+router.use("/level-packages", levelPackageRoutes);
+
+// Level Enrollment routes (NEW)
+router.use("/level-enrollments", levelEnrollmentRoutes);
+
 // =================================================================
 // ASSESSMENT & LEARNING ROUTES (To be implemented)
 // =================================================================
@@ -87,6 +95,8 @@ router.get("/", (req, res) => {
             payments: "/api/payments",
             analytics: "/api/admin/statistics",
             voice: "/api/voice",
+            levelPackage: "/api/level-package",
+            levelEnrollment: "/api/level-enrollment",
         },
     });
 });

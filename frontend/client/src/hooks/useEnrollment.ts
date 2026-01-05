@@ -40,14 +40,34 @@ interface EnrollmentStats {
   completedCourses: number;
 }
 
+interface LevelEnrollment {
+  _id: string;
+  userId: string;
+  level: string;
+  enrolledAt: string;
+  status: 'active' | 'paused' | 'cancelled';
+  lastAccessedAt?: string;
+  orderCode: number;
+  paidAmount: number;
+  paymentDate: string;
+  packageInfo?: {
+    level: string;
+    name: string;
+    price: number;
+    description: string;
+  };
+}
+
 const CACHE_DURATION = 30000; // 30 seconds cache
 
 export const useEnrollment = () => {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [levelEnrollments, setLevelEnrollments] = useState<LevelEnrollment[]>([]);
   const [stats, setStats] = useState<EnrollmentStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastFetch, setLastFetch] = useState<number>(0);
+  const [lastLevelFetch, setLastLevelFetch] = useState<number>(0);
   // Atomic selector - chỉ re-render khi token thay đổi
   const token = useAuthStore((state) => state.token);
 
@@ -99,6 +119,51 @@ export const useEnrollment = () => {
       setLoading(false);
     }
   }, [token, lastFetch]);
+
+  // Fetch user level enrollments
+  const fetchLevelEnrollments = useCallback(async () => {
+    if (!token) {
+      setError('Authentication required');
+      return;
+    }
+
+    // Check cache
+    const now = Date.now();
+    if (lastLevelFetch && (now - lastLevelFetch) < CACHE_DURATION) {
+      console.log('📋 Using cached level enrollment data');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      console.log('🔄 Fetching fresh level enrollment data');
+      const response = await fetch(`${API_BASE}/level-enrollments/my-enrollments`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        setLevelEnrollments(result.data || []);
+        setLastLevelFetch(now);
+      }
+
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch level enrollments';
+      console.error('Error fetching level enrollments:', err);
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [token, lastLevelFetch]);
 
   // Enroll in a course
   const enrollInCourse = async (courseId: string) => {
@@ -232,15 +297,18 @@ export const useEnrollment = () => {
   useEffect(() => {
     if (token) {
       fetchEnrollments();
+      fetchLevelEnrollments();
     }
-  }, [token, fetchEnrollments]);
+  }, [token, fetchEnrollments, fetchLevelEnrollments]);
 
   return {
     enrollments,
+    levelEnrollments,
     stats,
     loading,
     error,
     fetchEnrollments,
+    fetchLevelEnrollments,
     enrollInCourse,
     updateLessonProgress,
     getCourseProgress

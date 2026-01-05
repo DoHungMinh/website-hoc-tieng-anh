@@ -22,7 +22,6 @@ interface AIConfig {
   topic: string;
   level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
   contentLength: number;
-  price: number;
   duration: string;
   includePronunciation: boolean;
   includeExamples: boolean;
@@ -32,9 +31,10 @@ interface AIConfig {
 
 interface AICourseCreatorProps {
   onCourseGenerated: (course: Omit<Course, '_id' | 'createdAt' | 'updatedAt'>) => void;
+  defaultLevel?: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 }
 
-const AICourseCreator: React.FC<AICourseCreatorProps> = ({ onCourseGenerated }) => {
+const AICourseCreator: React.FC<AICourseCreatorProps> = ({ onCourseGenerated, defaultLevel = 'A1' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -42,9 +42,8 @@ const AICourseCreator: React.FC<AICourseCreatorProps> = ({ onCourseGenerated }) 
   const [config, setConfig] = useState<AIConfig>({
     type: 'vocabulary',
     topic: '',
-    level: 'A1',
+    level: defaultLevel,
     contentLength: 20,
-    price: 299000,
     duration: '4 tuần',
     includePronunciation: true,
     includeExamples: true,
@@ -66,9 +65,8 @@ const AICourseCreator: React.FC<AICourseCreatorProps> = ({ onCourseGenerated }) 
     setConfig({
       type: 'vocabulary',
       topic: '',
-      level: 'A1',
+      level: defaultLevel,
       contentLength: 20,
-      price: 299000,
       duration: '4 tuần',
       includePronunciation: true,
       includeExamples: true,
@@ -78,7 +76,7 @@ const AICourseCreator: React.FC<AICourseCreatorProps> = ({ onCourseGenerated }) 
   };
 
   const handleNext = () => {
-    if (currentStep < 5) {
+    if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -96,8 +94,6 @@ const AICourseCreator: React.FC<AICourseCreatorProps> = ({ onCourseGenerated }) 
       case 2:
         return config.topic.trim() !== '';
       case 3:
-        return config.price > 0 && config.duration.trim() !== '';
-      case 4:
         return config.contentLength >= 10;
       default:
         return true;
@@ -106,7 +102,7 @@ const AICourseCreator: React.FC<AICourseCreatorProps> = ({ onCourseGenerated }) 
 
   const handleGenerate = async () => {
     setIsGenerating(true);
-    setCurrentStep(5);
+    setCurrentStep(3);
     
     try {
       // Prepare AI generation config
@@ -115,7 +111,7 @@ const AICourseCreator: React.FC<AICourseCreatorProps> = ({ onCourseGenerated }) 
         topic: config.topic,
         level: config.level,
         contentLength: config.contentLength,
-        price: config.price,
+        price: 0,
         duration: config.duration,
         includePronunciation: config.includePronunciation,
         includeExamples: config.includeExamples,
@@ -149,7 +145,6 @@ const AICourseCreator: React.FC<AICourseCreatorProps> = ({ onCourseGenerated }) 
         type: generatedCourse.type || config.type,
         level: generatedCourse.level || config.level,
         duration: generatedCourse.duration || config.duration,
-        price: generatedCourse.price || config.price,
         instructor: generatedCourse.instructor || 'AI Assistant',
         status: 'draft' as const,
         studentsCount: generatedCourse.studentsCount || 0,
@@ -188,7 +183,6 @@ const AICourseCreator: React.FC<AICourseCreatorProps> = ({ onCourseGenerated }) 
       type: config.type,
       level: config.level,
       duration: config.duration,
-      price: config.price,
       instructor: 'AI Assistant',
       status: 'draft' as const,
       studentsCount: 0,
@@ -340,7 +334,7 @@ const AICourseCreator: React.FC<AICourseCreatorProps> = ({ onCourseGenerated }) 
           </div>
         );
 
-      case 4:
+      case 3:
         return (
           <div className="space-y-6">
             <div className="text-center">
@@ -437,81 +431,7 @@ const AICourseCreator: React.FC<AICourseCreatorProps> = ({ onCourseGenerated }) 
           </div>
         );
 
-      case 3:
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-4">
-                <DollarSign className="h-6 w-6 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Thiết lập giá và thời lượng</h3>
-              <p className="text-gray-600">Cấu hình thông tin tài chính và thời gian học</p>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Giá khóa học (VNĐ)
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={config.price}
-                    onChange={(e) => setConfig({ ...config, price: parseInt(e.target.value) || 0 })}
-                    placeholder="299000"
-                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    min="0"
-                    step="1000"
-                  />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <span className="text-gray-500">₫</span>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  Giá được hiển thị: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(config.price)}
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Thời lượng khóa học
-                </label>
-                <select
-                  value={config.duration}
-                  onChange={(e) => setConfig({ ...config, duration: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="1 tuần">1 tuần</option>
-                  <option value="2 tuần">2 tuần</option>
-                  <option value="3 tuần">3 tuần</option>
-                  <option value="4 tuần">4 tuần</option>
-                  <option value="6 tuần">6 tuần</option>
-                  <option value="8 tuần">8 tuần</option>
-                  <option value="10 tuần">10 tuần</option>
-                  <option value="12 tuần">12 tuần (3 tháng)</option>
-                  <option value="16 tuần">16 tuần (4 tháng)</option>
-                  <option value="24 tuần">24 tuần (6 tháng)</option>
-                </select>
-              </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-start">
-                  <Lightbulb className="h-5 w-5 text-blue-600 mt-0.5 mr-3" />
-                  <div>
-                    <h4 className="font-medium text-blue-900">Gợi ý định giá</h4>
-                    <ul className="text-sm text-blue-700 mt-1 space-y-1">
-                      <li>• Khóa học cơ bản (A1-A2): 199.000₫ - 399.000₫</li>
-                      <li>• Khóa học trung cấp (B1-B2): 299.000₫ - 599.000₫</li>
-                      <li>• Khóa học nâng cao (C1-C2): 499.000₫ - 999.000₫</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 5:
+      case 4:
         return (
           <div className="space-y-6">
             <div className="text-center">
@@ -611,7 +531,7 @@ const AICourseCreator: React.FC<AICourseCreatorProps> = ({ onCourseGenerated }) 
               </div>
               <div>
                 <h2 className="text-xl font-bold">AI tạo khóa học</h2>
-                <p className="text-purple-100">Bước {currentStep} / 5</p>
+                <p className="text-purple-100">Bước {currentStep} / 3</p>
               </div>
             </div>
             <button
@@ -625,7 +545,7 @@ const AICourseCreator: React.FC<AICourseCreatorProps> = ({ onCourseGenerated }) 
           {/* Progress bar */}
           <div className="mt-4">
             <div className="flex items-center gap-2">
-              {[1, 2, 3, 4, 5].map((step) => (
+              {[1, 2, 3].map((step) => (
                 <div
                   key={step}
                   className={`flex-1 h-2 rounded-full ${
@@ -661,7 +581,7 @@ const AICourseCreator: React.FC<AICourseCreatorProps> = ({ onCourseGenerated }) 
               Hủy
             </button>
             
-            {currentStep < 4 ? (
+            {currentStep < 3 ? (
               <button
                 onClick={handleNext}
                 disabled={!isStepValid()}
@@ -670,7 +590,7 @@ const AICourseCreator: React.FC<AICourseCreatorProps> = ({ onCourseGenerated }) 
                 Tiếp tục
                 <ChevronRight className="h-4 w-4" />
               </button>
-            ) : currentStep === 4 ? (
+            ) : currentStep === 3 ? (
               <button
                 onClick={handleGenerate}
                 disabled={!isStepValid()}

@@ -210,6 +210,123 @@ class PayOSService {
     }
 
     /**
+     * Tạo payment link cho LEVEL PACKAGE
+     * @param {Object} orderData - Thông tin level package order
+     * @param {string} orderData.level - Level (A1, A2, B1, B2, C1, C2)
+     * @param {string} orderData.levelName - Tên level package
+     * @param {number} orderData.price - Giá level package
+     * @param {string} orderData.userId - ID người dùng
+     * @param {string} orderData.userEmail - Email người dùng
+     * @returns {Promise<Object>} Payment link data
+     */
+    async createLevelPaymentLink(orderData) {
+        try {
+            const { level, levelName, price, userId, userEmail } = orderData;
+
+            // Tạo order code unique
+            const orderCode = this.generateOrderCode();
+
+            // Chuẩn bị dữ liệu payment theo PayOS format
+            const paymentData = {
+                orderCode: orderCode,
+                amount: Math.round(price), // PayOS yêu cầu số nguyên
+                description: `LEVEL:${level}`, // Format đặc biệt để parse level
+                items: [
+                    {
+                        name:
+                            levelName.length > 20
+                                ? levelName.substring(0, 17) + "..."
+                                : levelName,
+                        quantity: 1,
+                        price: Math.round(price),
+                    },
+                ],
+                returnUrl: PAYOS_CONFIG.returnUrl,
+                cancelUrl: PAYOS_CONFIG.cancelUrl,
+                buyerName: userEmail.split("@")[0],
+                buyerEmail: userEmail,
+                expiredAt: Math.floor(Date.now() / 1000) + 15 * 60, // 15 phút
+            };
+
+            console.log("🔄 Tạo PayOS level payment link:", {
+                orderCode,
+                level,
+                amount: paymentData.amount,
+            });
+
+            // Gọi PayOS API
+            const paymentLinkResponse = await this.payOS.paymentRequests.create(
+                paymentData
+            );
+
+            console.log("✅ PayOS level payment link được tạo:", {
+                orderCode: paymentLinkResponse.orderCode,
+                checkoutUrl: paymentLinkResponse.checkoutUrl,
+            });
+
+            // Lưu PaymentHistory
+            try {
+                const PaymentHistory = require("./PaymentHistory");
+                const LevelPackage = require("../src/models/LevelPackage");
+                const { User } = require("../src/models/User");
+
+                const levelPackage = await LevelPackage.findOne({ level });
+                const user = await User.findById(userId);
+
+                if (levelPackage && user) {
+                    const paymentHistory = new PaymentHistory({
+                        orderCode: paymentLinkResponse.orderCode,
+                        status: "PENDING",
+                        amount: paymentData.amount,
+                        description: paymentData.description,
+                        level: level,
+                        levelName: levelPackage.name,
+                        userId,
+                        userEmail: user.email,
+                        userFullName: user.fullName,
+                        checkoutUrl: paymentLinkResponse.checkoutUrl,
+                        qrCode: paymentLinkResponse.qrCode,
+                        expiredAt: new Date(paymentData.expiredAt * 1000),
+                        createdAt: getVietnamTime(),
+                    });
+
+                    await paymentHistory.save();
+                    console.log(
+                        "💾 Đã lưu PaymentHistory cho level:",
+                        paymentLinkResponse.orderCode
+                    );
+                }
+            } catch (historyError) {
+                console.warn(
+                    "⚠️ Không thể lưu PaymentHistory:",
+                    historyError.message
+                );
+            }
+
+            return {
+                success: true,
+                data: {
+                    orderCode: paymentLinkResponse.orderCode,
+                    checkoutUrl: paymentLinkResponse.checkoutUrl,
+                    qrCode: paymentLinkResponse.qrCode,
+                    amount: paymentData.amount,
+                    description: paymentData.description,
+                    expiredAt: paymentData.expiredAt,
+                    level,
+                    userId,
+                },
+            };
+        } catch (error) {
+            console.error("❌ Lỗi tạo PayOS level payment link:", error);
+            return {
+                success: false,
+                message: error.message || "Lỗi tạo level payment link",
+                error: error,
+            };
+        }
+    }
+
+    /**
      * Hủy payment link
      * @param {number} orderCode - Mã đơn hàng
      * @param {string} reason - Lý do hủy

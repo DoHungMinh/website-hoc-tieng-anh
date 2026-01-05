@@ -4,6 +4,7 @@ import {
     authenticateToken,
     requireAdmin,
 } from "../middleware/auth";
+import { checkSpecificLevelAccess } from "../middleware/checkLevelAccess";
 import {
     getCourses,
     getPublicCourses,
@@ -30,6 +31,21 @@ router.get("/public", getPublicCourses);
 
 // Get public course by ID (for viewing course details)
 router.get("/public/:id", getCourseById);
+
+// Get courses by level WITH enrollment check (for enrolled users)
+router.get("/level/:level", authenticateToken, (req: Request, res: Response) => {
+    const { level } = req.params;
+    
+    // Check if user has access to this level
+    const middleware = checkSpecificLevelAccess(level.toUpperCase());
+    
+    // Run the middleware check - if it passes, get the courses
+    return middleware(req, res, () => {
+        // Set level filter in query params
+        req.query.level = level.toUpperCase();
+        return getPublicCourses(req, res);
+    });
+});
 
 // =================================================================
 // USER ROUTES (Authentication required)
