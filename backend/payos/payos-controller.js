@@ -346,6 +346,15 @@ const handleEnrollmentFromWebhook = async (
             `🔍 Xử lý enrollment từ webhook - Order: ${orderCode}, Description: ${description}`
         );
 
+        // ✅ CHECK 1: LEVEL ENROLLMENT (Format: "LEVEL:B2")
+        const levelMatch = description.match(/^LEVEL:([A-C][12])$/i);
+        if (levelMatch) {
+            const level = levelMatch[1].toUpperCase();
+            console.log(`🎯 Detected LEVEL payment: ${level}`);
+            return await handleLevelEnrollmentFromWebhook(orderCode, level, webhookData);
+        }
+
+        // ✅ CHECK 2: COURSE ENROLLMENT
         // Tìm courseId từ description
         let courseId = null;
 
@@ -368,7 +377,7 @@ const handleEnrollmentFromWebhook = async (
 
         if (!courseId) {
             console.log(
-                `⚠️ Không thể tìm courseId từ description: ${description}`
+                `⚠️ Không thể tìm courseId hoặc level từ description: ${description}`
             );
             return;
         }
@@ -512,6 +521,117 @@ const handleEnrollmentFromWebhook = async (
             });
     } catch (error) {
         console.error("❌ Lỗi trong handleEnrollmentFromWebhook:", error);
+        throw error;
+    }
+};
+
+/**
+ * 🎯 Xử lý LEVEL enrollment từ webhook (CRITICAL cho payment safety)
+ * Function này đảm bảo user không mất tiền khi thanh toán thành công
+ */
+const handleLevelEnrollmentFromWebhook = async (orderCode, level, webhookData) => {
+    try {
+        console.log(`🎯 Xử lý LEVEL enrollment từ webhook - Order: ${orderCode}, Level: ${level}`);
+
+        // Import models
+        console.log("🔧 Importing models...");
+        const PaymentHistory = require("./PaymentHistory");
+        const LevelPackageModule = require("../src/models/LevelPackage");
+        const LevelPackage = LevelPackageModule.default || LevelPackageModule;
+        const LevelEnrollmentModule = require("../src/models/LevelEnrollment");
+        const LevelEnrollment = LevelEnrollmentModule.default || LevelEnrollmentModule;
+        const UserModule = require("../src/models/User");
+        const User = UserModule.User || UserModule.default || UserModule;
+
+        // Tìm userId từ payment history
+        const existingPayment = await PaymentHistory.findOne({ orderCode });
+        if (!existingPayment || !existingPayment.userId) {
+            console.log(`⚠️ Không tìm thấy userId trong payment history cho orderCode: ${orderCode}`);
+            return;
+        }
+
+        const userId = existingPayment.userId;
+        console.log(`✅ Found userId: ${userId}`);
+
+        // Kiểm tra user tồn tại
+        const user = await User.findById(userId);
+        if (!user) {
+            console.log(`❌ User không tồn tại: ${userId}`);
+            return;
+        }
+        console.log(`✅ User found: ${user.email}`);
+
+        // Kiểm tra level package tồn tại
+        const levelPackage = await LevelPackage.findOne({ level, status: 'active' });
+        if (!levelPackage) {
+            console.log(`❌ Level package không tồn tại: ${level}`);
+            return;
+        }
+        console.log(`✅ Level package found: ${levelPackage.name}`);
+
+        // ✅ IDEMPOTENT CHECK: Kiểm tra đã có enrollment chưa
+        const existingEnrollment = await LevelEnrollment.findOne({
+            userId: userId,
+            level: level
+        });
+
+        if (existingEnrollment) {
+            console.log(`✅ Level enrollment đã tồn tại: ${user.email} -> ${level} (created at: ${existingEnrollment.enrolledAt})`);
+            // Cập nhật payment history nếu chưa có thông tin
+            if (!existingPayment.level || !existingPayment.levelPackageName) {
+                await PaymentHistory.findOneAndUpdate(
+                    { orderCode },
+                    {
+                        level: level,
+                        levelPackageName: levelPackage.name,
+                        userEmail: user.email,
+                        userFullName: user.fullName
+                    }
+                );
+                console.log(`✅ Updated payment history with level info`);
+            }
+            return; // Không tạo duplicate
+        }
+
+        // Tạo level enrollment mới
+        const newEnrollment = new LevelEnrollment({
+            userId: userId,
+            level: level,
+            levelPackageId: levelPackage._id,
+            enrolledAt: new Date(),
+            expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 năm
+            status: 'active',
+            paymentStatus: 'paid',
+            paymentInfo: {
+                orderCode: orderCode,
+                amount: webhookData.amount || levelPackage.price,
+                paidAt: new Date()
+            }
+        });
+
+        await newEnrollment.save();
+        console.log(`✅ ĐÃ TẠO LEVEL ENROLLMENT TỪ WEBHOOK: ${user.email} -> ${level}`);
+
+        // Cập nhật payment history
+        await PaymentHistory.findOneAndUpdate(
+            { orderCode },
+            {
+                level: level,
+                levelPackageName: levelPackage.name,
+                userId: userId,
+                userEmail: user.email,
+                userFullName: user.fullName,
+                status: 'PAID',
+                paidAt: new Date()
+            }
+        );
+        console.log(`✅ Updated payment history with level enrollment info`);
+
+        // TODO: Gửi email thông báo (optional)
+        console.log(`📧 Email notification skipped for level enrollment (can be added later)`);
+
+    } catch (error) {
+        console.error("❌ Lỗi trong handleLevelEnrollmentFromWebhook:", error);
         throw error;
     }
 };
@@ -662,13 +782,14 @@ const createLevelPayment = async (req, res) => {
 
         // Import models
         console.log("🔧 Importing models...");
-        const LevelPackage =
-            require("../src/models/LevelPackage").default ||
-            require("../src/models/LevelPackage");
-        const LevelEnrollment =
-            require("../src/models/LevelEnrollment").default ||
-            require("../src/models/LevelEnrollment");
-        console.log("✅ Models imported successfully");
+        const LevelPackageModule = require("../src/models/LevelPackage");
+        const LevelPackage = LevelPackageModule.default || LevelPackageModule;
+        const LevelEnrollmentModule = require("../src/models/LevelEnrollment");
+        const LevelEnrollment = LevelEnrollmentModule.default || LevelEnrollmentModule;
+        console.log("✅ Models imported successfully", {
+            LevelPackageType: typeof LevelPackage,
+            hasFind: typeof LevelPackage.findOne
+        });
 
         // Lấy thông tin level package
         console.log("🔍 Finding level package:", { level, status: 'active' });
@@ -798,14 +919,30 @@ const handleLevelPaymentSuccess = async (req, res) => {
 
         console.log("🎯 Target level:", targetLevel);
 
-        // Import models
-        const LevelPackage =
-            require("../src/models/LevelPackage").default ||
-            require("../src/models/LevelPackage");
-        const LevelEnrollment =
-            require("../src/models/LevelEnrollment").default ||
-            require("../src/models/LevelEnrollment");
-        const { User } = require("../src/models/User");
+        // Import models with error handling
+        let LevelPackage, LevelEnrollment, User;
+        try {
+            console.log("🔧 Importing models...");
+            const LevelPackageModule = require("../src/models/LevelPackage");
+            LevelPackage = LevelPackageModule.default || LevelPackageModule;
+            const LevelEnrollmentModule = require("../src/models/LevelEnrollment");
+            LevelEnrollment = LevelEnrollmentModule.default || LevelEnrollmentModule;
+            const UserModule = require("../src/models/User");
+            User = UserModule.User || UserModule.default || UserModule;
+            console.log("✅ Models imported successfully", {
+                LevelPackageType: typeof LevelPackage,
+                LevelEnrollmentType: typeof LevelEnrollment,
+                UserType: typeof User,
+                hasFindOne: typeof LevelPackage.findOne
+            });
+        } catch (importError) {
+            console.error("❌ Error importing models:", importError);
+            return res.status(500).json({
+                success: false,
+                message: "Lỗi hệ thống khi import models",
+                error: process.env.NODE_ENV === 'development' ? importError.message : undefined
+            });
+        }
 
         // Kiểm tra level package có tồn tại không
         const levelPackage = await LevelPackage.findOne({ level: targetLevel });
@@ -842,16 +979,30 @@ const handleLevelPaymentSuccess = async (req, res) => {
             lastAccessedAt: new Date(),
         });
 
-        await newEnrollment.save();
-
-        console.log(
-            `✅ Đã tạo level enrollment thành công cho user ${userId} - level ${targetLevel}`
-        );
+        try {
+            await newEnrollment.save();
+            console.log(
+                `✅ Đã tạo level enrollment thành công cho user ${userId} - level ${targetLevel}`
+            );
+        } catch (saveError) {
+            // ✅ Handle duplicate key error gracefully
+            if (saveError.code === 11000) {
+                console.log(`⚠️ Level enrollment đã tồn tại (duplicate), skip tạo mới`);
+                // Vẫn trả về success vì user đã có enrollment rồi
+                const existing = await LevelEnrollment.findOne({ userId, level: targetLevel });
+                return res.json({
+                    success: true,
+                    message: `Bạn đã sở hữu Level ${targetLevel} rồi`,
+                    enrollment: existing,
+                });
+            }
+            throw saveError; // Re-throw nếu không phải duplicate error
+        }
 
         // Lưu vào PaymentHistory để admin có thể theo dõi
         try {
             const PaymentHistory = require("./PaymentHistory");
-            const User = require("../src/models/User").User;
+            const { User } = require("../src/models/User");
             
             const user = await User.findById(userId);
             
@@ -915,15 +1066,15 @@ const handleLevelPaymentSuccess = async (req, res) => {
             const emailService = require("./email-service");
             const emailInfo = {
                 userEmail: user.email,
-                levelName: levelPackage.name,
-                level: targetLevel,
+                courseName: `Level ${targetLevel} - ${levelPackage.name}`, // Sử dụng format tương tự course
+                courseId: levelPackage._id,
                 amount: paymentData.amount || levelPackage.price,
                 paymentDate: new Date(),
                 orderCode: orderCode,
             };
 
             emailService
-                .sendLevelPurchaseEmail(emailInfo)
+                .sendPaymentSuccessEmail(emailInfo) // ✅ Dùng function có sẵn
                 .then((emailResult) => {
                     if (emailResult.success) {
                         console.log(`📧 Đã gửi email thông báo mua level tới ${user.email}`);

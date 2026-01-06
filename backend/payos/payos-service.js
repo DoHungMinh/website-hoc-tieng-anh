@@ -221,10 +221,14 @@ class PayOSService {
      */
     async createLevelPaymentLink(orderData) {
         try {
-            const { level, levelName, price, userId, userEmail } = orderData;
+            const { level, levelName, price, userId, userEmail} = orderData;
 
             // Tạo order code unique
             const orderCode = this.generateOrderCode();
+
+            // Cấu hình returnUrl về trang courses với level param
+            const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+            const levelReturnUrl = `${frontendUrl}/courses?orderCode=${orderCode}&level=${level}&status=PAID`;
 
             // Chuẩn bị dữ liệu payment theo PayOS format
             const paymentData = {
@@ -241,7 +245,7 @@ class PayOSService {
                         price: Math.round(price),
                     },
                 ],
-                returnUrl: PAYOS_CONFIG.returnUrl,
+                returnUrl: levelReturnUrl, // Redirect về /levels/{level} sau thanh toán
                 cancelUrl: PAYOS_CONFIG.cancelUrl,
                 buyerName: userEmail.split("@")[0],
                 buyerEmail: userEmail,
@@ -267,7 +271,8 @@ class PayOSService {
             // Lưu PaymentHistory
             try {
                 const PaymentHistory = require("./PaymentHistory");
-                const LevelPackage = require("../src/models/LevelPackage");
+                const LevelPackageModule = require("../src/models/LevelPackage");
+                const LevelPackage = LevelPackageModule.default || LevelPackageModule;
                 const { User } = require("../src/models/User");
 
                 const levelPackage = await LevelPackage.findOne({ level });
@@ -280,7 +285,7 @@ class PayOSService {
                         amount: paymentData.amount,
                         description: paymentData.description,
                         level: level,
-                        levelName: levelPackage.name,
+                        levelPackageName: levelPackage.name, // ✅ Sửa từ levelName → levelPackageName
                         userId,
                         userEmail: user.email,
                         userFullName: user.fullName,

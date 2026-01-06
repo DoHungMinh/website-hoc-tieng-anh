@@ -30,3 +30,6 @@ Tài liệu này cung cấp bối cảnh kỹ thuật toàn diện của dự á
 
 [cite\_start] Trước khi sửa code của chức năng gì hãy đọc kỹ các file liên quan đến chức năng đó thật kỹ đểu hiểu cấu trúc file và file đó làm gì, bên cạnh đó phải hiếu cấu trúc file đó và các phân chia chức năng trong file đó như thế nào (vd: controller, service, route, model, util...) để khi sửa code không làm ảnh hưởng đến các chức năng khác và giữ được tính module hóa trong dự án (ví dụ minh họa phần sử lý logic là của service trong backend và controller chỉ gọi service chứ không xử lý logic trong controller) kiểu như vậy nhé. 
 [cite\_end]
+
+[cite\_start] trước khi code hãy đọc thật kỹ các file tôi đã gửi đính kèm để hiểu rõ hơn code. Bên cạnh đó làm chức năng nào phải đọc kỹ tất cả các file liên quan đến chức năng đó không được bỏ sót file nào để hiểu rõ cấu trúc và cách hoạt động của chức năng đó. Bạn đang bị lỗi là không chịu đọc kỹ các file liên quan mà làm luôn code dẫn đến bị lỗi tùm lum, hãy nhớ kỹ điều này nhé.
+[cite\_end]

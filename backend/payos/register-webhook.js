@@ -13,11 +13,21 @@ const axios = require("axios");
 require("dotenv").config();
 
 // PayOS configuration từ .env
-const clientId = "99e81be5-7170-43dc-b87a-66062bb4a530";
-const apiKey = "ec43e303-8879-4b1c-ac4c-0c10b533fd86";
+const clientId = process.env.PAYOS_CLIENT_ID;
+const apiKey = process.env.PAYOS_API_KEY;
 
-// Webhook URL - sử dụng ngrok URL của bạn (cập nhật từ ảnh ngrok)
-const webhookUrl = "https://98140395b6cd.ngrok-free.app/api/payos/webhook";
+// Webhook URL - sử dụng từ .env hoặc ngrok URL
+const webhookUrl = process.env.PAYOS_WEBHOOK_URL || "https://98140395b6cd.ngrok-free.app/api/payos/webhook";
+
+// Kiểm tra credentials
+if (!clientId || !apiKey) {
+    console.error("❌ Thiếu PAYOS_CLIENT_ID hoặc PAYOS_API_KEY trong file .env");
+    console.log("💡 Vui lòng thêm vào file backend/.env:");
+    console.log("   PAYOS_CLIENT_ID=your_client_id");
+    console.log("   PAYOS_API_KEY=your_api_key");
+    console.log("   PAYOS_WEBHOOK_URL=your_webhook_url");
+    process.exit(1);
+}
 
 console.log("🔧 Đăng ký webhook PayOS...");
 console.log("📡 Webhook URL:", webhookUrl);
