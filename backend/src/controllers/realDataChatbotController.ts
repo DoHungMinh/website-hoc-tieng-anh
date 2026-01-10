@@ -5,6 +5,7 @@ import { Assessment, IAssessment } from '../models/Assessment';
 import IELTSTestResult from '../models/IELTSTestResult';
 import Course, { ICourse } from '../models/Course';
 import Enrollment, { IEnrollment } from '../models/Enrollment';
+import LevelEnrollment from '../models/LevelEnrollment';
 import ChatSession, { IChatSession, IChatMessage } from '../models/ChatSession';
 import { AIService } from '../services/aiService';
 
@@ -196,10 +197,16 @@ ${hasIELTSData ? '✅ Đã có dữ liệu IELTS để phân tích chính xác!'
         .sort({ completedAt: -1 })
         .limit(10);
 
-      // Lấy thông tin enrollment/khóa học đã đăng ký
+      // Lấy thông tin enrollment/khóa học đã đăng ký (Hệ thống cũ)
       const enrollments = await Enrollment.find({ userId })
         .populate('courseId', 'title description level price')
         .sort({ enrolledAt: -1 });
+
+      // Lấy thông tin Level Enrollment (Hệ thống mới - hộp thẻ level)
+      const levelEnrollments = await LevelEnrollment.find({ 
+        userId,
+        status: 'active'
+      }).sort({ enrolledAt: -1 });
 
       // Lấy danh sách khóa học có sẵn để gợi ý
       const availableCourses = await Course.find({ isActive: true })
@@ -223,6 +230,7 @@ ${hasIELTSData ? '✅ Đã có dữ liệu IELTS để phân tích chính xác!'
         assessmentsCount: assessments.length,
         ieltsResultsCount: ieltsResults.length,
         enrollmentsCount: enrollments.length,
+        levelEnrollmentsCount: levelEnrollments.length,
         availableCoursesCount: availableCourses.length,
         availableIELTSExamsCount: availableIELTSExams.length
       });
@@ -235,7 +243,7 @@ ${hasIELTSData ? '✅ Đã có dữ liệu IELTS để phân tích chính xác!'
       }
 
       // Kiểm tra xem user có dữ liệu học tập không
-      if (!progress && assessments.length === 0 && ieltsResults.length === 0 && enrollments.length === 0) {
+      if (!progress && assessments.length === 0 && ieltsResults.length === 0 && enrollments.length === 0 && levelEnrollments.length === 0) {
         return res.json({
           success: true,
           analysis: `📊 **CHƯA CÓ DỮ LIỆU HỌC TẬP**
@@ -267,7 +275,7 @@ Hãy bắt đầu với một bài test IELTS để đánh giá trình độ nh�
         // Không sử dụng AI Service để tránh progress fake data
         // Sử dụng trực tiếp fallback rule-based analysis
         console.log('🔄 Using rule-based analysis instead of AI Service...');
-        analysis = await realDataChatbotController.buildComprehensiveAnalysis(user, progress, assessments, ieltsResults, enrollments, availableCourses, availableIELTSExams);
+        analysis = await realDataChatbotController.buildComprehensiveAnalysis(user, progress, assessments, ieltsResults, enrollments, levelEnrollments, availableCourses, availableIELTSExams);
         console.log('✅ Rule-based analysis completed');
 
       } catch (aiError) {
@@ -352,6 +360,10 @@ Hãy bắt đầu với một bài test IELTS để đánh giá trình độ nh�
       const enrollments = await Enrollment.find({ userId })
         .populate('courseId', 'title description level price')
         .sort({ enrolledAt: -1 });
+      const levelEnrollments = await LevelEnrollment.find({ 
+        userId,
+        status: 'active'
+      }).sort({ enrolledAt: -1 });
       const availableCourses = await Course.find({ isActive: true })
         .select('title description level price')
         .limit(5);
@@ -364,6 +376,7 @@ Hãy bắt đầu với một bài test IELTS để đánh giá trình độ nh�
         assessmentsCount: assessments.length,
         ieltsResultsCount: ieltsResults.length,
         enrollmentsCount: enrollments.length,
+        levelEnrollmentsCount: levelEnrollments.length,
         availableCoursesCount: availableCourses.length
       });
 
@@ -376,7 +389,7 @@ Hãy bắt đầu với một bài test IELTS để đánh giá trình độ nh�
 
       // Kiểm tra dữ liệu thật
       const hasIELTSData = ieltsResults.length > 0;
-      const hasEnrollments = enrollments.length > 0;
+      const hasEnrollments = enrollments.length > 0 || levelEnrollments.length > 0;
 
       if (!hasIELTSData && assessments.length === 0 && !hasEnrollments) {
         return res.json({
@@ -408,7 +421,7 @@ Sau khi có ít nhất 3-5 bài test IELTS, tôi sẽ đưa ra lộ trình cá n
 
       try {
         console.log('🔄 Building IELTS-based recommendations...');
-        recommendations = await realDataChatbotController.buildIELTSBasedRecommendations(user, ieltsResults, enrollments, availableCourses);
+        recommendations = await realDataChatbotController.buildIELTSBasedRecommendations(user, ieltsResults, enrollments, levelEnrollments, availableCourses);
         console.log('✅ IELTS-based recommendations completed');
 
       } catch (error) {
@@ -1125,11 +1138,13 @@ Dựa trên dữ liệu thực tế của bạn! 📈`;
     assessments: IAssessment[], 
     ieltsResults: any[], 
     enrollments: any[],
+    levelEnrollments: any[],
     availableCourses: any[] = [],
     availableIELTSExams: any[] = []
   ): Promise<string> {
     const hasIELTSData = ieltsResults.length > 0;
     const hasEnrollments = enrollments.length > 0;
+    const hasLevelEnrollments = levelEnrollments.length > 0;
     const latestIELTS = hasIELTSData ? ieltsResults[0] : null;
 
     let analysis = `📊 **PHÂN TÍCH HỌC TẬP - ${user.fullName}**\n\n`;
@@ -1167,9 +1182,28 @@ Dựa trên dữ liệu thực tế của bạn! 📈`;
       analysis += `💡 Hãy làm bài test IELTS để đánh giá trình độ!\n\n`;
     }
 
-    // Enrollments Section
+    // Enrollments Section - Level Packages (Hệ thống mới)
+    if (hasLevelEnrollments) {
+      analysis += `🎯 **GÓI LEVEL ĐÃ MUA (${levelEnrollments.length} gói):**\n`;
+      
+      levelEnrollments.forEach((enrollment, index) => {
+        const enrollDate = new Date(enrollment.enrolledAt).toLocaleDateString('vi-VN');
+        const paymentDate = enrollment.paymentDate ? new Date(enrollment.paymentDate).toLocaleDateString('vi-VN') : 'N/A';
+        const paidAmount = enrollment.paidAmount || 0;
+        
+        analysis += `${index + 1}. **🎫 Gói Level ${enrollment.level}**\n`;
+        analysis += `   📅 Đăng ký: ${enrollDate}\n`;
+        if (paidAmount > 0) {
+          analysis += `   💰 Đã thanh toán: ${paidAmount.toLocaleString()}đ (${paymentDate})\n`;
+        }
+        analysis += `   👉 Truy cập: Tất cả khóa học level ${enrollment.level}\n`;
+        analysis += `   ✅ Trạng thái: ${enrollment.status === 'active' ? 'Hoạt động' : enrollment.status}\n\n`;
+      });
+    }
+
+    // Enrollments Section - Single Courses (Hệ thống cũ)
     if (hasEnrollments) {
-      analysis += `📚 **KHÓA HỌC ĐÃ ĐĂNG KÝ (${enrollments.length} khóa):**\n`;
+      analysis += `📚 **KHÓA HỌC RIÊNG LẺ ĐÃ ĐĂNG KÝ (${enrollments.length} khóa):**\n`;
       
       enrollments.forEach((enrollment, index) => {
         const course = enrollment.courseId;
@@ -1182,7 +1216,7 @@ Dựa trên dữ liệu thực tế của bạn! 📈`;
         analysis += `   📊 Tiến độ: ${completion}% (${status})\n`;
         analysis += `   🎓 Level: ${course.level}\n\n`;
       });
-    } else {
+    } else if (!hasLevelEnrollments && !hasEnrollments) {
       analysis += `📚 **KHÓA HỌC ĐÃ ĐĂNG KÝ:** 0 khóa\n`;
       analysis += `💡 Chưa đăng ký khóa học nào!\n\n`;
     }
@@ -1275,8 +1309,8 @@ Dựa trên dữ liệu thực tế của bạn! 📈`;
       } else {
         analysis += `🔥 **CẦN XÂY DỰNG NỀN TẢNG (${averagePercentage}%)** - Kế hoạch từ cơ bản:\n`;
         analysis += `   ✅ **Ưu tiên cao:** Ngữ pháp cơ bản và từ vựng thiết yếu\n`;
-        analysis += `   📚 **Khóa học nên đăng ký:** Elementary (A2-B1), Basic English, hoặc khóa tiếng Anh giao tiếp\n`;
-        analysis += `   💪 **Mục tiêu:** Hướng tới Band 5.5, làm quen format IELTS và phương pháp học\n`;
+        analysis += `   📚 **Khóa học nên đăng ký:** Elementary (A1-A2), Basic English\n`;
+        analysis += `   💪 **Mục tiêu:** Hướng tới Band 5.0, làm quen format IELTS và phương pháp học\n`;
         analysis += `   🎯 **Luyện tập:** 30p Reading/Listening cơ bản mỗi ngày, học 10-15 từ vựng thiết yếu/ngày\n`;
       }
       
@@ -1393,10 +1427,12 @@ Dựa trên dữ liệu thực tế của bạn! 📈`;
     user: IUser, 
     ieltsResults: any[], 
     enrollments: any[],
+    levelEnrollments: any[],
     availableCourses: any[] = []
   ): Promise<string> {
     const hasIELTSData = ieltsResults.length > 0;
     const hasEnrollments = enrollments.length > 0;
+    const hasLevelEnrollments = levelEnrollments.length > 0;
     const latestIELTS = hasIELTSData ? ieltsResults[0] : null;
 
     let recommendations = `🎯 **LỘ TRÌNH HỌC TẬP CÁ NHÂN - ${user.fullName}**\n\n`;

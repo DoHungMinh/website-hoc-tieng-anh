@@ -2,7 +2,6 @@ import { useEffect, useState, Suspense, memo } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Layout from "../components/layout/Layout";
 import AccountDisabledNotification from "../components/common/AccountDisabledNotification";
-import { AuthDebugger } from "../components/auth/AuthDebugger";
 import PageLoader from "../components/common/PageLoader";
 import Chatbot from "../components/chatbot/Chatbot";
 import { syncTokens } from "../utils/tokenSync";
@@ -65,8 +64,6 @@ const RootLayout = memo(() => {
             )}
 
             <Chatbot />
-
-            {import.meta.env.DEV && <AuthDebugger />}
         </Layout>
     );
 });

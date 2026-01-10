@@ -1,5 +1,5 @@
 // Skill types for English learning
-export type SkillType = 'vocabulary' | 'grammar' | 'listening' | 'speaking' | 'reading' | 'writing';
+export type SkillType = 'vocabulary' | 'grammar'| 'listening' | 'speaking' | 'reading' | 'writing';
 
 export interface SkillTab {
     id: SkillType;

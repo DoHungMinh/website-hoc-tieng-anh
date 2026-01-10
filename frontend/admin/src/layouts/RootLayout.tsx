@@ -2,7 +2,6 @@ import { useEffect, useState, Suspense, memo } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Layout from "../components/layout/Layout";
 import AccountDisabledNotification from "../components/common/AccountDisabledNotification";
-import { AuthDebugger } from "../components/auth/AuthDebugger";
 import PageLoader from "../components/common/PageLoader";
 
 import { syncTokens } from "../utils/tokenSync";
@@ -90,9 +89,6 @@ const RootLayout = memo(() => {
                     onClose={clearAccountDisabledMessage}
                 />
             )}
-
-            {/* Auth Debugger - only in development */}
-            {import.meta.env.DEV && <AuthDebugger />}
         </Layout>
     );
 });

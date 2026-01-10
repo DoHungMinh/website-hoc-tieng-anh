@@ -19,6 +19,7 @@ const Chatbot = () => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const [showQuickActions, setShowQuickActions] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -263,6 +264,80 @@ const Chatbot = () => {
     }
   };
 
+  // Handle quick action selection
+  const handleQuickAction = async (action: string) => {
+    setShowQuickActions(false);
+    
+    let messageText = '';
+    if (action === 'progress') {
+      messageText = 'Phân tích tiến độ học tập của tôi';
+    } else if (action === 'roadmap') {
+      messageText = 'Đề xuất lộ trình học tập cho tôi';
+    }
+
+    if (!messageText) return;
+
+    const userMessage: Message = {
+      id: `user-${Date.now()}`,
+      text: messageText,
+      isBot: false,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setIsTyping(true);
+
+    try {
+      let response;
+      
+      // Gọi API tương ứng với action
+      if (action === 'progress') {
+        response = await apiService.generateProgressAnalysis();
+      } else if (action === 'roadmap') {
+        response = await apiService.generateLearningRecommendations();
+      } else {
+        throw new Error('Invalid action');
+      }
+
+      if (response.success) {
+        // Lấy content từ response (analysis hoặc recommendations)
+        const apiResponse = response as { success: boolean; analysis?: string; recommendations?: string; sessionId?: string };
+        const content = apiResponse.analysis || apiResponse.recommendations || 'Không có dữ liệu';
+        
+        const botMessage: Message = {
+          id: `bot-${Date.now()}`,
+          text: content,
+          isBot: true,
+          timestamp: new Date(),
+          type: action === 'progress' ? 'progress_analysis' : 'learning_recommendations'
+        };
+
+        setMessages(prev => [...prev, botMessage]);
+
+        // Update sessionId nếu có
+        if (apiResponse.sessionId) {
+          setSessionId(apiResponse.sessionId);
+        }
+      } else {
+        throw new Error('API returned unsuccessful response');
+      }
+    } catch (error) {
+      console.error('Failed to process quick action:', error);
+
+      const errorMessage: Message = {
+        id: `error-${Date.now()}`,
+        text: 'Xin lỗi, tôi gặp sự cố kỹ thuật. Vui lòng thử lại sau.',
+        isBot: true,
+        timestamp: new Date(),
+        type: 'error'
+      };
+
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
   // Get chat window class names
   const getChatWindowClasses = () => {
     let classes = styles.chatWindow;
@@ -336,7 +411,7 @@ const Chatbot = () => {
                     className={`${styles.messageRow} ${message.isBot ? styles.messageRowBot : styles.messageRowUser}`}
                   >
                     <div className={`${styles.messageBubble} ${message.isBot ? styles.messageBubbleBot : styles.messageBubbleUser}`}>
-                      <p>{message.text}</p>
+                      <p className={styles.messageContent}>{message.text}</p>
                       <div className={styles.messageTime}>
                         {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
@@ -358,12 +433,34 @@ const Chatbot = () => {
 
               {/* Input */}
               <div className={styles.inputArea}>
+                {/* Quick Actions Menu */}
+                {showQuickActions && !isVoiceMode && (
+                  <div className={styles.quickActionsMenu}>
+                    <button
+                      className={styles.quickActionItem}
+                      onClick={() => handleQuickAction('progress')}
+                    >
+                      <span className={styles.quickActionIcon}>📊</span>
+                      <span className={styles.quickActionText}>Phân tích tiến độ học tập</span>
+                    </button>
+                    <button
+                      className={styles.quickActionItem}
+                      onClick={() => handleQuickAction('roadmap')}
+                    >
+                      <span className={styles.quickActionIcon}>🎯</span>
+                      <span className={styles.quickActionText}>Đề xuất lộ trình học tập</span>
+                    </button>
+                  </div>
+                )}
 
                 {/* Text Mode Input */}
                 {!isVoiceMode && (
                   <div className={styles.inputWrapper}>
-                    <button className={styles.addButton}>
-                      <Plus size={20} />
+                    <button 
+                      className={styles.addButton}
+                      onClick={() => setShowQuickActions(!showQuickActions)}
+                    >
+                      <Plus size={20} className={showQuickActions ? styles.plusRotated : ''} />
                     </button>
                     <input
                       type="text"

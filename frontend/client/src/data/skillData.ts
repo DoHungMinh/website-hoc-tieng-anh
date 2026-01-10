@@ -3,10 +3,6 @@ import { SkillTab, SkillCourse, SkillType } from '../types/skill';
 export const skillTabs: SkillTab[] = [
     { id: 'vocabulary', label: 'Từ vựng', icon: '📚', count: 8 },
     { id: 'grammar', label: 'Ngữ pháp', icon: '📝', count: 6 },
-    { id: 'listening', label: 'Nghe', icon: '🎧', count: 5 },
-    { id: 'speaking', label: 'Nói', icon: '🗣️', count: 4 },
-    { id: 'reading', label: 'Đọc', icon: '📖', count: 7 },
-    { id: 'writing', label: 'Viết', icon: '✍️', count: 5 },
 ];
 
 // Generate mock courses for each skill
