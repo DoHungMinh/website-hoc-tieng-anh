@@ -1108,6 +1108,103 @@ const handleLevelPaymentSuccess = async (req, res) => {
     }
 };
 
+/**
+ * Lấy báo cáo thanh toán theo tháng
+ * GET /api/payos/report/monthly?month=1&year=2026
+ */
+const getMonthlyReport = async (req, res) => {
+    console.log('🔴 getMonthlyReport function called - NEW CODE VERSION 2');
+    try {
+        const { month, year } = req.query;
+        
+        console.log(`📊 Getting monthly report for ${month}/${year}`);
+        
+        if (!month || !year) {
+            return res.status(400).json({
+                success: false,
+                message: 'month và year là bắt buộc'
+            });
+        }
+        
+        const monthNum = parseInt(month);
+        const yearNum = parseInt(year);
+        
+        if (monthNum < 1 || monthNum > 12) {
+            return res.status(400).json({
+                success: false,
+                message: 'month phải từ 1-12'
+            });
+        }
+        
+        // Tạo date range
+        const startDate = new Date(yearNum, monthNum - 1, 1, 0, 0, 0, 0);
+        const endDate = new Date(yearNum, monthNum, 0, 23, 59, 59, 999);
+        
+        console.log(`📅 Date range: ${startDate.toISOString()} - ${endDate.toISOString()}`);
+        
+        const PaymentHistory = require('./PaymentHistory');
+        
+        // Lấy payments và populate
+        const payments = await PaymentHistory.find({
+            createdAt: { $gte: startDate, $lte: endDate }
+        })
+        .populate('userId', 'fullName email phone')
+        .populate('courseId', 'title type level')
+        .sort({ createdAt: -1 })
+        .lean();
+        
+        console.log(`✅ Found ${payments.length} payments`);
+        
+        // Debug: Log payments status
+        console.log('🔍 Payment statuses:', payments.map(p => ({ orderCode: p.orderCode, status: p.status, amount: p.amount })));
+        
+        // Tính stats - Filter ra payments có amount hợp lệ
+        const paidPayments = payments.filter(p => p.status === 'PAID' && typeof p.amount === 'number' && !isNaN(p.amount));
+        const totalRevenue = paidPayments.reduce((sum, p) => sum + p.amount, 0);
+        
+        console.log(`💰 PAID payments: ${paidPayments.length}, Total revenue: ${totalRevenue}`);
+        
+        const stats = {
+            totalTransactions: payments.length,
+            successfulTransactions: paidPayments.length,
+            failedTransactions: payments.filter(p => p.status === 'FAILED' || p.status === 'CANCELLED').length,
+            pendingTransactions: payments.filter(p => p.status === 'PENDING' || p.status === 'PROCESSING').length,
+            totalRevenue: totalRevenue,
+            averageTransaction: 0
+        };
+        
+        stats.averageTransaction = stats.successfulTransactions > 0 
+            ? stats.totalRevenue / stats.successfulTransactions 
+            : 0;
+        
+        const monthNames = ['', 'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+                           'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
+        
+        const reportData = {
+            month: monthNum,
+            year: yearNum,
+            monthName: monthNames[monthNum],
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            payments: payments,
+            stats: stats
+        };
+        
+        return res.json({
+            success: true,
+            data: reportData
+        });
+        
+    } catch (error) {
+        console.error('❌ Error getting monthly report:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Lỗi server khi lấy báo cáo tháng',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
 module.exports = {
     createPayment,
     getPaymentStatus,
@@ -1115,4 +1212,5 @@ module.exports = {
     cancelPayment,
     createLevelPayment,
     handleLevelPaymentSuccess,
+    getMonthlyReport,
 };

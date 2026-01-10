@@ -432,18 +432,22 @@ router.get(
 
             console.log(`💳 Found ${payments.length} payments in month ${targetMonth}/${targetYear}`);
 
-            // Tính toán thống kê
-            const totalRevenue = payments
-                .filter((p: any) => p.status === "PAID")
-                .reduce((sum: number, p: any) => sum + p.amount, 0);
+            // Tính toán thống kê - Filter ra payments có amount hợp lệ
+            const paidPayments = payments.filter((p: any) => 
+                p.status === "PAID" && 
+                typeof p.amount === 'number' && 
+                !isNaN(p.amount)
+            );
+            
+            const totalRevenue = paidPayments.reduce((sum: number, p: any) => sum + p.amount, 0);
 
             const stats = {
                 totalTransactions: payments.length,
-                successfulTransactions: payments.filter((p: any) => p.status === "PAID").length,
+                successfulTransactions: paidPayments.length,
                 failedTransactions: payments.filter((p: any) => p.status === "FAILED" || p.status === "CANCELLED").length,
                 pendingTransactions: payments.filter((p: any) => p.status === "PENDING" || p.status === "PROCESSING").length,
                 totalRevenue,
-                averageTransaction: payments.length > 0 ? totalRevenue / payments.filter((p: any) => p.status === "PAID").length : 0,
+                averageTransaction: paidPayments.length > 0 ? totalRevenue / paidPayments.length : 0,
             };
 
             res.json({

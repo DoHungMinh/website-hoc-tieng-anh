@@ -102,7 +102,7 @@ const AICourseCreator: React.FC<AICourseCreatorProps> = ({ onCourseGenerated, de
 
   const handleGenerate = async () => {
     setIsGenerating(true);
-    setCurrentStep(3);
+    setCurrentStep(4); // Chuyển sang step 4 để hiển thị loading UI
     
     try {
       // Prepare AI generation config

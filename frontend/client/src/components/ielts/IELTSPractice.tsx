@@ -15,6 +15,8 @@ import {
 import IELTSReadingTest from './IELTSReadingTest';
 import IELTSListeningTest from './IELTSListeningTest';
 import IELTSTestHistory from './IELTSTestHistory';
+import SearchFilterBar from '../common/SearchFilterBar';
+import SearchFilterBar from '../common/SearchFilterBar';
 
 interface ReadingTest {
   id: number;
@@ -48,6 +50,34 @@ const IELTSPractice = () => {
   const [activeTab, setActiveTab] = useState<'reading' | 'listening' | 'history'>('reading');
   const [showReadingTest, setShowReadingTest] = useState(false);
   const [showListeningTest, setShowListeningTest] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+
+  // Filter options for SearchFilterBar
+  const filterOptions = [
+    { id: 'reading', label: 'Reading', value: 'reading', category: 'Loại bài thi' },
+    { id: 'listening', label: 'Listening', value: 'listening', category: 'Loại bài thi' },
+  ];
+
+  const handleFilterToggle = (filterId: string) => {
+    setActiveFilters((prev) =>
+      prev.includes(filterId) ? prev.filter((id) => id !== filterId) : [...prev, filterId]
+    );
+  };
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+
+  // Filter options for SearchFilterBar
+  const filterOptions = [
+    { id: 'reading', label: 'Reading', value: 'reading', category: 'Loại bài thi' },
+    { id: 'listening', label: 'Listening', value: 'listening', category: 'Loại bài thi' },
+  ];
+
+  const handleFilterToggle = (filterId: string) => {
+    setActiveFilters((prev) =>
+      prev.includes(filterId) ? prev.filter((id) => id !== filterId) : [...prev, filterId]
+    );
+  };
 
   if (showReadingTest) {
     return <IELTSReadingTest />;
@@ -148,7 +178,37 @@ const IELTSPractice = () => {
     return 'bg-orange-500';
   };
 
-  const currentTests = activeTab === 'reading' ? readingTests : listeningTests;
+  // Get base tests based on active tab
+  const baseTests = activeTab === 'reading' ? readingTests : listeningTests;
+
+  // Filter tests based on search query and active filters
+  const filteredTests = baseTests.filter((test) => {
+    // Search filter
+    const matchesSearch = searchQuery.trim() === '' ||
+      test.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      test.topic.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      test.difficulty.toLowerCase().includes(searchQuery.toLowerCase());
+
+    // Type filter (reading/listening)
+    if (activeFilters.length === 0) return matchesSearch;
+
+    const hasReadingFilter = activeFilters.includes('reading');
+    const hasListeningFilter = activeFilters.includes('listening');
+
+    // If both filters active or no type filters, show all
+    if ((hasReadingFilter && hasListeningFilter) || (!hasReadingFilter && !hasListeningFilter)) {
+      return matchesSearch;
+    }
+
+    // Match type with active tab
+    const matchesTypeFilter = 
+      (hasReadingFilter && activeTab === 'reading') ||
+      (hasListeningFilter && activeTab === 'listening');
+
+    return matchesSearch && matchesTypeFilter;
+  });
+
+  const currentTests = filteredTests;
 
   // Render tab lịch sử
   if (activeTab === 'history') {
@@ -251,6 +311,17 @@ const IELTSPractice = () => {
           </div>
         </div>
 
+        {/* Search and Filter Bar */}
+        <SearchFilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          activeFilters={activeFilters}
+          onFilterToggle={handleFilterToggle}
+          filterOptions={filterOptions}
+          placeholder="Tìm kiếm theo tên bài thi, chủ đề, độ khó..."
+          colorTheme="green"
+        />
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
           <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
@@ -303,8 +374,9 @@ const IELTSPractice = () => {
         </div>
 
         {/* Tests Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-          {currentTests.map((test) => (
+        {currentTests.length > 0 ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+            {currentTests.map((test) => (
             <div
               key={test.id}
               className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 group border border-gray-100"
@@ -402,15 +474,34 @@ const IELTSPractice = () => {
                 </button>
               </div>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16">
+            <div className="mx-auto h-24 w-24 text-gray-400 mb-4">
+              <BookOpen className="h-full w-full" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {searchQuery || activeFilters.length > 0
+                ? 'Không tìm thấy bài thi phù hợp'
+                : 'Chưa có bài thi nào'}
+            </h3>
+            <p className="text-gray-500">
+              {searchQuery || activeFilters.length > 0
+                ? 'Hãy thử tìm kiếm với từ khóa khác hoặc điều chỉnh bộ lọc'
+                : 'Các bài thi IELTS sẽ được cập nhật sớm nhất có thể.'}
+            </p>
+          </div>
+        )}
 
         {/* Load More Button */}
-        <div className="text-center mt-12">
-          <button className="bg-white hover:bg-gray-50 text-gray-700 px-8 py-3 rounded-xl font-medium border border-gray-200 hover:border-green-300 transition-all duration-300 shadow-lg hover:shadow-xl">
-            Tải thêm bài test
-          </button>
-        </div>
+        {currentTests.length > 0 && (
+          <div className="text-center mt-12">
+            <button className="bg-white hover:bg-gray-50 text-gray-700 px-8 py-3 rounded-xl font-medium border border-gray-200 hover:border-green-300 transition-all duration-300 shadow-lg hover:shadow-xl">
+              Tải thêm bài test
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

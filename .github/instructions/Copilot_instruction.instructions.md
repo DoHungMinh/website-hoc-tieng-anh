@@ -6,7 +6,7 @@ Tài liệu này cung cấp bối cảnh kỹ thuật toàn diện của dự á
 - Clean Code
 - Tối ưu hiệu suất      
 - Tránh các lỗi Anti-pattern phổ biến
-- DRY
+- DRY principle
 - SRP cấp function
 
 ### **2.Những điều cần phải xem kỹ trước khi trả lời **

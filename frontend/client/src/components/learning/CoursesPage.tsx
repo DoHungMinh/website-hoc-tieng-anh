@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { courseAPI, Course as APICourse } from '@/services/courseAPI';
 import PurchasedCourses from '../dashboard/PurchasedCourses';
+import SearchFilterBar from '../common/SearchFilterBar';
 
 
 
@@ -40,6 +41,24 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
   const [activeType, setActiveType] = useState<CourseType | null>(selectedType || null);
   const [courses, setCourses] = useState<APICourse[]>([]);
   const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+
+  // Filter options for SearchFilterBar
+  const filterOptions = [
+    { id: 'a1', label: 'A1 - Sơ cấp', value: 'A1', category: 'Cấp độ' },
+    { id: 'a2', label: 'A2 - Cơ bản', value: 'A2', category: 'Cấp độ' },
+    { id: 'b1', label: 'B1 - Trung cấp', value: 'B1', category: 'Cấp độ' },
+    { id: 'b2', label: 'B2 - Trung cấp cao', value: 'B2', category: 'Cấp độ' },
+    { id: 'c1', label: 'C1 - Nâng cao', value: 'C1', category: 'Cấp độ' },
+    { id: 'c2', label: 'C2 - Thành thạo', value: 'C2', category: 'Cấp độ' },
+  ];
+
+  const handleFilterToggle = (filterId: string) => {
+    setActiveFilters((prev) =>
+      prev.includes(filterId) ? prev.filter((id) => id !== filterId) : [...prev, filterId]
+    );
+  };
 
   // Load courses from API
   useEffect(() => {
@@ -64,6 +83,25 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
 
     loadCourses();
   }, [activeType]);
+
+  // Filter courses based on search query and active filters
+  const filteredCourses = courses.filter((course) => {
+    // Search filter - tìm kiếm theo tên khóa học
+    const matchesSearch = searchQuery.trim() === '' ||
+      course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      course.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    // Level filter
+    if (activeFilters.length === 0) return matchesSearch;
+
+    const activeLevels = filterOptions
+      .filter(opt => activeFilters.includes(opt.id))
+      .map(opt => opt.value);
+
+    const matchesLevelFilter = activeLevels.includes(course.level);
+
+    return matchesSearch && matchesLevelFilter;
+  });
 
 
 
@@ -191,19 +229,39 @@ const CoursesPage: React.FC<CoursesPageProps> = ({
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {/* Search and Filter Bar */}
+          <SearchFilterBar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            activeFilters={activeFilters}
+            onFilterToggle={handleFilterToggle}
+            filterOptions={filterOptions}
+            placeholder="Tìm kiếm theo tên khóa học..."
+            colorTheme="indigo"
+          />
+
           {loading ? (
             <div className="text-center py-12">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               <p className="mt-4 text-gray-600">Đang tải khóa học...</p>
             </div>
-          ) : courses.length === 0 ? (
+          ) : filteredCourses.length === 0 ? (
             <div className="text-center py-12">
               <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
-              <p className="mt-4 text-gray-600">Chưa có khóa học nào cho loại này</p>
+              <p className="mt-4 text-gray-600">
+                {searchQuery || activeFilters.length > 0
+                  ? 'Không tìm thấy khóa học phù hợp'
+                  : 'Chưa có khóa học nào cho loại này'}
+              </p>
+              {(searchQuery || activeFilters.length > 0) && (
+                <p className="mt-2 text-sm text-gray-500">
+                  Hãy thử tìm kiếm với từ khóa khác hoặc điều chỉnh bộ lọc
+                </p>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {courses
+              {filteredCourses
                 .filter(course => course._id && !purchasedCourseIds.includes(course._id)) // Ẩn khóa học đã mua
                 .map((course) => (
                   <APICourseCard key={course._id} course={course} />

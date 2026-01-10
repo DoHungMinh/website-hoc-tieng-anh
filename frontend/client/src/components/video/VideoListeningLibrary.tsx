@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Play, Clock, Target, ArrowLeft, CheckCircle, Volume2 } from 'lucide-react';
 import VideoExercisePlayer from './VideoExercisePlayer';
+import SearchFilterBar from '../common/SearchFilterBar';
 
 interface VideoExercise {
   _id: string;
@@ -18,6 +19,32 @@ interface VideoListeningLibraryProps {
 
 const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack }) => {
   const [selectedVideo, setSelectedVideo] = useState<VideoExercise | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+
+  // Filter options for SearchFilterBar
+  const filterOptions = [
+    { id: 'beginner', label: 'Beginner', value: 'Beginner', category: 'Cấp độ' },
+    { id: 'intermediate', label: 'Intermediate', value: 'Intermediate', category: 'Cấp độ' },
+    { id: 'advanced', label: 'Advanced', value: 'Advanced', category: 'Cấp độ' },
+    { id: 'story', label: 'Story', value: 'Story', category: 'Chủ đề' },
+    { id: 'business', label: 'Business', value: 'Business', category: 'Chủ đề' },
+    { id: 'travel', label: 'Travel', value: 'Travel', category: 'Chủ đề' },
+    { id: 'grammar', label: 'Grammar', value: 'Grammar', category: 'Chủ đề' },
+    { id: 'environment', label: 'Environment', value: 'Environment', category: 'Chủ đề' },
+    { id: 'basics', label: 'Basics', value: 'Basics', category: 'Chủ đề' },
+    { id: 'career', label: 'Career', value: 'Career', category: 'Chủ đề' },
+    { id: 'tourism', label: 'Tourism', value: 'Tourism', category: 'Chủ đề' },
+    { id: 'education', label: 'Education', value: 'Education', category: 'Chủ đề' },
+    { id: 'science', label: 'Science', value: 'Science', category: 'Chủ đề' },
+    { id: 'social', label: 'Social', value: 'Social', category: 'Chủ đề' },
+  ];
+
+  const handleFilterToggle = (filterId: string) => {
+    setActiveFilters((prev) =>
+      prev.includes(filterId) ? prev.filter((id) => id !== filterId) : [...prev, filterId]
+    );
+  };
 
   // Demo data - sẽ thay bằng API call sau
   const videoExercises: VideoExercise[] = [
@@ -77,6 +104,27 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
     }
   ];
 
+  // Filter and search logic
+  const filteredVideos = videoExercises.filter((video) => {
+    // Search filter
+    const matchesSearch = searchQuery.trim() === '' || 
+      video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      video.topics.some(topic => topic.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    // Active filters
+    if (activeFilters.length === 0) return matchesSearch;
+
+    const activeFilterValues = filterOptions
+      .filter(opt => activeFilters.includes(opt.id))
+      .map(opt => opt.value.toLowerCase());
+
+    const matchesFilters = video.topics.some(topic => 
+      activeFilterValues.includes(topic.toLowerCase())
+    );
+
+    return matchesSearch && matchesFilters;
+  });
+
   if (selectedVideo) {
     return <VideoExercisePlayer video={selectedVideo} onBack={() => setSelectedVideo(null)} />;
   }
@@ -101,6 +149,17 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
           </div>
         </div>
 
+        {/* Search and Filter Bar */}
+        <SearchFilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          activeFilters={activeFilters}
+          onFilterToggle={handleFilterToggle}
+          filterOptions={filterOptions}
+          placeholder="Tìm kiếm theo cấp độ, độ khó, chủ đề..."
+          colorTheme="indigo"
+        />
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
@@ -110,7 +169,7 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Tổng số video</p>
-                <p className="text-2xl font-bold text-gray-900">{videoExercises.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{filteredVideos.length}</p>
               </div>
             </div>
           </div>
@@ -123,7 +182,7 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
               <div>
                 <p className="text-sm text-gray-600">Tổng bài tập</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {videoExercises.reduce((sum, v) => sum + v.blankCount, 0)}
+                  {filteredVideos.reduce((sum, v) => sum + v.blankCount, 0)}
                 </p>
               </div>
             </div>
@@ -144,7 +203,7 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
 
         {/* Video Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {videoExercises.map((video) => (
+          {filteredVideos.map((video) => (
             <div
               key={video._id}
               className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group cursor-pointer"
@@ -215,14 +274,18 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
         </div>
 
         {/* Empty State (if no videos) */}
-        {videoExercises.length === 0 && (
+        {filteredVideos.length === 0 && (
           <div className="text-center py-16">
             <Volume2 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-600 mb-2">
-              Chưa có bài tập nào
+              {searchQuery || activeFilters.length > 0 
+                ? 'Không tìm thấy video phù hợp' 
+                : 'Chưa có bài tập nào'}
             </h3>
             <p className="text-gray-500">
-              Hệ thống đang cập nhật thêm video mới
+              {searchQuery || activeFilters.length > 0
+                ? 'Hãy thử tìm kiếm với từ khóa khác hoặc điều chỉnh bộ lọc'
+                : 'Hệ thống đang cập nhật thêm video mới'}
             </p>
           </div>
         )}

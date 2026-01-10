@@ -129,7 +129,7 @@ export const generateMonthlyPaymentReport = (data: MonthlyReportData) => {
     doc.text(`Tong giao dich:`, col1X, yPosition);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
-    doc.text(`${data.stats.totalTransactions}`, col1X + 40, yPosition);
+    doc.text(`${data.stats.totalTransactions || 0}`, col1X + 40, yPosition);
 
     // Column 2
     doc.setFont('helvetica', 'normal');
@@ -137,7 +137,7 @@ export const generateMonthlyPaymentReport = (data: MonthlyReportData) => {
     doc.text(`Thanh cong:`, col2X, yPosition);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(34, 197, 94); // Green
-    doc.text(`${data.stats.successfulTransactions}`, col2X + 30, yPosition);
+    doc.text(`${data.stats.successfulTransactions || 0}`, col2X + 30, yPosition);
 
     yPosition += 6;
 
@@ -147,7 +147,7 @@ export const generateMonthlyPaymentReport = (data: MonthlyReportData) => {
     doc.text(`That bai:`, col1X, yPosition);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(239, 68, 68); // Red
-    doc.text(`${data.stats.failedTransactions}`, col1X + 40, yPosition);
+    doc.text(`${data.stats.failedTransactions || 0}`, col1X + 40, yPosition);
 
     // Column 2
     doc.setFont('helvetica', 'normal');
@@ -155,7 +155,7 @@ export const generateMonthlyPaymentReport = (data: MonthlyReportData) => {
     doc.text(`Dang xu ly:`, col2X, yPosition);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(250, 204, 21); // Yellow
-    doc.text(`${data.stats.pendingTransactions}`, col2X + 30, yPosition);
+    doc.text(`${data.stats.pendingTransactions || 0}`, col2X + 30, yPosition);
 
     yPosition += 8;
 
@@ -174,7 +174,7 @@ export const generateMonthlyPaymentReport = (data: MonthlyReportData) => {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
     doc.setTextColor(79, 70, 229); // Purple
-    const revenueText = `${data.stats.totalRevenue.toLocaleString('vi-VN')} VND`;
+    const revenueText = `${(data.stats.totalRevenue || 0).toLocaleString('vi-VN')} VND`;
     doc.text(revenueText, col1X + 35, yPosition);
 
     // Giao dịch trung bình
@@ -184,7 +184,7 @@ export const generateMonthlyPaymentReport = (data: MonthlyReportData) => {
     doc.text(`Trung binh/GD:`, col2X, yPosition);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
-    const avgText = `${Math.round(data.stats.averageTransaction).toLocaleString('vi-VN')} VND`;
+    const avgText = `${Math.round(data.stats.averageTransaction || 0).toLocaleString('vi-VN')} VND`;
     doc.text(avgText, col2X + 32, yPosition);
 
     // ==================== BẢNG GIAO DỊCH CHI TIẾT ====================
@@ -208,8 +208,22 @@ export const generateMonthlyPaymentReport = (data: MonthlyReportData) => {
         });
 
         const customer = payment.userId?.fullName || 'N/A';
-        const course = payment.courseId?.title || 'N/A';
-        const amount = `${payment.amount.toLocaleString('vi-VN')}`;
+        // Lấy tên khóa học: ưu tiên courseId.title, sau đó levelPackageName, cuối cùng mới là description
+        let course = 'N/A';
+        if (payment.courseId?.title) {
+            course = payment.courseId.title;
+        } else if (payment.levelPackageName) {
+            course = payment.levelPackageName;
+        } else if (payment.description) {
+            // Parse description để lấy tên (vd: "LEVEL:B2" -> "Level B2")
+            if (payment.description.startsWith('LEVEL:')) {
+                const level = payment.description.replace('LEVEL:', '');
+                course = `Level ${level}`;
+            } else {
+                course = payment.description;
+            }
+        }
+        const amount = `${(payment.amount || 0).toLocaleString('vi-VN')}`;
         
         let status = '';
         if (payment.status === 'PAID') status = 'Thanh cong';

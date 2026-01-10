@@ -4,6 +4,7 @@ import { ArrowLeft, BookOpen, Clock, Target } from 'lucide-react';
 import IELTSExamCard from './IELTSExamCard';
 import IELTSTestHistory from './IELTSTestHistory';
 import { API_BASE_URL } from '@/utils/constants';
+import SearchFilterBar from '../common/SearchFilterBar';
 
 interface IELTSExam {
   _id: string;
@@ -23,6 +24,20 @@ const IELTSExamList: React.FC<IELTSExamListProps> = ({ onBack }) => {
   const navigate = useNavigate();
   const [exams, setExams] = useState<IELTSExam[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+
+  // Filter options for SearchFilterBar
+  const filterOptions = [
+    { id: 'reading', label: 'Reading', value: 'reading', category: 'Loại bài thi' },
+    { id: 'listening', label: 'Listening', value: 'listening', category: 'Loại bài thi' },
+  ];
+
+  const handleFilterToggle = (filterId: string) => {
+    setActiveFilters((prev) =>
+      prev.includes(filterId) ? prev.filter((id) => id !== filterId) : [...prev, filterId]
+    );
+  };
 
   // Fetch published IELTS exams
   useEffect(() => {
@@ -57,6 +72,33 @@ const IELTSExamList: React.FC<IELTSExamListProps> = ({ onBack }) => {
 
     fetchExams();
   }, []);
+
+  // Filter exams based on search query and active filters
+  const filteredExams = exams.filter((exam) => {
+    // Search filter
+    const matchesSearch = searchQuery.trim() === '' ||
+      exam.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      exam.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      exam.difficulty?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    // Type filter (reading/listening)
+    if (activeFilters.length === 0) return matchesSearch;
+
+    const hasReadingFilter = activeFilters.includes('reading');
+    const hasListeningFilter = activeFilters.includes('listening');
+
+    // If both filters active, show all
+    if (hasReadingFilter && hasListeningFilter) {
+      return matchesSearch;
+    }
+
+    // Match type with filter
+    const matchesTypeFilter = 
+      (hasReadingFilter && exam.type === 'reading') ||
+      (hasListeningFilter && exam.type === 'listening');
+
+    return matchesSearch && matchesTypeFilter;
+  });
 
   const handleStartExam = (examId: string, type: 'reading' | 'listening') => {
     // Store exam info for the test component
@@ -96,7 +138,7 @@ const IELTSExamList: React.FC<IELTSExamListProps> = ({ onBack }) => {
                 <BookOpen className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{exams.filter(e => e.type === 'reading').length}</p>
+                <p className="text-2xl font-bold text-gray-900">{filteredExams.filter(e => e.type === 'reading').length}</p>
                 <p className="text-gray-600">Đề Reading</p>
               </div>
             </div>
@@ -108,7 +150,7 @@ const IELTSExamList: React.FC<IELTSExamListProps> = ({ onBack }) => {
                 <Target className="h-6 w-6 text-emerald-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{exams.filter(e => e.type === 'listening').length}</p>
+                <p className="text-2xl font-bold text-gray-900">{filteredExams.filter(e => e.type === 'listening').length}</p>
                 <p className="text-gray-600">Đề Listening</p>
               </div>
             </div>
@@ -120,12 +162,23 @@ const IELTSExamList: React.FC<IELTSExamListProps> = ({ onBack }) => {
                 <Clock className="h-6 w-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{exams.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{filteredExams.length}</p>
                 <p className="text-gray-600">Tổng đề thi</p>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Search and Filter Bar */}
+        <SearchFilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          activeFilters={activeFilters}
+          onFilterToggle={handleFilterToggle}
+          filterOptions={filterOptions}
+          placeholder="Tìm kiếm theo tên đề thi, độ khó, mô tả..."
+          colorTheme="indigo"
+        />
 
         {/* Main Content - 2 Column Layout */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
@@ -145,9 +198,9 @@ const IELTSExamList: React.FC<IELTSExamListProps> = ({ onBack }) => {
                 </div>
               ) : (
                 <>
-                  {exams.length > 0 ? (
+                  {filteredExams.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {exams.map((exam) => (
+                      {filteredExams.map((exam) => (
                         <IELTSExamCard
                           key={exam._id}
                           exam={exam}
@@ -160,9 +213,15 @@ const IELTSExamList: React.FC<IELTSExamListProps> = ({ onBack }) => {
                       <div className="mx-auto h-24 w-24 text-gray-400 mb-4">
                         <BookOpen className="h-full w-full" />
                       </div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có đề thi nào</h3>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        {searchQuery || activeFilters.length > 0
+                          ? 'Không tìm thấy đề thi phù hợp'
+                          : 'Chưa có đề thi nào'}
+                      </h3>
                       <p className="text-gray-500">
-                        Các đề thi IELTS sẽ được cập nhật sớm nhất có thể.
+                        {searchQuery || activeFilters.length > 0
+                          ? 'Hãy thử tìm kiếm với từ khóa khác hoặc điều chỉnh bộ lọc'
+                          : 'Các đề thi IELTS sẽ được cập nhật sớm nhất có thể.'}
                       </p>
                     </div>
                   )}

@@ -17,6 +17,8 @@ import IELTSExamCard from "./IELTSExamCard";
 import IELTSTestHistory from "./IELTSTestHistory";
 import { useCachedFetch } from "@/utils/apiCache";
 import { API_BASE_URL } from "@/utils/constants";
+import SearchFilterBar from "../common/SearchFilterBar";
+import SearchFilterBar from "../common/SearchFilterBar";
 
 interface IELTSExam {
     _id: string;
@@ -35,6 +37,68 @@ const IELTSCenter = () => {
     const [exams, setExams] = useState<IELTSExam[]>([]);
     const [loading, setLoading] = useState(true);
     const { fetchWithCache } = useCachedFetch();
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeFilters, setActiveFilters] = useState<string[]>([]);
+
+    // Filter options for SearchFilterBar
+    const filterOptions = [
+        { id: 'reading', label: 'Reading', value: 'reading', category: 'Loại bài thi' },
+        { id: 'listening', label: 'Listening', value: 'listening', category: 'Loại bài thi' },
+        { id: 'easy', label: 'Easy', value: 'Easy', category: 'Độ khó' },
+        { id: 'medium', label: 'Medium', value: 'Medium', category: 'Độ khó' },
+        { id: 'hard', label: 'Hard', value: 'Hard', category: 'Độ khó' },
+        { id: 'intermediate', label: 'Intermediate', value: 'Intermediate', category: 'Cấp độ' },
+        { id: 'advanced', label: 'Advanced', value: 'Advanced', category: 'Cấp độ' },
+    ];
+
+    const handleFilterToggle = (filterId: string) => {
+        setActiveFilters((prev) =>
+            prev.includes(filterId) ? prev.filter((id) => id !== filterId) : [...prev, filterId]
+        );
+    };
+
+    // Filter and search logic
+    const filteredExams = exams.filter((exam) => {
+        // Search filter
+        const matchesSearch = searchQuery.trim() === '' ||
+            exam.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            exam.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            exam.difficulty?.toLowerCase().includes(searchQuery.toLowerCase());
+
+        // Active filters
+        if (activeFilters.length === 0) return matchesSearch;
+
+        const typeFilters = activeFilters.filter(id => ['reading', 'listening'].includes(id));
+        const difficultyFilters = activeFilters.filter(id => ['easy', 'medium', 'hard'].includes(id));
+        const levelFilters = activeFilters.filter(id => ['intermediate', 'advanced'].includes(id));
+
+        let matchesTypeFilter = typeFilters.length === 0 || typeFilters.includes(exam.type);
+        let matchesDifficultyFilter = difficultyFilters.length === 0 || 
+            difficultyFilters.some(filter => exam.difficulty?.toLowerCase().includes(filter));
+        let matchesLevelFilter = levelFilters.length === 0 ||
+            levelFilters.some(filter => exam.difficulty?.toLowerCase().includes(filter));
+
+        return matchesSearch && matchesTypeFilter && matchesDifficultyFilter && matchesLevelFilter;
+    });
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeFilters, setActiveFilters] = useState<string[]>([]);
+
+    // Filter options for SearchFilterBar
+    const filterOptions = [
+        { id: 'reading', label: 'Reading', value: 'reading', category: 'Loại bài thi' },
+        { id: 'listening', label: 'Listening', value: 'listening', category: 'Loại bài thi' },
+        { id: 'easy', label: 'Easy', value: 'Easy', category: 'Độ khó' },
+        { id: 'medium', label: 'Medium', value: 'Medium', category: 'Độ khó' },
+        { id: 'hard', label: 'Hard', value: 'Hard', category: 'Độ khó' },
+        { id: 'intermediate', label: 'Intermediate', value: 'Intermediate', category: 'Cấp độ' },
+        { id: 'advanced', label: 'Advanced', value: 'Advanced', category: 'Cấp độ' },
+    ];
+
+    const handleFilterToggle = (filterId: string) => {
+        setActiveFilters((prev) =>
+            prev.includes(filterId) ? prev.filter((id) => id !== filterId) : [...prev, filterId]
+        );
+    };
 
     // Fetch published IELTS exams - chỉ gọi 1 lần khi component mount
     useEffect(() => {
@@ -312,6 +376,17 @@ const IELTSCenter = () => {
                         </p>
                     </div>
 
+                    {/* Search and Filter Bar */}
+                    <SearchFilterBar
+                        searchQuery={searchQuery}
+                        onSearchChange={setSearchQuery}
+                        activeFilters={activeFilters}
+                        onFilterToggle={handleFilterToggle}
+                        filterOptions={filterOptions}
+                        placeholder="Tìm kiếm theo loại bài thi, độ khó, cấp độ..."
+                        colorTheme="green"
+                    />
+
                     {loading ? (
                         <div className="flex justify-center py-12">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
@@ -320,9 +395,9 @@ const IELTSCenter = () => {
                         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                             {/* Left side - Available Exams */}
                             <div className="xl:col-span-2">
-                                {exams.length > 0 ? (
+                                {filteredExams.length > 0 ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {exams.map((exam) => (
+                                        {filteredExams.map((exam) => (
                                             <IELTSExamCard
                                                 key={exam._id}
                                                 exam={exam}
@@ -336,16 +411,19 @@ const IELTSCenter = () => {
                                             <BookOpen className="h-full w-full" />
                                         </div>
                                         <h3 className="text-lg font-medium text-gray-900 mb-2">
-                                            Chưa có đề thi nào
+                                            {searchQuery || activeFilters.length > 0
+                                                ? 'Không tìm thấy đề thi phù hợp'
+                                                : 'Chưa có đề thi nào'}
                                         </h3>
                                         <p className="text-gray-500">
-                                            Các đề thi IELTS sẽ được cập nhật
-                                            sớm nhất có thể.
+                                            {searchQuery || activeFilters.length > 0
+                                                ? 'Hãy thử tìm kiếm với từ khóa khác hoặc điều chỉnh bộ lọc'
+                                                : 'Các đề thi IELTS sẽ được cập nhật sớm nhất có thể.'}
                                         </p>
                                     </div>
                                 )}
 
-                                {exams.length > 0 && (
+                                {filteredExams.length > 0 && (
                                     <div className="text-center mt-8">
                                         <button
                                             onClick={() =>

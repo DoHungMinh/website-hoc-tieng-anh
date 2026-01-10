@@ -32,10 +32,10 @@ export const generateCourse = async (req: Request, res: Response) => {
       });
     }
 
-    // Validate price
-    if (!config.price || config.price < 0) {
+    // Validate price - Allow 0 for free courses (courses within Level packages)
+    if (config.price === undefined || config.price === null || config.price < 0) {
       return res.status(400).json({
-        error: 'Price must be a positive number'
+        error: 'Price must be 0 or a positive number'
       });
     }
 

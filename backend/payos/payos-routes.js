@@ -12,7 +12,8 @@ const {
   handleWebhook,
   cancelPayment,
   createLevelPayment,
-  handleLevelPaymentSuccess
+  handleLevelPaymentSuccess,
+  getMonthlyReport
 } = require('./payos-controller');
 
 // Middleware để parse JSON
@@ -74,6 +75,14 @@ router.post('/create-level-payment', authenticateToken, createLevelPayment);
  * @body    { orderCode: number, level: string }
  */
 router.post('/level-payment-success', authenticateToken, handleLevelPaymentSuccess);
+
+/**
+ * @route   GET /api/payos/report/monthly
+ * @desc    Lấy báo cáo thanh toán theo tháng
+ * @access  Private (cần auth)
+ * @query   month: number, year: number
+ */
+router.get('/report/monthly', authenticateToken, getMonthlyReport);
 
 /**
  * @route   GET /api/payos/health

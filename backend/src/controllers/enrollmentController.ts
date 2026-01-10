@@ -3,6 +3,7 @@ import type { IEnrollment } from '../models/Enrollment';
 import Enrollment from '../models/Enrollment';
 import Course from '../models/Course';
 import { Progress } from '../models/Progress';
+import LevelEnrollment from '../models/LevelEnrollment';
 import mongoose from 'mongoose';
 
 export const enrollInCourse = async (req: Request, res: Response) => {
@@ -25,6 +26,24 @@ export const enrollInCourse = async (req: Request, res: Response) => {
     if (!course) {
       res.status(404).json({ message: 'Course not found' });
       return;
+    }
+
+    // ✅ CHECK LEVEL ENROLLMENT: Nếu khóa học có level và user đã mua level đó → cho phép enroll miễn phí
+    if (course.level) {
+      const levelEnrollment = await LevelEnrollment.findOne({
+        userId,
+        level: course.level,
+        status: 'active'
+      });
+
+      if (!levelEnrollment) {
+        res.status(403).json({ 
+          message: `Bạn cần mua Level ${course.level} trước khi truy cập khóa học này`,
+          requiresLevelPurchase: true,
+          requiredLevel: course.level
+        });
+        return;
+      }
     }
 
     // Check if user is already enrolled

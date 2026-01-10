@@ -42,15 +42,10 @@ const IELTSExamCard: React.FC<IELTSExamCardProps> = ({ exam, onStartExam }) => {
     >
       {/* Header */}
       <div className={`bg-gradient-to-r ${getTypeColor()} p-6 text-white`}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            {getTypeIcon()}
-            <span className="text-sm font-semibold uppercase tracking-wide">
-              IELTS {exam.type === 'reading' ? 'Reading' : 'Listening'}
-            </span>
-          </div>
-          <span className={`px-2 py-1 rounded-full text-xs font-bold ${getDifficultyColor(exam.difficulty)}`}>
-            {exam.difficulty}
+        <div className="flex items-center gap-2 mb-3">
+          {getTypeIcon()}
+          <span className="text-sm font-semibold uppercase tracking-wide">
+            IELTS {exam.type === 'reading' ? 'Reading' : 'Listening'}
           </span>
         </div>
         <h3 className="text-xl font-bold text-white leading-tight">
@@ -65,7 +60,7 @@ const IELTSExamCard: React.FC<IELTSExamCardProps> = ({ exam, onStartExam }) => {
         </p>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="text-center">
             <div className="flex items-center justify-center w-10 h-10 bg-indigo-50 rounded-lg mx-auto mb-2">
               <Clock className="h-5 w-5 text-indigo-600" />
@@ -79,15 +74,6 @@ const IELTSExamCard: React.FC<IELTSExamCardProps> = ({ exam, onStartExam }) => {
             </div>
             <p className="text-xs text-gray-500">Câu hỏi</p>
             <p className="text-sm font-bold text-gray-900">{exam.totalQuestions}</p>
-          </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center w-10 h-10 bg-amber-50 rounded-lg mx-auto mb-2">
-              <Users className="h-5 w-5 text-amber-600" />
-            </div>
-            <p className="text-xs text-gray-500">Mức độ</p>
-            <p className="text-sm font-bold text-gray-900">
-              {exam.difficulty.split(' ')[1] || 'Medium'}
-            </p>
           </div>
         </div>
 

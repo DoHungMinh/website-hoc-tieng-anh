@@ -25,6 +25,7 @@ const Chatbot = () => {
   const [sessionId, setSessionId] = useState<string>('');
   const [connectionError, setConnectionError] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [hasLoadedHistory, setHasLoadedHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -47,6 +48,15 @@ const Chatbot = () => {
 
   // Initial welcome message based on auth status
   useEffect(() => {
+    // Chỉ set welcome message khi mở chatbot lần đầu hoặc khi đóng rồi mở lại
+    if (!isOpen) {
+      setHasLoadedHistory(false);
+      return;
+    }
+
+    // Nếu đã load history rồi thì không set welcome message nữa
+    if (hasLoadedHistory) return;
+
     const { isAuth, currentUser } = getCurrentAuthStatus();
 
     const welcomeMessage = {
@@ -59,7 +69,7 @@ const Chatbot = () => {
       type: 'welcome'
     };
     setMessages([welcomeMessage]);
-  }, [getCurrentAuthStatus]);
+  }, [isOpen, hasLoadedHistory, getCurrentAuthStatus]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -92,10 +102,10 @@ const Chatbot = () => {
 
   // Reset and reload when auth state changes
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !hasLoadedHistory) {
       loadChatHistory();
     }
-  }, [isOpen, isAuthenticated]);
+  }, [isOpen, hasLoadedHistory]);
 
   const loadChatHistory = async () => {
     try {
@@ -141,10 +151,16 @@ const Chatbot = () => {
               timestamp: new Date(msg.timestamp),
               type: msg.metadata?.type
             }));
-            setMessages(prev => [...prev, ...formattedMessages]);
+            
+            // Thay thế toàn bộ messages bằng history (không append)
+            setMessages(formattedMessages);
             setSessionId(sessionResponse.session.id);
+            setHasLoadedHistory(true);
           }
         }
+      } else {
+        // Không có history, đánh dấu đã load để không load lại
+        setHasLoadedHistory(true);
       }
     } catch (error) {
       console.error('Failed to load chat history:', error);
