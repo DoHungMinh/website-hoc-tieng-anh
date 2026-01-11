@@ -66,16 +66,16 @@ Hiện tại bạn đang ở **chế độ khách** - tôi có thể trả lời
     const listeningTests = ieltsResults.filter((r: any) => r.examType === 'listening');
     
     const readingAvg = readingTests.length > 0 ? 
-      readingTests.reduce((sum: number, test: any) => sum + test.score.percentage, 0) / readingTests.length : 0;
+      readingTests.reduce((sum: number, test: any) => sum + (test.score.bandScore || 0), 0) / readingTests.length : 0;
     const listeningAvg = listeningTests.length > 0 ? 
-      listeningTests.reduce((sum: number, test: any) => sum + test.score.percentage, 0) / listeningTests.length : 0;
+      listeningTests.reduce((sum: number, test: any) => sum + (test.score.bandScore || 0), 0) / listeningTests.length : 0;
 
     const latestResult = ieltsResults[0];
-    const averageScore = ieltsResults.reduce((sum: number, result: any) => sum + result.score.percentage, 0) / ieltsResults.length;
+    const averageScore = ieltsResults.reduce((sum: number, result: any) => sum + (result.score.bandScore || 0), 0) / ieltsResults.length;
 
     const trend = ieltsResults.length >= 2 ? 
-      (latestResult.score.percentage > ieltsResults[1].score.percentage ? '📈 Đang cải thiện' : 
-       latestResult.score.percentage < ieltsResults[1].score.percentage ? '📉 Cần ôn tập thêm' : '➡️ Ổn định') : '📊 Cần thêm data';
+      ((latestResult.score.bandScore || 0) > (ieltsResults[1].score.bandScore || 0) ? '📈 Đang cải thiện' : 
+       (latestResult.score.bandScore || 0) < (ieltsResults[1].score.bandScore || 0) ? '📉 Cần ôn tập thêm' : '➡️ Ổn định') : '📊 Cần thêm data';
 
     return {
       hasData: true,
@@ -90,11 +90,11 @@ Hiện tại bạn đang ở **chế độ khách** - tôi có thể trả lời
     };
   }
 
-  // Get performance feedback
-  static getPerformanceFeedback(percentage: number): string {
-    if (percentage >= 80) return '🎉 Xuất sắc! Kết quả rất ấn tượng!';
-    if (percentage >= 70) return '👍 Tốt! Bạn đang trên đúng hướng!';
-    if (percentage >= 60) return '💪 Khá! Cần cải thiện thêm một chút!';
+  // Get performance feedback based on IELTS Band Score
+  static getPerformanceFeedback(bandScore: number): string {
+    if (bandScore >= 8.0) return '🎉 Xuất sắc! Kết quả rất ấn tượng!';
+    if (bandScore >= 7.0) return '👍 Tốt! Bạn đang trên đúng hướng!';
+    if (bandScore >= 6.0) return '💪 Khá! Cần cải thiện thêm một chút!';
     return '🎯 Cần luyện tập nhiều hơn để đạt mục tiêu!';
   }
 

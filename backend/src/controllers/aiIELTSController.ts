@@ -17,19 +17,32 @@ const generateIELTSReadingContentMock = async (config: AIIELTSReadingConfig) => 
   // Simulate AI processing delay
   await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 3000));
 
-  const totalQuestions = config.numPassages * config.questionsPerPassage;
+  // IELTS Reading standard: 3 passages with 40 total questions
+  // Distribution: Passage 1 (13), Passage 2 (13), Passage 3 (14)
+  const getQuestionsForPassage = (passageIndex: number, totalPassages: number): number => {
+    if (totalPassages === 3) {
+      // Standard IELTS: 13, 13, 14 = 40 questions
+      return passageIndex === 2 ? 14 : 13; // Last passage gets 14, others get 13
+    }
+    // For non-standard configs, distribute evenly
+    return config.questionsPerPassage;
+  };
+
+  const totalQuestions = config.numPassages === 3 ? 40 : config.numPassages * config.questionsPerPassage;
   
   // Generate passages with realistic content
   const passages = [];
-  console.log(`Starting to generate ${config.numPassages} passages with ${config.questionsPerPassage} questions each`);
+  console.log(`Starting to generate ${config.numPassages} passages with total ${totalQuestions} questions`);
   
   for (let i = 1; i <= config.numPassages; i++) {
+    const questionsInThisPassage = getQuestionsForPassage(i - 1, config.numPassages);
+    
     // Get specific topic for this passage
     const currentPassageTopic = config.topics[(i-1) % config.topics.length] || 'General Academic Topic';
-    console.log(`Creating passage ${i} with topic: "${currentPassageTopic}"`);
+    console.log(`Creating passage ${i} with topic: "${currentPassageTopic}" and ${questionsInThisPassage} questions`);
     
     const questions = [];
-    for (let j = 1; j <= config.questionsPerPassage; j++) {
+    for (let j = 1; j <= questionsInThisPassage; j++) {
       // Use the specific passage topic instead of random
       const topic = currentPassageTopic;
       

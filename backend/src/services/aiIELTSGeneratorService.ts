@@ -26,16 +26,28 @@ export class AIIELTSGeneratorService {
   async generateIELTSReadingTest(config: IELTSGeneratorConfig) {
     console.log('🤖 Starting AI generation for IELTS Reading test:', config.title);
 
-    const totalQuestions = config.numPassages * config.questionsPerPassage;
+    // IELTS Reading standard: 3 passages with 40 total questions
+    // Distribution: Passage 1 (13), Passage 2 (13), Passage 3 (14)
+    const getQuestionsForPassage = (passageIndex: number, totalPassages: number): number => {
+      if (totalPassages === 3) {
+        // Standard IELTS: 13, 13, 14 = 40 questions
+        return passageIndex === 2 ? 14 : 13; // Last passage gets 14, others get 13
+      }
+      // For non-standard configs, distribute evenly
+      return config.questionsPerPassage;
+    };
+
+    const totalQuestions = config.numPassages === 3 ? 40 : config.numPassages * config.questionsPerPassage;
     const passages = [];
 
     // Generate each passage
     for (let i = 0; i < config.numPassages; i++) {
       const topic = config.topics[i % config.topics.length];
-      console.log(`📝 Generating passage ${i + 1}/${config.numPassages} with topic: "${topic}"`);
+      const questionsInThisPassage = getQuestionsForPassage(i, config.numPassages);
+      console.log(`📝 Generating passage ${i + 1}/${config.numPassages} with topic: "${topic}" (${questionsInThisPassage} questions)`);
 
       try {
-        const passage = await this.generatePassage(topic, config, i + 1);
+        const passage = await this.generatePassage(topic, config, i + 1, questionsInThisPassage);
         passages.push(passage);
         console.log(`✅ Passage ${i + 1} generated successfully`);
       } catch (error) {
@@ -87,7 +99,7 @@ export class AIIELTSGeneratorService {
   /**
    * Generate a single passage with questions
    */
-  private async generatePassage(topic: string, config: IELTSGeneratorConfig, passageNumber: number) {
+  private async generatePassage(topic: string, config: IELTSGeneratorConfig, passageNumber: number, questionsCount: number) {
     const systemPrompt = `You are an IELTS expert specializing in creating authentic IELTS Academic Reading passages. 
 Your passages must be comprehensive, well-researched, and match the quality of official IELTS tests.
 
@@ -178,7 +190,7 @@ Write the passage NOW - complete and comprehensive. No shortcuts or placeholders
     console.log(`📝 Passage ${passageNumber} generated: "${passageData.title}" (${wordCount} words)`);
 
     // Generate questions for this passage
-    const questions = await this.generateQuestions(passageData.content, topic, config, passageNumber);
+    const questions = await this.generateQuestions(passageData.content, topic, config, passageNumber, questionsCount);
 
     return {
       id: `passage${passageNumber}`,
@@ -196,9 +208,9 @@ Write the passage NOW - complete and comprehensive. No shortcuts or placeholders
   /**
    * Generate questions for a passage
    */
-  private async generateQuestions(passageContent: string, topic: string, config: IELTSGeneratorConfig, passageNumber: number) {
+  private async generateQuestions(passageContent: string, topic: string, config: IELTSGeneratorConfig, passageNumber: number, questionsCount: number) {
     const systemPrompt = `You are an IELTS examiner creating authentic IELTS Reading questions. 
-Generate ${config.questionsPerPassage} diverse questions that test comprehension of the passage.
+Generate ${questionsCount} diverse questions that test comprehension of the passage.
 
 Question types to use (mix them):
 1. Multiple Choice (4 options: A, B, C, D)
@@ -213,12 +225,12 @@ Requirements:
 - Provide clear correct answers
 - Each question should be unique and test different parts of the passage`;
 
-    const userPrompt = `Based on this passage, create ${config.questionsPerPassage} IELTS Reading questions:
+    const userPrompt = `Based on this passage, create ${questionsCount} IELTS Reading questions:
 
 PASSAGE:
 ${passageContent}
 
-Generate a JSON array of exactly ${config.questionsPerPassage} questions with this structure:
+Generate a JSON array of exactly ${questionsCount} questions with this structure:
 [
   {
     "id": "passage${passageNumber}-q1",

@@ -255,15 +255,23 @@ export const createIELTSExam = async (req: Request, res: Response) => {
 
     // Calculate total questions
     let totalQuestions = 0;
-    if (type === 'reading' && passages) {
+    
+    // If totalQuestions is provided in request body (from AI generation), use it
+    // Otherwise calculate from passages/sections
+    if (req.body.totalQuestions && typeof req.body.totalQuestions === 'number') {
+      totalQuestions = req.body.totalQuestions;
+      console.log('Using provided totalQuestions:', totalQuestions);
+    } else if (type === 'reading' && passages) {
       totalQuestions = passages.reduce((total: number, passage: any) => 
         total + (passage.questions ? passage.questions.length : 0), 0);
+      console.log('Calculated totalQuestions from passages:', totalQuestions);
     } else if (type === 'listening' && sections) {
       totalQuestions = sections.reduce((total: number, section: any) => 
         total + (section.questions ? section.questions.length : 0), 0);
+      console.log('Calculated totalQuestions from sections:', totalQuestions);
     }
 
-    console.log('Calculated total questions:', totalQuestions);
+    console.log('Final calculated total questions:', totalQuestions);
 
     // Create exam object
     const examData = {
@@ -545,26 +553,58 @@ export const submitTestResult = async (req: Request, res: Response): Promise<voi
     }
 
     // Process answers and calculate score
+    // IMPORTANT: Save ALL questions to database, not just answered ones
     const processedAnswers = [];
     let correctCount = 0;
 
-    for (const [questionId, userAnswer] of Object.entries(answers)) {
-      const question = allQuestions.find(q => q.id === questionId);
-      const isCorrect = question && question.correctAnswer !== undefined && 
+    console.log('📊 [IELTS Submit] Starting to process answers...');
+    console.log('📊 Total questions in exam:', allQuestions.length);
+    console.log('📊 Answers received from frontend:', Object.keys(answers).length);
+
+    // Loop through ALL questions in the exam
+    for (const question of allQuestions) {
+      let userAnswer = answers[question.id]; // undefined if not answered
+      
+      // Convert numeric index (0,1,2,3) to letter (A,B,C,D) if needed
+      // This handles cases where frontend sends index instead of letter
+      if (typeof userAnswer === 'number' && typeof question.correctAnswer === 'string') {
+        const indexToLetter = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+        userAnswer = indexToLetter[userAnswer] || userAnswer;
+        console.log(`🔄 Converted index ${answers[question.id]} to letter ${userAnswer}`);
+      }
+      
+      // DEBUG: Log first 3 questions to check types
+      if (processedAnswers.length < 3) {
+        console.log(`🔍 Question ${processedAnswers.length + 1}:`, {
+          questionId: question.id,
+          originalUserAnswer: answers[question.id],
+          convertedUserAnswer: userAnswer,
+          correctAnswer: question.correctAnswer,
+          strictEqual: userAnswer === question.correctAnswer,
+        });
+      }
+      
+      const isCorrect = userAnswer !== undefined && 
+                       question.correctAnswer !== undefined && 
                        userAnswer === question.correctAnswer;
       
       if (isCorrect) correctCount++;
 
       processedAnswers.push({
-        questionId,
-        userAnswer,
-        correctAnswer: question?.correctAnswer,
+        questionId: question.id,
+        userAnswer: userAnswer !== undefined ? userAnswer : null, // Store null for unanswered
+        correctAnswer: question.correctAnswer,
         isCorrect: !!isCorrect
       });
     }
 
-    const totalQuestions = allQuestions.length;
-    const percentage = Math.round((correctCount / totalQuestions) * 100);
+    console.log('📊 Processed answers count:', processedAnswers.length);
+    console.log('📊 Correct answers:', correctCount);
+    console.log('📊 Sample processed answer:', processedAnswers[0]);
+
+    // IMPORTANT: Always use 40 questions for IELTS standard scoring
+    // Even if the exam has fewer questions (e.g., 13 for Part 1 practice)
+    const totalQuestions = 40;
 
     // Calculate IELTS band score using official scoring system
     let bandScore: number | undefined;
@@ -586,7 +626,6 @@ export const submitTestResult = async (req: Request, res: Response): Promise<voi
       score: {
         correctAnswers: correctCount,
         totalQuestions,
-        percentage,
         bandScore,
         description
       },
@@ -595,6 +634,13 @@ export const submitTestResult = async (req: Request, res: Response): Promise<voi
     });
 
     await testResult.save();
+
+    console.log('✅ [IELTS Submit] Test result saved to database');
+    console.log('📊 Saved result ID:', testResult._id);
+    console.log('📊 Saved correctAnswers:', testResult.score.correctAnswers);
+    console.log('📊 Saved totalQuestions:', testResult.score.totalQuestions);
+    console.log('📊 Saved bandScore:', testResult.score.bandScore);
+    console.log('📊 Saved answers count:', testResult.answers.length);
 
     // Update user level based on test results if bandScore is available
     if (bandScore && bandScore > 0) {
@@ -642,6 +688,15 @@ export const getUserTestHistory = async (req: Request, res: Response): Promise<v
       .limit(Number(limit))
       .skip(skip)
       .select('-answers'); // Exclude detailed answers for list view
+
+    console.log('📋 [IELTS History] Found results:', results.length);
+    if (results.length > 0) {
+      console.log('📋 First result sample:');
+      console.log('   - examTitle:', results[0].examTitle);
+      console.log('   - correctAnswers:', results[0].score.correctAnswers);
+      console.log('   - totalQuestions:', results[0].score.totalQuestions);
+      console.log('   - bandScore:', results[0].score.bandScore);
+    }
 
     const totalResults = await IELTSTestResult.countDocuments({ userId });
 

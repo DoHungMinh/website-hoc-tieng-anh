@@ -80,7 +80,6 @@ export interface UserAnswer {
 export interface AssessmentResult {
   totalScore: number;
   maxScore: number;
-  percentage: number;
   level: LearningLevel;
   skillBreakdown: SkillBreakdown;
   strengths: string[];
@@ -98,7 +97,6 @@ export interface SkillBreakdown {
 export interface SkillScore {
   score: number;
   maxScore: number;
-  percentage: number;
 }
 
 export interface Progress {
@@ -155,7 +153,7 @@ export interface TestResult {
   testName: string;
   score: number;
   maxScore: number;
-  percentage: number;
+  bandScore?: number;
   completedAt: string;
 }
 

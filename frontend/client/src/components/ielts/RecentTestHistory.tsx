@@ -17,7 +17,6 @@ interface TestResult {
   score: {
     correctAnswers: number;
     totalQuestions: number;
-    percentage: number;
     bandScore?: number;
     description?: string;
   };
@@ -96,9 +95,10 @@ const RecentTestHistory = ({ onViewAll, onViewDetail }: RecentTestHistoryProps) 
     return 'text-red-600';
   };
 
-  const getScoreIcon = (percentage: number) => {
-    if (percentage >= 80) return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-    if (percentage >= 60) return <Target className="h-4 w-4 text-blue-500" />;
+  const getScoreIcon = (bandScore?: number) => {
+    if (!bandScore) return <Target className="h-4 w-4 text-gray-500" />;
+    if (bandScore >= 8.0) return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+    if (bandScore >= 6.0) return <Target className="h-4 w-4 text-blue-500" />;
     return <Target className="h-4 w-4 text-orange-500" />;
   };
 
@@ -199,7 +199,7 @@ const RecentTestHistory = ({ onViewAll, onViewDetail }: RecentTestHistoryProps) 
                     {formatDate(result.completedAt)}
                   </div>
                   <div className="flex items-center gap-1">
-                    {getScoreIcon(result.score.percentage)}
+                    {getScoreIcon(result.score.bandScore)}
                     <span className="font-medium">
                       {result.score.correctAnswers}/{result.score.totalQuestions}
                     </span>
@@ -208,12 +208,18 @@ const RecentTestHistory = ({ onViewAll, onViewDetail }: RecentTestHistoryProps) 
               </div>
 
               <div className="text-right flex-shrink-0 ml-2">
-                <div className="text-lg font-bold text-gray-900">
-                  {result.score.percentage}%
-                </div>
-                {result.score.bandScore && (
-                  <div className={`text-xs font-medium ${getBandScoreColor(result.score.bandScore)}`}>
-                    Band {result.score.bandScore}
+                {result.score.bandScore ? (
+                  <>
+                    <div className={`text-lg font-bold ${getBandScoreColor(result.score.bandScore)}`}>
+                      Band {result.score.bandScore}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {result.score.correctAnswers}/{result.score.totalQuestions}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-lg font-bold text-gray-900">
+                    {result.score.correctAnswers}/{result.score.totalQuestions}
                   </div>
                 )}
               </div>

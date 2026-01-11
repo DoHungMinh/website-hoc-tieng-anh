@@ -75,7 +75,7 @@ export const voiceChatController = {
           ieltsCount: ieltsResults.length,
           averageScore:
             ieltsResults.length > 0
-              ? ieltsResults.reduce((sum, r) => sum + r.score.percentage, 0) /
+              ? ieltsResults.reduce((sum, r) => sum + (r.score.bandScore || 0), 0) /
                 ieltsResults.length
               : 0,
         },

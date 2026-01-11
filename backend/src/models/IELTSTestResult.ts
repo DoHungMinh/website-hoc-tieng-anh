@@ -2,7 +2,7 @@ import { Schema, model, Document } from 'mongoose';
 
 interface IAnswer {
   questionId: string;
-  userAnswer: string | number;
+  userAnswer: string | number | null;  // Allow null for unanswered questions
   correctAnswer?: string | number;
   isCorrect: boolean;
 }
@@ -16,7 +16,6 @@ interface IIELTSTestResult extends Omit<Document, "_id"> {
   score: {
     correctAnswers: number;
     totalQuestions: number;
-    percentage: number;
     bandScore?: number;
     description?: string;
   };
@@ -52,7 +51,7 @@ const ieltsTestResultSchema = new Schema<IIELTSTestResult>({
     },
     userAnswer: {
       type: Schema.Types.Mixed,
-      required: true
+      required: false  // Allow null for unanswered questions
     },
     correctAnswer: {
       type: Schema.Types.Mixed
@@ -68,10 +67,6 @@ const ieltsTestResultSchema = new Schema<IIELTSTestResult>({
       required: true
     },
     totalQuestions: {
-      type: Number,
-      required: true
-    },
-    percentage: {
       type: Number,
       required: true
     },

@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import {
     calculateIELTSScore,
-    calculateSimpleScore,
     getBandScoreColor,
     getBandScoreBackground,
 } from "@/utils/ieltsScoring";
@@ -298,7 +297,9 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
             0
         );
 
-        const totalQuestions = allQuestions.length;
+        // IMPORTANT: Always use 40 questions for IELTS standard scoring
+        // Even if the exam has fewer questions (e.g., 13 for Part 1 practice)
+        const totalQuestions = 40;
 
         // Check if questions have correct answers for IELTS scoring
         const hasCorrectAnswers = allQuestions.some(
@@ -318,10 +319,6 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
 
         // Fallback to simple scoring if no correct answers available
         const answeredQuestions = Object.keys(answers).length;
-        const simpleResult = calculateSimpleScore(
-            answeredQuestions,
-            totalQuestions
-        );
 
         return {
             totalQuestions,
@@ -329,8 +326,7 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                 ? correctAnswers
                 : answeredQuestions,
             bandScore: 0,
-            percentage: simpleResult.percentage,
-            description: simpleResult.description,
+            description: 'Chưa có đáp án chính thức - Không thể tính band score',
         };
     };
 
@@ -532,7 +528,7 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                                 examData.title,
                                 testResult.correctAnswers,
                                 testResult.totalQuestions,
-                                testResult.percentage
+                                testResult.bandScore || 0
                             );
                             console.log("Progress updated successfully");
                         } catch (progressError) {
@@ -664,7 +660,7 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                             </div>
                             <div className="bg-yellow-50 rounded-lg p-4 text-center">
                                 <div className="text-xl font-bold text-yellow-600">
-                                    {testResult.percentage}%
+                                    {Math.round((testResult.correctAnswers / testResult.totalQuestions) * 100)}%
                                 </div>
                                 <div className="text-yellow-600 text-sm">
                                     Tỷ lệ chính xác
@@ -1139,7 +1135,7 @@ const IELTSTest: React.FC<IELTSTestProps> = ({ onBackToCenter }) => {
                             </div>
                             <div className="bg-yellow-50 rounded-xl p-6">
                                 <div className="text-2xl font-bold text-yellow-600">
-                                    {testResult.percentage}%
+                                    {Math.round((testResult.correctAnswers / testResult.totalQuestions) * 100)}%
                                 </div>
                                 <div className="text-yellow-600">
                                     Tỷ lệ chính xác

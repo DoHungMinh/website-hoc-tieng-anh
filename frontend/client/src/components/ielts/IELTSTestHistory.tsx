@@ -19,7 +19,6 @@ interface TestResult {
   score: {
     correctAnswers: number;
     totalQuestions: number;
-    percentage: number;
     bandScore?: number;
     description?: string;
   };
@@ -109,9 +108,10 @@ const IELTSTestHistory = ({ onViewDetail }: IELTSTestHistoryProps) => {
     return 'text-red-600';
   };
 
-  const getScoreIcon = (percentage: number) => {
-    if (percentage >= 80) return <Award className="h-5 w-5 text-gold-500" />;
-    if (percentage >= 60) return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+  const getScoreIcon = (bandScore?: number) => {
+    if (!bandScore) return <Target className="h-5 w-5 text-gray-500" />;
+    if (bandScore >= 8.0) return <Award className="h-5 w-5 text-gold-500" />;
+    if (bandScore >= 6.0) return <CheckCircle2 className="h-5 w-5 text-green-500" />;
     return <Target className="h-5 w-5 text-orange-500" />;
   };
 
@@ -119,7 +119,6 @@ const IELTSTestHistory = ({ onViewDetail }: IELTSTestHistoryProps) => {
     if (results.length === 0) return null;
 
     const totalTests = results.length;
-    const avgScore = results.reduce((sum, result) => sum + result.score.percentage, 0) / totalTests;
     const avgBandScore = results
       .filter(r => r.score.bandScore)
       .reduce((sum, result) => sum + (result.score.bandScore || 0), 0) /
@@ -130,7 +129,6 @@ const IELTSTestHistory = ({ onViewDetail }: IELTSTestHistoryProps) => {
 
     return {
       totalTests,
-      avgScore: Math.round(avgScore),
       avgBandScore: avgBandScore ? Math.round(avgBandScore * 10) / 10 : null,
       readingTests,
       listeningTests
@@ -193,10 +191,11 @@ const IELTSTestHistory = ({ onViewDetail }: IELTSTestHistoryProps) => {
               <TrendingUp className="h-4 w-4" />
               {stats.totalTests} bài thi
             </span>
-            <span className="text-green-600 font-semibold">
-              Điểm TB: {stats.avgScore}%
-              {stats.avgBandScore && ` (Band ${stats.avgBandScore})`}
-            </span>
+            {stats.avgBandScore && (
+              <span className="text-green-600 font-semibold">
+                Điểm TB: Band {stats.avgBandScore}
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -209,7 +208,9 @@ const IELTSTestHistory = ({ onViewDetail }: IELTSTestHistoryProps) => {
             <div className="text-sm text-blue-700">Tổng bài thi</div>
           </div>
           <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{stats.avgScore}%</div>
+            <div className="text-2xl font-bold text-green-600">
+              {stats.avgBandScore ? `Band ${stats.avgBandScore}` : 'N/A'}
+            </div>
             <div className="text-sm text-green-700">Điểm trung bình</div>
           </div>
           <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-4 text-center">
@@ -251,10 +252,9 @@ const IELTSTestHistory = ({ onViewDetail }: IELTSTestHistoryProps) => {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {getScoreIcon(result.score.percentage)}
+                    {getScoreIcon(result.score.bandScore)}
                     <span className="font-medium">
                       {result.score.correctAnswers}/{result.score.totalQuestions}
-                      <span className="text-gray-500 ml-1">({result.score.percentage}%)</span>
                     </span>
                   </div>
 

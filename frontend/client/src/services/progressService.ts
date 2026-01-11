@@ -32,7 +32,6 @@ interface IELTSResult {
     score: {
         correctAnswers: number;
         totalQuestions: number;
-        percentage: number;
         bandScore?: number;
         description?: string;
     };
@@ -294,16 +293,14 @@ class ProgressService {
             const testsCompleted = ieltsResults.length;
             const coursesEnrolled = enrollmentCount;
 
-            // Tính điểm trung bình từ IELTS results
+            // Tính điểm trung bình từ IELTS results (chỉ dùng bandScore)
+            const ieltsResultsWithBandScore = ieltsResults.filter(r => r.score.bandScore);
             const averageScore =
-                ieltsResults.length > 0
-                    ? ieltsResults.reduce(
-                        (sum, result) =>
-                            sum +
-                            (result.score.bandScore ||
-                                result.score.percentage / 10),
+                ieltsResultsWithBandScore.length > 0
+                    ? ieltsResultsWithBandScore.reduce(
+                        (sum, result) => sum + (result.score.bandScore || 0),
                         0
-                    ) / ieltsResults.length
+                    ) / ieltsResultsWithBandScore.length
                     : 0;
 
             // Sử dụng dữ liệu từ API hoặc fallback
@@ -386,7 +383,7 @@ class ProgressService {
         testName: string,
         score: number,
         maxScore: number,
-        percentage: number
+        scoreValue: number  // Có thể là percentage hoặc bandScore
     ): Promise<boolean> {
         try {
             const response = await fetch(`${API_BASE_URL}/progress/test`, {
@@ -396,7 +393,7 @@ class ProgressService {
                     testName,
                     score,
                     maxScore,
-                    percentage,
+                    percentage: scoreValue,  // Backend vẫn dùng field name "percentage" nhưng giá trị có thể là bandScore
                 }),
             });
 

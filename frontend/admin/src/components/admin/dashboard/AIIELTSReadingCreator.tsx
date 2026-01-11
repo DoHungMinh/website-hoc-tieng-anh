@@ -218,18 +218,31 @@ const AIIELTSReadingCreator: React.FC<AIIELTSReadingCreatorProps> = ({ onExamGen
   };
 
   const generateFallbackExam = (): AIGeneratedIELTSReading => {
-    const totalQuestions = config.numPassages * config.questionsPerPassage;
-    console.log(`Generating fallback exam: ${config.numPassages} passages, ${config.questionsPerPassage} questions per passage, total: ${totalQuestions}`);
+    // IELTS Reading standard: 3 passages with 40 total questions
+    // Distribution: Passage 1 (13), Passage 2 (13), Passage 3 (14)
+    const getQuestionsForPassage = (passageIndex: number, totalPassages: number): number => {
+      if (totalPassages === 3) {
+        // Standard IELTS: 13, 13, 14 = 40 questions
+        return passageIndex === 2 ? 14 : 13; // Last passage gets 14, others get 13
+      }
+      // For non-standard configs, distribute evenly
+      return config.questionsPerPassage;
+    };
+    
+    const totalQuestions = config.numPassages === 3 ? 40 : config.numPassages * config.questionsPerPassage;
+    console.log(`Generating fallback exam: ${config.numPassages} passages, total: ${totalQuestions} questions`);
     
     // Generate passages based on config
     const passages = [];
     for (let i = 1; i <= config.numPassages; i++) {
+      const questionsInThisPassage = getQuestionsForPassage(i - 1, config.numPassages);
+      
       // Get specific topic for this passage
       const passageTopic = config.topics.filter(t => t.trim())[(i-1) % config.topics.filter(t => t.trim()).length] || 'Academic Reading';
-      console.log(`Creating fallback passage ${i} with topic: "${passageTopic}"`);
+      console.log(`Creating fallback passage ${i} with topic: "${passageTopic}" and ${questionsInThisPassage} questions`);
       
       const questions = [];
-      for (let j = 1; j <= config.questionsPerPassage; j++) {
+      for (let j = 1; j <= questionsInThisPassage; j++) {
         // Use the specific passage topic instead of random
         const topic = passageTopic;
         
@@ -409,8 +422,10 @@ In a real exam, this passage would be much longer and contain specific informati
     switch (currentStep) {
       case 1:
         return config.title.trim().length > 0 && config.difficulty && config.duration > 0;
-      case 2:
-        return config.numPassages > 0 && config.questionsPerPassage > 0 && config.topics.filter(t => t.trim()).length > 0;
+      case 2: {
+        const totalQuestions = config.numPassages === 3 ? 40 : config.numPassages * config.questionsPerPassage;
+        return config.numPassages > 0 && totalQuestions > 0 && config.topics.filter(t => t.trim()).length > 0;
+      }
       case 3:
         return true;
       default:
@@ -612,15 +627,28 @@ In a real exam, this passage would be much longer and contain specific informati
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Số câu hỏi mỗi passage
                   </label>
-                  <input
-                    type="number"
-                    value={config.questionsPerPassage}
-                    onChange={(e) => setConfig(prev => ({ ...prev, questionsPerPassage: parseInt(e.target.value) || 1 }))}
-                    min="5"
-                    max="20"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">Thông thường: 13-14 câu</p>
+                  {config.numPassages === 3 ? (
+                    <div className="w-full px-4 py-3 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                      <p className="text-blue-800 font-semibold mb-1">Tự động phân bổ chuẩn IELTS</p>
+                      <p className="text-sm text-blue-600">
+                        📌 Passage 1: <span className="font-bold">13 câu</span> | 
+                        Passage 2: <span className="font-bold">13 câu</span> | 
+                        Passage 3: <span className="font-bold">14 câu</span> = <span className="font-bold text-blue-700">40 câu</span>
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <input
+                        type="number"
+                        value={config.questionsPerPassage}
+                        onChange={(e) => setConfig(prev => ({ ...prev, questionsPerPassage: parseInt(e.target.value) || 1 }))}
+                        min="5"
+                        max="20"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                      />
+                      <p className="text-sm text-gray-500 mt-1">Thông thường: 13-14 câu</p>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -694,7 +722,9 @@ In a real exam, this passage would be much longer and contain specific informati
                       <Target className="h-6 w-6 text-blue-600" />
                     </div>
                     <p className="text-sm text-blue-600">Tổng câu hỏi</p>
-                    <p className="font-bold text-blue-800">{config.numPassages * config.questionsPerPassage}</p>
+                    <p className="font-bold text-blue-800">
+                      {config.numPassages === 3 ? 40 : config.numPassages * config.questionsPerPassage}
+                    </p>
                   </div>
                   <div className="text-center">
                     <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-xl mx-auto mb-2">
@@ -757,7 +787,9 @@ In a real exam, this passage would be much longer and contain specific informati
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Câu hỏi/passage:</p>
-                    <p className="font-medium">{config.questionsPerPassage}</p>
+                    <p className="font-medium">
+                      {config.numPassages === 3 ? '13, 13, 14 (auto)' : config.questionsPerPassage}
+                    </p>
                   </div>
                 </div>
 
@@ -792,7 +824,7 @@ In a real exam, this passage would be much longer and contain specific informati
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    Tổng cộng {config.numPassages * config.questionsPerPassage} câu hỏi đa dạng (multiple choice, fill blank, T/F/NG)
+                    Tổng cộng {config.numPassages === 3 ? 40 : config.numPassages * config.questionsPerPassage} câu hỏi đa dạng (multiple choice, fill blank, T/F/NG)
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>

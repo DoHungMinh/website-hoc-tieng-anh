@@ -83,7 +83,7 @@ export const realDataChatbotController = {
           stats: {
             ieltsCount: ieltsResults.length,
             averageScore: ieltsResults.length > 0 ? 
-              ieltsResults.reduce((sum, r) => sum + r.score.percentage, 0) / ieltsResults.length : 0
+              ieltsResults.filter(r => r.score.bandScore).reduce((sum, r) => sum + (r.score.bandScore || 0), 0) / ieltsResults.filter(r => r.score.bandScore).length : 0
           }
         };
 
@@ -121,7 +121,7 @@ export const realDataChatbotController = {
           response = `Chào ${user.fullName}! 👋 
 
 ${hasIELTSData && latestResult ? 
-`📊 **Trình độ hiện tại**: ${user.level} (Band ${latestResult.score.bandScore || 'N/A'} - ${latestResult.score.percentage}%)` : 
+`📊 **Trình độ hiện tại**: ${user.level}${latestResult.score.bandScore ? ` (Band ${latestResult.score.bandScore})` : ''}` : 
 `📊 **Trình độ hiện tại**: ${user.level}`}
 
 Tôi có thể giúp bạn:
@@ -129,7 +129,7 @@ Tôi có thể giúp bạn:
 • **"kết quả IELTS"** - Xem điểm số và feedback  
 • **"gợi ý học tập"** - Lộ trình phù hợp
 
-${hasIELTSData ? '✅ Đã có dữ liệu IELTS để phân tích chính xác!' : '⚠️ Làm bài test để có phân tích chi tiết hơn!'}`;
+${hasIELTSData ? '✅ Đã có dữ liệu IELTS để phân tích chính xác!' : '⚠️ Làm bài test để có phân tích chi tiết hơn!'}` ;
         }
       }
 
@@ -506,19 +506,21 @@ ${progress.studyStreak.current >= 7 ? '🎉 Tuyệt vời! Bạn đã duy trì h
     let ieltsSection = '';
     if (ieltsResults.length > 0) {
       const latestResult = ieltsResults[0];
-      const averageScore = ieltsResults.reduce((sum: number, result: any) => sum + result.score.percentage, 0) / ieltsResults.length;
+      const ieltsWithBandScore = ieltsResults.filter((r: any) => r.score.bandScore);
+      const averageBandScore = ieltsWithBandScore.length > 0 ?
+        ieltsWithBandScore.reduce((sum: number, result: any) => sum + result.score.bandScore, 0) / ieltsWithBandScore.length : 0;
       const readingTests = ieltsResults.filter((r: any) => r.examType === 'reading').length;
       const listeningTests = ieltsResults.filter((r: any) => r.examType === 'listening').length;
       
       ieltsSection = `
 🎯 **TIẾN ĐỘ IELTS:**
 • Tổng bài test: ${ieltsResults.length} (Reading: ${readingTests}, Listening: ${listeningTests})
-• Điểm trung bình: ${Math.round(averageScore)}%
-• Kết quả mới nhất: ${latestResult.score.percentage}% (${latestResult.examTitle})
-• Band Score mới nhất: ${latestResult.score.bandScore || 'N/A'}
-• Xu hướng: ${ieltsResults.length >= 2 ? 
-    (latestResult.score.percentage > ieltsResults[1].score.percentage ? '📈 Đang cải thiện' : 
-     latestResult.score.percentage < ieltsResults[1].score.percentage ? '📉 Cần ôn tập thêm' : '➡️ Ổn định') : '📊 Cần thêm data'}`;
+• Band Score trung bình: ${averageBandScore > 0 ? averageBandScore.toFixed(1) : 'N/A'}
+• Kết quả mới nhất: Band ${latestResult.score.bandScore || 'N/A'} (${latestResult.examTitle})
+• Số câu đúng: ${latestResult.score.correctAnswers}/${latestResult.score.totalQuestions}
+• Xu hướng: ${ieltsResults.length >= 2 && ieltsResults[1].score.bandScore && latestResult.score.bandScore ? 
+    (latestResult.score.bandScore > ieltsResults[1].score.bandScore ? '📈 Đang cải thiện' : 
+     latestResult.score.bandScore < ieltsResults[1].score.bandScore ? '📉 Cần ôn tập thêm' : '➡️ Ổn định') : '📊 Cần thêm data'}`;
     }
 
     return `📈 **TIẾN ĐỘ CỦA ${user.fullName.toUpperCase()}**
@@ -543,42 +545,47 @@ ${progressSection}${ieltsSection}`;
     const readingTests = ieltsResults.filter((r: any) => r.examType === 'reading');
     const listeningTests = ieltsResults.filter((r: any) => r.examType === 'listening');
     
-    // Tính điểm trung bình cho từng skill
-    const readingAvg = readingTests.length > 0 ? 
-      readingTests.reduce((sum: number, test: any) => sum + test.score.percentage, 0) / readingTests.length : 0;
-    const listeningAvg = listeningTests.length > 0 ? 
-      listeningTests.reduce((sum: number, test: any) => sum + test.score.percentage, 0) / listeningTests.length : 0;
+    // Tính điểm trung bình cho từng skill (dùng bandScore)
+    const readingWithBandScore = readingTests.filter((t: any) => t.score.bandScore);
+    const listeningWithBandScore = listeningTests.filter((t: any) => t.score.bandScore);
+    
+    const readingAvgBand = readingWithBandScore.length > 0 ? 
+      readingWithBandScore.reduce((sum: number, test: any) => sum + test.score.bandScore, 0) / readingWithBandScore.length : 0;
+    const listeningAvgBand = listeningWithBandScore.length > 0 ? 
+      listeningWithBandScore.reduce((sum: number, test: any) => sum + test.score.bandScore, 0) / listeningWithBandScore.length : 0;
 
     // Phân tích xu hướng
-    const trend = ieltsResults.length >= 2 ? 
-      (latestTest.score.percentage > ieltsResults[1].score.percentage ? '📈 Đang cải thiện' : 
-       latestTest.score.percentage < ieltsResults[1].score.percentage ? '📉 Cần ôn tập thêm' : '➡️ Ổn định') : '📊 Cần thêm data';
+    const trend = ieltsResults.length >= 2 && ieltsResults[1].score.bandScore && latestTest.score.bandScore ? 
+      (latestTest.score.bandScore > ieltsResults[1].score.bandScore ? '📈 Đang cải thiện' : 
+       latestTest.score.bandScore < ieltsResults[1].score.bandScore ? '📉 Cần ôn tập thêm' : '➡️ Ổn định') : '📊 Cần thêm data';
 
     return `📊 **PHÂN TÍCH KẾT QUẢ IELTS CỦA ${user.fullName.toUpperCase()}**
 
 🎯 **Kết quả mới nhất:**
 • Đề thi: ${latestTest.examTitle}
 • Loại: ${latestTest.examType === 'reading' ? '📖 Reading' : '🎧 Listening'}
-• Điểm số: ${latestTest.score.percentage}% (${latestTest.score.correctAnswers}/${latestTest.score.totalQuestions} câu đúng)
 • Band Score: ${latestTest.score.bandScore || 'N/A'}
+• Số câu đúng: ${latestTest.score.correctAnswers}/${latestTest.score.totalQuestions}
 • Đánh giá: ${latestTest.score.description || 'N/A'}
 • Ngày làm: ${new Date(latestTest.completedAt).toLocaleDateString('vi-VN')}
 
 � **Thống kê tổng quan:**
 • Tổng bài test: ${ieltsResults.length}
-${readingTests.length > 0 ? `• Reading trung bình: ${Math.round(readingAvg)}% (${readingTests.length} bài)` : ''}
-${listeningTests.length > 0 ? `• Listening trung bình: ${Math.round(listeningAvg)}% (${listeningTests.length} bài)` : ''}
+${readingWithBandScore.length > 0 ? `• Reading trung bình: Band ${readingAvgBand.toFixed(1)} (${readingTests.length} bài)` : ''}
+${listeningWithBandScore.length > 0 ? `• Listening trung bình: Band ${listeningAvgBand.toFixed(1)} (${listeningTests.length} bài)` : ''}
 • Xu hướng: ${trend}
 
 🎯 **Feedback:**
-${latestTest.score.percentage >= 80 ? '🎉 Xuất sắc! Kết quả rất ấn tượng!' : 
-  latestTest.score.percentage >= 70 ? '👍 Tốt! Bạn đang trên đúng hướng!' :
-  latestTest.score.percentage >= 60 ? '💪 Khá! Cần cải thiện thêm một chút!' : 
-  '🎯 Cần luyện tập nhiều hơn để đạt mục tiêu!'}
+${latestTest.score.bandScore ? 
+  (latestTest.score.bandScore >= 8.0 ? '🎉 Xuất sắc! Kết quả rất ấn tượng!' : 
+   latestTest.score.bandScore >= 7.0 ? '👍 Tốt! Bạn đang trên đúng hướng!' :
+   latestTest.score.bandScore >= 6.0 ? '💪 Khá! Cần cải thiện thêm một chút!' : 
+   '🎯 Cần luyện tập nhiều hơn để đạt mục tiêu!') :
+  '🎯 Hãy tiếp tục luyện tập!'}
 
-${readingTests.length > 0 && listeningTests.length > 0 ? 
-  (readingAvg > listeningAvg ? '� Reading mạnh hơn Listening, hãy tập trung cải thiện kỹ năng nghe!' : 
-   listeningAvg > readingAvg ? '🎧 Listening mạnh hơn Reading, hãy luyện đọc hiểu thêm!' : 
+${readingWithBandScore.length > 0 && listeningWithBandScore.length > 0 ? 
+  (readingAvgBand > listeningAvgBand ? '📖 Reading mạnh hơn Listening, hãy tập trung cải thiện kỹ năng nghe!' : 
+   listeningAvgBand > readingAvgBand ? '🎧 Listening mạnh hơn Reading, hãy luyện đọc hiểu thêm!' : 
    '⚖️ Cả hai skill đều cần được cải thiện đồng đều!') : ''}`;
   },
 
@@ -595,27 +602,31 @@ ${readingTests.length > 0 && listeningTests.length > 0 ?
       const readingTests = ieltsResults.filter((r: any) => r.examType === 'reading');
       const listeningTests = ieltsResults.filter((r: any) => r.examType === 'listening');
       
-      const readingAvg = readingTests.length > 0 ? 
-        readingTests.reduce((sum: number, test: any) => sum + test.score.percentage, 0) / readingTests.length : 0;
-      const listeningAvg = listeningTests.length > 0 ? 
-        listeningTests.reduce((sum: number, test: any) => sum + test.score.percentage, 0) / listeningTests.length : 0;
+      // Tính band score trung bình cho từng skill
+      const readingWithBandScore = readingTests.filter((t: any) => t.score.bandScore);
+      const listeningWithBandScore = listeningTests.filter((t: any) => t.score.bandScore);
+      
+      const readingAvgBand = readingWithBandScore.length > 0 ? 
+        readingWithBandScore.reduce((sum: number, test: any) => sum + test.score.bandScore, 0) / readingWithBandScore.length : 0;
+      const listeningAvgBand = listeningWithBandScore.length > 0 ? 
+        listeningWithBandScore.reduce((sum: number, test: any) => sum + test.score.bandScore, 0) / listeningWithBandScore.length : 0;
 
       ieltsAnalysis = `
 🎯 **Phân tích từ kết quả IELTS:**
-• Reading: ${Math.round(readingAvg)}% (${readingTests.length} bài)
-• Listening: ${Math.round(listeningAvg)}% (${listeningTests.length} bài)
-• Điểm yếu: ${readingAvg < listeningAvg ? 'Reading' : listeningAvg < readingAvg ? 'Listening' : 'Cần cải thiện đồng đều'}
+• Reading: ${readingWithBandScore.length > 0 ? `Band ${readingAvgBand.toFixed(1)}` : 'Chưa có'} (${readingTests.length} bài)
+• Listening: ${listeningWithBandScore.length > 0 ? `Band ${listeningAvgBand.toFixed(1)}` : 'Chưa có'} (${listeningTests.length} bài)
+• Điểm yếu: ${readingAvgBand > 0 && listeningAvgBand > 0 ? (readingAvgBand < listeningAvgBand ? 'Reading' : listeningAvgBand < readingAvgBand ? 'Listening' : 'Cần cải thiện đồng đều') : 'Chưa đủ dữ liệu'}
 
 📚 **Khóa học được ưu tiên dựa trên kết quả:**`;
 
       // Filter courses based on weak areas
-      if (readingAvg < listeningAvg && readingAvg < 70) {
+      if (readingAvgBand > 0 && listeningAvgBand > 0 && readingAvgBand < listeningAvgBand && readingAvgBand < 7.0) {
         recommendedCourses = availableCourses.filter((course: any) => 
           course.title.toLowerCase().includes('reading') || 
           course.title.toLowerCase().includes('vocabulary') ||
           course.title.toLowerCase().includes('grammar')
         );
-      } else if (listeningAvg < readingAvg && listeningAvg < 70) {
+      } else if (readingAvgBand > 0 && listeningAvgBand > 0 && listeningAvgBand < readingAvgBand && listeningAvgBand < 7.0) {
         recommendedCourses = availableCourses.filter((course: any) => 
           course.title.toLowerCase().includes('listening') || 
           course.title.toLowerCase().includes('pronunciation')
@@ -845,17 +856,16 @@ ${ieltsResults.length > 0 ? '✅ Khóa học được sắp xếp theo độ ưu
 
 🎯 **Trình độ hiện tại**: ${user.level.toUpperCase()}
 ${hasIELTSData ? `🏆 **IELTS Band Score**: ${bandScore}` : '📝 **IELTS**: Chưa có kết quả'}
-${hasIELTSData ? `📈 **Điểm gần nhất**: ${latestResult.score.percentage}%` : ''}
 
 💭 **Đánh giá**: ${levelDescription}
 
 ${hasIELTSData ? `📋 **Phân tích chi tiết từ ${ieltsResults.length} bài test**:
 • Reading: ${this.getSkillLevel(latestResult, 'reading')}
 • Listening: ${this.getSkillLevel(latestResult, 'listening')}
-• Tổng thể: ${latestResult.score.percentage >= 70 ? 'Tốt' : latestResult.score.percentage >= 50 ? 'Trung bình' : 'Cần cải thiện'}` : ''}
+• Tổng thể: ${latestResult.score.bandScore ? (latestResult.score.bandScore >= 7.0 ? 'Tốt' : latestResult.score.bandScore >= 5.0 ? 'Trung bình' : 'Cần cải thiện') : 'N/A'}` : ''}
 
 🎯 **Bước tiếp theo**: ${hasIELTSData ? 
-  (latestResult.score.percentage >= 70 ? 'Nâng cao kỹ năng chuyên sâu' : 'Tập trung khắc phục điểm yếu') : 
+  (latestResult.score.bandScore && latestResult.score.bandScore >= 7.0 ? 'Nâng cao kỹ năng chuyên sâu' : 'Tập trung khắc phục điểm yếu') : 
   'Làm bài test IELTS để đánh giá chính xác'}`;
   },
 
@@ -881,24 +891,28 @@ Mục tiêu: ${user.learningGoals.join(', ') || 'Thiết lập mục tiêu học
       const readingTests = ieltsResults.filter((r: any) => r.examType === 'reading');
       const listeningTests = ieltsResults.filter((r: any) => r.examType === 'listening');
       
-      const readingAvg = readingTests.length > 0 ? 
-        readingTests.reduce((sum: number, test: any) => sum + test.score.percentage, 0) / readingTests.length : 0;
-      const listeningAvg = listeningTests.length > 0 ? 
-        listeningTests.reduce((sum: number, test: any) => sum + test.score.percentage, 0) / listeningTests.length : 0;
+      // Tính band score trung bình
+      const readingWithBandScore = readingTests.filter((t: any) => t.score.bandScore);
+      const listeningWithBandScore = listeningTests.filter((t: any) => t.score.bandScore);
+      
+      const readingAvgBand = readingWithBandScore.length > 0 ? 
+        readingWithBandScore.reduce((sum: number, test: any) => sum + test.score.bandScore, 0) / readingWithBandScore.length : 0;
+      const listeningAvgBand = listeningWithBandScore.length > 0 ? 
+        listeningWithBandScore.reduce((sum: number, test: any) => sum + test.score.bandScore, 0) / listeningWithBandScore.length : 0;
 
-      const weekPoints = readingAvg < listeningAvg ? 'Reading' : listeningAvg < readingAvg ? 'Listening' : 'Cả hai kỹ năng';
-      const strongPoints = readingAvg > listeningAvg ? 'Reading' : listeningAvg > readingAvg ? 'Listening' : 'Đồng đều';
+      const weekPoints = readingAvgBand < listeningAvgBand ? 'Reading' : listeningAvgBand < readingAvgBand ? 'Listening' : 'Cả hai kỹ năng';
+      const strongPoints = readingAvgBand > listeningAvgBand ? 'Reading' : listeningAvgBand > readingAvgBand ? 'Listening' : 'Đồng đều';
 
       ieltsRecommendations = `
 🎯 **Dựa trên ${ieltsResults.length} bài IELTS test:**
-• Điểm mạnh: ${strongPoints} (${Math.max(readingAvg, listeningAvg).toFixed(0)}%)
-• Cần cải thiện: ${weekPoints} (${Math.min(readingAvg, listeningAvg).toFixed(0)}%)
+• Điểm mạnh: ${strongPoints} (Band ${Math.max(readingAvgBand, listeningAvgBand).toFixed(1)})
+• Cần cải thiện: ${weekPoints} (Band ${Math.min(readingAvgBand, listeningAvgBand).toFixed(1)})
 • Band Score mục tiêu: ${latestResult.score.bandScore ? (latestResult.score.bandScore + 0.5).toFixed(1) : '6.5+'}
 
-� **Lộ trình học cá nhân hóa:**
-${readingAvg < 70 ? '• Đọc 2 bài Reading mỗi ngày (30 phút)' : ''}
-${listeningAvg < 70 ? '• Nghe podcast/audiobook 20 phút mỗi ngày' : ''}
-${readingAvg < 60 || listeningAvg < 60 ? '• Học 15-20 từ vựng mới hàng ngày' : '• Ôn lại từ vựng đã học (10 từ/ngày)'}
+📚 **Lộ trình học cá nhân hóa:**
+${readingAvgBand < 7.0 ? '• Đọc 2 bài Reading mỗi ngày (30 phút)' : ''}
+${listeningAvgBand < 7.0 ? '• Nghe podcast/audiobook 20 phút mỗi ngày' : ''}
+${readingAvgBand < 6.0 || listeningAvgBand < 6.0 ? '• Học 15-20 từ vựng mới hàng ngày' : '• Ôn lại từ vựng đã học (10 từ/ngày)'}
 • Làm 1 bài IELTS test mỗi tuần để theo dõi tiến bộ`;
     }
 
@@ -917,18 +931,22 @@ Streak hiện tại: ${progress.studyStreak.current} ngày 🔥`;
 ${ieltsRecommendations}${progressRecommendations}
 
 ⏰ **Lịch học được đề xuất:**
-- **Thứ 2, 4, 6:** ${ieltsResults.some((r: any) => r.examType === 'reading' && r.score.percentage < 70) ? 'Reading Skills' : 'Vocabulary Building'} (25 phút)
-- **Thứ 3, 5, 7:** ${ieltsResults.some((r: any) => r.examType === 'listening' && r.score.percentage < 70) ? 'Listening Practice' : 'Grammar Review'} (25 phút)  
+- **Thứ 2, 4, 6:** ${ieltsResults.some((r: any) => r.examType === 'reading' && r.score.bandScore && r.score.bandScore < 7.0) ? 'Reading Skills' : 'Vocabulary Building'} (25 phút)
+⏰ **Lịch học được đề xuất:**
+- **Thứ 2, 4, 6:** ${ieltsResults.some((r: any) => r.examType === 'reading' && r.score.bandScore && r.score.bandScore < 7.0) ? 'Reading Skills' : 'Vocabulary Building'} (25 phút)
+- **Thứ 3, 5, 7:** ${ieltsResults.some((r: any) => r.examType === 'listening' && r.score.bandScore && r.score.bandScore < 7.0) ? 'Listening Practice' : 'Grammar Review'} (25 phút)  
 - **Chủ nhật:** IELTS Full Test + Review (60 phút)
 
 🎯 **Mục tiêu 4 tuần tới:**
 ${ieltsResults.length > 0 ? `• Cải thiện ${(() => {
       const readingResults = ieltsResults.filter((r: any) => r.examType === 'reading');
       const listeningResults = ieltsResults.filter((r: any) => r.examType === 'listening');
-      const readingAvg = readingResults.length > 0 ? readingResults.reduce((sum: number, r: any) => sum + r.score.percentage, 0) / readingResults.length : 0;
-      const listeningAvg = listeningResults.length > 0 ? listeningResults.reduce((sum: number, r: any) => sum + r.score.percentage, 0) / listeningResults.length : 0;
-      return readingAvg < listeningAvg ? 'Reading' : 'Listening';
-    })()} lên 75%+` : '• Hoàn thành 4 bài IELTS test đầu tiên'}
+      const readingWithBand = readingResults.filter((r: any) => r.score.bandScore);
+      const listeningWithBand = listeningResults.filter((r: any) => r.score.bandScore);
+      const readingAvgBand = readingWithBand.length > 0 ? readingWithBand.reduce((sum: number, r: any) => sum + r.score.bandScore, 0) / readingWithBand.length : 0;
+      const listeningAvgBand = listeningWithBand.length > 0 ? listeningWithBand.reduce((sum: number, r: any) => sum + r.score.bandScore, 0) / listeningWithBand.length : 0;
+      return readingAvgBand < listeningAvgBand ? 'Reading' : 'Listening';
+    })()} lên Band 7.5+` : '• Hoàn thành 4 bài IELTS test đầu tiên'}
 • Duy trì streak học tập 28 ngày
 • ${user.learningGoals.join(', ') || 'Thiết lập mục tiêu rõ ràng'}`;
   },
@@ -948,10 +966,14 @@ Sau đó tôi sẽ phân tích chi tiết và đưa ra kế hoạch cải thiệ
     const readingTests = ieltsResults.filter((r: any) => r.examType === 'reading');
     const listeningTests = ieltsResults.filter((r: any) => r.examType === 'listening');
     
-    const readingAvg = readingTests.length > 0 ? 
-      readingTests.reduce((sum: number, test: any) => sum + test.score.percentage, 0) / readingTests.length : 0;
-    const listeningAvg = listeningTests.length > 0 ? 
-      listeningTests.reduce((sum: number, test: any) => sum + test.score.percentage, 0) / listeningTests.length : 0;
+    // Tính band score trung bình
+    const readingWithBandScore = readingTests.filter((t: any) => t.score.bandScore);
+    const listeningWithBandScore = listeningTests.filter((t: any) => t.score.bandScore);
+    
+    const readingAvgBand = readingWithBandScore.length > 0 ? 
+      readingWithBandScore.reduce((sum: number, test: any) => sum + test.score.bandScore, 0) / readingWithBandScore.length : 0;
+    const listeningAvgBand = listeningWithBandScore.length > 0 ? 
+      listeningWithBandScore.reduce((sum: number, test: any) => sum + test.score.bandScore, 0) / listeningWithBandScore.length : 0;
 
     // Phân tích chi tiết từ answers của bài test gần nhất
     const latestTest = ieltsResults[0];
@@ -970,26 +992,26 @@ Sau đó tôi sẽ phân tích chi tiết và đưa ra kế hoạch cải thiệ
     }
 
     const overallAssessment = 
-      readingAvg >= 80 && listeningAvg >= 80 ? '🎉 Excellent! Cả hai kỹ năng đều rất tốt!' :
-      readingAvg >= 70 && listeningAvg >= 70 ? '👍 Good! Đang trên đúng hướng!' :
-      readingAvg >= 60 && listeningAvg >= 60 ? '💪 Fair! Cần cải thiện thêm!' :
+      readingAvgBand >= 8.0 && listeningAvgBand >= 8.0 ? '🎉 Excellent! Cả hai kỹ năng đều rất tốt!' :
+      readingAvgBand >= 7.0 && listeningAvgBand >= 7.0 ? '👍 Good! Đang trên đúng hướng!' :
+      readingAvgBand >= 6.0 && listeningAvgBand >= 6.0 ? '💪 Fair! Cần cải thiện thêm!' :
       '🎯 Needs Improvement! Cần luyện tập nhiều hơn!';
 
     return `🔍 **PHÂN TÍCH ĐIỂM YẾU CỦA ${user.fullName.toUpperCase()}**
 
 📊 **Đánh giá tổng quan:**
-${readingTests.length > 0 ? `• Reading: ${Math.round(readingAvg)}% (${readingTests.length} bài test)` : '• Reading: Chưa có dữ liệu'}
-${listeningTests.length > 0 ? `• Listening: ${Math.round(listeningAvg)}% (${listeningTests.length} bài test)` : '• Listening: Chưa có dữ liệu'}
+${readingWithBandScore.length > 0 ? `• Reading: Band ${readingAvgBand.toFixed(1)} (${readingTests.length} bài test)` : '• Reading: Chưa có dữ liệu'}
+${listeningWithBandScore.length > 0 ? `• Listening: Band ${listeningAvgBand.toFixed(1)} (${listeningTests.length} bài test)` : '• Listening: Chưa có dữ liệu'}
 • Kết quả: ${overallAssessment}
 
 🎯 **Điểm yếu chính:**
-${readingAvg < listeningAvg ? 
-  `• **Reading (${Math.round(readingAvg)}%)**: Cần cải thiện khả năng đọc hiểu
+${readingAvgBand < listeningAvgBand ? 
+  `• **Reading (Band ${readingAvgBand.toFixed(1)})**: Cần cải thiện khả năng đọc hiểu
   - Luyện đọc skimming & scanning  
   - Học từ vựng Academic
   - Luyện dạng câu hỏi True/False/Not Given` : 
-  readingAvg > listeningAvg ?
-  `• **Listening (${Math.round(listeningAvg)}%)**: Cần cải thiện khả năng nghe
+  readingAvgBand > listeningAvgBand ?
+  `• **Listening (Band ${listeningAvgBand.toFixed(1)})**: Cần cải thiện khả năng nghe
   - Luyện nghe với accent khác nhau
   - Cải thiện kỹ năng note-taking
   - Luyện dạng câu hỏi Multiple Choice` :
@@ -1001,13 +1023,13 @@ ${readingAvg < listeningAvg ?
 ${specificWeaknesses}
 
 💡 **Kế hoạch cải thiện (2 tuần tới):**
-${readingAvg < 70 ? '• Đọc 1 passage Academic mỗi ngày (15 phút)' : ''}
-${listeningAvg < 70 ? '• Nghe podcast/TED talks 20 phút mỗi ngày' : ''}
+${readingAvgBand < 7.0 ? '• Đọc 1 passage Academic mỗi ngày (15 phút)' : ''}
+${listeningAvgBand < 7.0 ? '• Nghe podcast/TED talks 20 phút mỗi ngày' : ''}
 • Ôn lại từ vựng từ các bài test đã làm
 • Làm 1 bài full test mỗi tuần để đo tiến bộ
 • Review và phân tích tất cả câu sai
 
-🎯 **Mục tiêu:** Cải thiện điểm yếu lên 75%+ trong 1 tháng!`;
+🎯 **Mục tiêu:** Cải thiện điểm yếu lên Band 7.5+ trong 1 tháng!`;
   },
 
   // Helper method: Xây dựng phân tích tiến độ thật
@@ -1109,12 +1131,25 @@ Dựa trên dữ liệu thực tế của bạn! 📈`;
     
     const correctAnswers = skillAnswers.filter((answer: any) => answer.isCorrect).length;
     const totalAnswers = skillAnswers.length;
-    const percentage = (correctAnswers / totalAnswers) * 100;
+    const correctRate = correctAnswers / totalAnswers;
     
-    if (percentage >= 80) return `Tốt (${percentage.toFixed(0)}%)`;
-    if (percentage >= 60) return `Khá (${percentage.toFixed(0)}%)`;
-    if (percentage >= 40) return `Trung bình (${percentage.toFixed(0)}%)`;
-    return `Yếu (${percentage.toFixed(0)}%)`;
+    // Convert to band score equivalent
+    let bandScore = 0;
+    if (correctRate >= 0.95) bandScore = 9.0;
+    else if (correctRate >= 0.90) bandScore = 8.5;
+    else if (correctRate >= 0.85) bandScore = 8.0;
+    else if (correctRate >= 0.78) bandScore = 7.5;
+    else if (correctRate >= 0.70) bandScore = 7.0;
+    else if (correctRate >= 0.60) bandScore = 6.5;
+    else if (correctRate >= 0.50) bandScore = 6.0;
+    else if (correctRate >= 0.40) bandScore = 5.5;
+    else if (correctRate >= 0.30) bandScore = 5.0;
+    else bandScore = 4.5;
+    
+    if (bandScore >= 8.0) return `Tốt (Band ${bandScore.toFixed(1)})`;
+    if (bandScore >= 6.5) return `Khá (Band ${bandScore.toFixed(1)})`;
+    if (bandScore >= 5.5) return `Trung bình (Band ${bandScore.toFixed(1)})`;
+    return `Yếu (Band ${bandScore.toFixed(1)})`;
   },
 
   // Get user enrollments with course details
@@ -1156,17 +1191,18 @@ Dựa trên dữ liệu thực tế của bạn! 📈`;
       ieltsResults.slice(0, 5).forEach((result, index) => {
         const date = new Date(result.completedAt).toLocaleDateString('vi-VN');
         const bandScore = result.score.bandScore || 'N/A';
-        const percentage = result.score.percentage || 0;
+        const correctAnswers = result.score.correctAnswers || 0;
+        const totalQuestions = result.score.totalQuestions || 40;
         
-        analysis += `${index + 1}. **${date}** - Band ${bandScore} (${percentage}%)\n`;
+        analysis += `${index + 1}. **${date}** - Band ${bandScore} (${correctAnswers}/${totalQuestions})\n`;
         
         // Chi tiết điểm từng kỹ năng nếu có
         if (result.sections) {
           if (result.sections.reading) {
-            analysis += `   📖 Reading: ${result.sections.reading.score}/${result.sections.reading.maxScore} (${Math.round(result.sections.reading.score/result.sections.reading.maxScore*100)}%)\n`;
+            analysis += `   📖 Reading: ${result.sections.reading.score}/${result.sections.reading.maxScore}\n`;
           }
           if (result.sections.listening) {
-            analysis += `   🎧 Listening: ${result.sections.listening.score}/${result.sections.listening.maxScore} (${Math.round(result.sections.listening.score/result.sections.listening.maxScore*100)}%)\n`;
+            analysis += `   🎧 Listening: ${result.sections.listening.score}/${result.sections.listening.maxScore}\n`;
           }
         }
         analysis += `\n`;
@@ -1174,7 +1210,8 @@ Dựa trên dữ liệu thực tế của bạn! 📈`;
 
       // Xu hướng điểm số
       if (ieltsResults.length > 1) {
-        const trend = ieltsResults[0].score.percentage > ieltsResults[1].score.percentage ? '📈 Cải thiện' : '📉 Cần nỗ lực hơn';
+        const trend = ieltsResults[0].score.bandScore && ieltsResults[1].score.bandScore && 
+          ieltsResults[0].score.bandScore > ieltsResults[1].score.bandScore ? '📈 Cải thiện' : '📉 Cần nỗ lực hơn';
         analysis += `📈 **Xu hướng:** ${trend}\n\n`;
       }
     } else {
@@ -1222,19 +1259,18 @@ Dựa trên dữ liệu thực tế của bạn! 📈`;
     }
 
     // Smart Recommendations based on available data
-    analysis += `� **GỢI Ý CẢI THIỆN:**\n`;
+    analysis += `💡 **GỢI Ý CẢI THIỆN:**\n`;
     
     // Recommendations based on IELTS results
     if (hasIELTSData && latestIELTS) {
       const bandScore = parseFloat(latestIELTS.score.bandScore) || 0;
-      const percentage = latestIELTS.score.percentage || 0;
       
-      if (percentage >= 80) {
+      if (bandScore >= 8.0) {
         analysis += `🎯 **Trình độ cao** - Duy trì và nâng cao:\n`;
         analysis += `   • Luyện thêm các đề IELTS Reading và Listening nâng cao\n`;
         analysis += `   • Đăng ký khóa học chuyên sâu cho level C1-C2\n`;
-      } else if (percentage >= 60) {
-        analysis += `� **Trình độ trung bình** - Cần cải thiện:\n`;
+      } else if (bandScore >= 6.0) {
+        analysis += `📚 **Trình độ trung bình** - Cần cải thiện:\n`;
         analysis += `   • Luyện tập thêm IELTS Reading và Listening\n`;
         analysis += `   • Đăng ký khóa học B1-B2 để củng cố nền tảng\n`;
       } else {
@@ -1251,93 +1287,100 @@ Dựa trên dữ liệu thực tế của bạn! 📈`;
 
     // SMART PERSONAL RECOMMENDATIONS - Phân tích dữ liệu IELTS thật
     if (hasIELTSData) {
-      // Tính điểm trung bình từ tất cả các bài test
-      const totalPercentage = ieltsResults.reduce((sum, result) => sum + (result.score.percentage || 0), 0);
-      const averagePercentage = Math.round(totalPercentage / ieltsResults.length);
-      
-      // Tính band score trung bình
-      const totalBandScore = ieltsResults.reduce((sum, result) => {
+      // Tính band score trung bình từ tất cả các bài test
+      const ieltsWithBandScore = ieltsResults.filter(r => r.score.bandScore);
+      const totalBandScore = ieltsWithBandScore.reduce((sum, result) => {
         const band = parseFloat(result.score.bandScore) || 0;
         return sum + band;
       }, 0);
-      const averageBandScore = (totalBandScore / ieltsResults.length).toFixed(1);
+      const averageBandScore = ieltsWithBandScore.length > 0 ? 
+        (totalBandScore / ieltsWithBandScore.length).toFixed(1) : '0.0';
       
       // Phân tích xu hướng
       let trendAnalysis = '';
-      if (ieltsResults.length >= 2) {
+      if (ieltsResults.length >= 2 && ieltsResults[0].score.bandScore && ieltsResults[1].score.bandScore) {
         const recent = ieltsResults.slice(0, 2);
         const older = ieltsResults.slice(-2);
-        const recentAvg = recent.reduce((sum, r) => sum + r.score.percentage, 0) / recent.length;
-        const olderAvg = older.reduce((sum, r) => sum + r.score.percentage, 0) / older.length;
+        const recentWithBand = recent.filter(r => r.score.bandScore);
+        const olderWithBand = older.filter(r => r.score.bandScore);
         
-        if (recentAvg > olderAvg + 5) {
-          trendAnalysis = '📈 **Xu hướng cải thiện rõ rệt!**';
-        } else if (recentAvg < olderAvg - 5) {
-          trendAnalysis = '📉 **Xu hướng giảm, cần tập trung hơn!**';
-        } else {
-          trendAnalysis = '➡️ **Xu hướng ổn định.**';
+        if (recentWithBand.length > 0 && olderWithBand.length > 0) {
+          const recentAvg = recentWithBand.reduce((sum, r) => sum + r.score.bandScore, 0) / recentWithBand.length;
+          const olderAvg = olderWithBand.reduce((sum, r) => sum + r.score.bandScore, 0) / olderWithBand.length;
+          
+          if (recentAvg > olderAvg + 0.5) {
+            trendAnalysis = '📈 **Xu hướng cải thiện rõ rệt!**';
+          } else if (recentAvg < olderAvg - 0.5) {
+            trendAnalysis = '📉 **Xu hướng giảm, cần tập trung hơn!**';
+          } else {
+            trendAnalysis = '➡️ **Xu hướng ổn định.**';
+          }
         }
       }
       
+      const avgBand = parseFloat(averageBandScore);
+      
       analysis += `\n🎯 **GỢI Ý CÁ NHÂN DỰA TRÊN ${ieltsResults.length} BÀI TEST IELTS:**\n`;
-      analysis += `📊 **Điểm trung bình:** ${averagePercentage}% (Band ${averageBandScore})\n`;
-      analysis += `📈 **Điểm mới nhất:** ${latestIELTS.score.percentage}% (Band ${latestIELTS.score.bandScore || 'N/A'})\n`;
+      analysis += `📊 **Band Score trung bình:** ${averageBandScore}\n`;
+      analysis += `📈 **Band Score mới nhất:** ${latestIELTS.score.bandScore || 'N/A'}\n`;
       if (trendAnalysis) {
         analysis += `${trendAnalysis}\n`;
       }
       analysis += `\n`;
       
-      // Gợi ý cụ thể dựa trên điểm trung bình
-      if (averagePercentage >= 80) {
-        analysis += `🌟 **TRÌNH ĐỘ CAO (${averagePercentage}%)** - Chiến lược nâng cao:\n`;
+      // Gợi ý cụ thể dựa trên band score trung bình
+      if (avgBand >= 8.0) {
+        analysis += `🌟 **TRÌNH ĐỘ CAO (Band ${averageBandScore})** - Chiến lược nâng cao:\n`;
         analysis += `   ✅ **Duy trì thế mạnh:** Tiếp tục luyện đề IELTS Reading & Listening nâng cao\n`;
         analysis += `   📚 **Khóa học nên đăng ký:** Advanced English (C1-C2), IELTS Band 7.5+, hoặc khóa từ vựng Academic\n`;
-        analysis += `   💪 **Mục tiêu:** Hướng tới Band 8.0-9.0, focus vào Writing & Speaking\n`;
+        analysis += `   💪 **Mục tiêu:** Hướng tới Band 8.5-9.0, focus vào Writing & Speaking\n`;
         analysis += `   🎯 **Luyện tập:** 2-3 đề Reading/Listening khó mỗi tuần, đọc báo tiếng Anh hằng ngày\n`;
-      } else if (averagePercentage >= 65) {
-        analysis += `📚 **TRÌNH ĐỘ TỐT (${averagePercentage}%)** - Củng cố và phát triển:\n`;
+      } else if (avgBand >= 6.5) {
+        analysis += `📚 **TRÌNH ĐỘ TỐT (Band ${averageBandScore})** - Củng cố và phát triển:\n`;
         analysis += `   ✅ **Điểm mạnh:** Nền tảng ổn, cần nâng cao kỹ thuật làm bài\n`;
         analysis += `   📚 **Khóa học nên đăng ký:** Intermediate-Upper (B2), IELTS Band 6.5, hoặc khóa ngữ pháp nâng cao\n`;
-        analysis += `   💪 **Mục tiêu:** Hướng tới Band 7.0, cải thiện từ vựng academic và tốc độ đọc\n`;
+        analysis += `   💪 **Mục tiêu:** Hướng tới Band 7.5, cải thiện từ vựng academic và tốc độ đọc\n`;
         analysis += `   🎯 **Luyện tập:** 1-2 đề Reading/Listening mỗi ngày, học 20-30 từ vựng IELTS/ngày\n`;
-      } else if (averagePercentage >= 50) {
-        analysis += `⚡ **TRÌNH ĐỘ TRUNG BÌNH (${averagePercentage}%)** - Cần cải thiện cơ bản:\n`;
+      } else if (avgBand >= 5.0) {
+        analysis += `⚡ **TRÌNH ĐỘ TRUNG BÌNH (Band ${averageBandScore})** - Cần cải thiện cơ bản:\n`;
         analysis += `   ✅ **Ưu tiên:** Củng cố ngữ pháp và từ vựng cơ bản\n`;
         analysis += `   📚 **Khóa học nên đăng ký:** Pre-Intermediate (B1), Grammar & Vocabulary, hoặc IELTS Foundation\n`;
-        analysis += `   💪 **Mục tiêu:** Hướng tới Band 6.0, tăng tốc độ đọc hiểu và nghe hiểu\n`;
+        analysis += `   💪 **Mục tiêu:** Hướng tới Band 6.5, tăng tốc độ đọc hiểu và nghe hiểu\n`;
         analysis += `   🎯 **Luyện tập:** 1 đề Reading/Listening mỗi ngày, học 15-20 từ vựng cơ bản/ngày\n`;
       } else {
-        analysis += `🔥 **CẦN XÂY DỰNG NỀN TẢNG (${averagePercentage}%)** - Kế hoạch từ cơ bản:\n`;
+        analysis += `🔥 **CẦN XÂY DỰNG NỀN TẢNG (Band ${averageBandScore})** - Kế hoạch từ cơ bản:\n`;
         analysis += `   ✅ **Ưu tiên cao:** Ngữ pháp cơ bản và từ vựng thiết yếu\n`;
         analysis += `   📚 **Khóa học nên đăng ký:** Elementary (A1-A2), Basic English\n`;
-        analysis += `   💪 **Mục tiêu:** Hướng tới Band 5.0, làm quen format IELTS và phương pháp học\n`;
+        analysis += `   💪 **Mục tiêu:** Hướng tới Band 5.5, làm quen format IELTS và phương pháp học\n`;
         analysis += `   🎯 **Luyện tập:** 30p Reading/Listening cơ bản mỗi ngày, học 10-15 từ vựng thiết yếu/ngày\n`;
       }
       
       // Phân tích điểm yếu theo từng kỹ năng
       analysis += `\n🔍 **PHÂN TÍCH ĐIỂM YẾU VÀ ĐỀ XUẤT CỤ THỂ:**\n`;
       
-      const readingScores = ieltsResults.filter(r => r.examType === 'reading').map(r => r.score.percentage);
-      const listeningScores = ieltsResults.filter(r => r.examType === 'listening').map(r => r.score.percentage);
+      const readingTests = ieltsResults.filter(r => r.examType === 'reading');
+      const listeningTests = ieltsResults.filter(r => r.examType === 'listening');
+      const readingWithBand = readingTests.filter(r => r.score.bandScore);
+      const listeningWithBand = listeningTests.filter(r => r.score.bandScore);
       
-      if (readingScores.length > 0) {
-        const readingAvg = Math.round(readingScores.reduce((a, b) => a + b, 0) / readingScores.length);
-        analysis += `   📖 **Reading:** Trung bình ${readingAvg}% - `;
-        if (readingAvg < averagePercentage - 10) {
+      if (readingWithBand.length > 0) {
+        const readingAvgBand = (readingWithBand.reduce((sum, r) => sum + r.score.bandScore, 0) / readingWithBand.length).toFixed(1);
+        analysis += `   📖 **Reading:** Trung bình Band ${readingAvgBand} - `;
+        if (parseFloat(readingAvgBand) < avgBand - 1.0) {
           analysis += `⚠️ Điểm yếu! Nên đăng ký khóa Reading Comprehension và luyện đọc hiểu hằng ngày\n`;
-        } else if (readingAvg > averagePercentage + 10) {
+        } else if (parseFloat(readingAvgBand) > avgBand + 1.0) {
           analysis += `💪 Điểm mạnh! Hãy duy trì và nâng cao với các bài đọc khó hơn\n`;
         } else {
           analysis += `✅ Cân bằng, tiếp tục luyện đều đặn\n`;
         }
       }
       
-      if (listeningScores.length > 0) {
-        const listeningAvg = Math.round(listeningScores.reduce((a, b) => a + b, 0) / listeningScores.length);
-        analysis += `   🎧 **Listening:** Trung bình ${listeningAvg}% - `;
-        if (listeningAvg < averagePercentage - 10) {
+      if (listeningWithBand.length > 0) {
+        const listeningAvgBand = (listeningWithBand.reduce((sum, r) => sum + r.score.bandScore, 0) / listeningWithBand.length).toFixed(1);
+        analysis += `   🎧 **Listening:** Trung bình Band ${listeningAvgBand} - `;
+        if (parseFloat(listeningAvgBand) < avgBand - 1.0) {
           analysis += `⚠️ Điểm yếu! Nên đăng ký khóa Listening Skills và nghe podcast tiếng Anh hằng ngày\n`;
-        } else if (listeningAvg > averagePercentage + 10) {
+        } else if (parseFloat(listeningAvgBand) > avgBand + 1.0) {
           analysis += `💪 Điểm mạnh! Thử thách với native speaker content và news\n`;
         } else {
           analysis += `✅ Cân bằng, tiếp tục luyện đều đặn\n`;
@@ -1438,49 +1481,54 @@ Dựa trên dữ liệu thực tế của bạn! 📈`;
     let recommendations = `🎯 **LỘ TRÌNH HỌC TẬP CÁ NHÂN - ${user.fullName}**\n\n`;
 
     if (hasIELTSData) {
-      // Tính điểm trung bình từ tất cả các bài test
-      const totalPercentage = ieltsResults.reduce((sum, result) => sum + (result.score.percentage || 0), 0);
-      const averagePercentage = Math.round(totalPercentage / ieltsResults.length);
-      
-      // Tính band score trung bình
-      const totalBandScore = ieltsResults.reduce((sum, result) => {
+      // Tính band score trung bình từ tất cả các bài test
+      const ieltsWithBandScore = ieltsResults.filter(r => r.score.bandScore);
+      const totalBandScore = ieltsWithBandScore.reduce((sum, result) => {
         const band = parseFloat(result.score.bandScore) || 0;
         return sum + band;
       }, 0);
-      const averageBandScore = (totalBandScore / ieltsResults.length).toFixed(1);
+      const averageBandScore = ieltsWithBandScore.length > 0 ? 
+        (totalBandScore / ieltsWithBandScore.length).toFixed(1) : '0.0';
       
       // Phân tích xu hướng
       let trendAnalysis = '';
-      if (ieltsResults.length >= 2) {
+      if (ieltsResults.length >= 2 && ieltsResults[0].score.bandScore && ieltsResults[1].score.bandScore) {
         const recent = ieltsResults.slice(0, 2);
         const older = ieltsResults.slice(-2);
-        const recentAvg = recent.reduce((sum, r) => sum + r.score.percentage, 0) / recent.length;
-        const olderAvg = older.reduce((sum, r) => sum + r.score.percentage, 0) / older.length;
+        const recentWithBand = recent.filter(r => r.score.bandScore);
+        const olderWithBand = older.filter(r => r.score.bandScore);
         
-        if (recentAvg > olderAvg + 5) {
-          trendAnalysis = '📈 **Xu hướng cải thiện rõ rệt!**';
-        } else if (recentAvg < olderAvg - 5) {
-          trendAnalysis = '📉 **Cần tập trung học tập hơn!**';
-        } else {
-          trendAnalysis = '➡️ **Xu hướng ổn định.**';
+        if (recentWithBand.length > 0 && olderWithBand.length > 0) {
+          const recentAvg = recentWithBand.reduce((sum, r) => sum + r.score.bandScore, 0) / recentWithBand.length;
+          const olderAvg = olderWithBand.reduce((sum, r) => sum + r.score.bandScore, 0) / olderWithBand.length;
+          
+          if (recentAvg > olderAvg + 0.5) {
+            trendAnalysis = '📈 **Xu hướng cải thiện rõ rệt!**';
+          } else if (recentAvg < olderAvg - 0.5) {
+            trendAnalysis = '📉 **Cần tập trung học tập hơn!**';
+          } else {
+            trendAnalysis = '➡️ **Xu hướng ổn định.**';
+          }
         }
       }
       
+      const avgBand = parseFloat(averageBandScore);
+      
       recommendations += `📊 **ĐÁNH GIÁ HIỆN TẠI (Dựa trên ${ieltsResults.length} bài test IELTS):**\n`;
-      recommendations += `   • **Điểm trung bình:** ${averagePercentage}% (Band ${averageBandScore})\n`;
-      recommendations += `   • **Điểm mới nhất:** ${latestIELTS.score.percentage}% (Band ${latestIELTS.score.bandScore || 'N/A'})\n`;
+      recommendations += `   • **Band Score trung bình:** ${averageBandScore}\n`;
+      recommendations += `   • **Band Score mới nhất:** ${latestIELTS.score.bandScore || 'N/A'}\n`;
       if (trendAnalysis) {
         recommendations += `   • ${trendAnalysis}\n`;
       }
       recommendations += `\n`;
       
-      // Lộ trình cụ thể dựa trên điểm trung bình
-      if (averagePercentage >= 80) {
-        recommendations += `🌟 **LỘ TRÌNH NÂNG CAO (${averagePercentage}%):**\n\n`;
-        recommendations += `🎯 **Mục tiêu 3 tháng tới:** Band 8.0-9.0\n`;
+      // Lộ trình cụ thể dựa trên band score trung bình
+      if (avgBand >= 8.0) {
+        recommendations += `🌟 **LỘ TRÌNH NÂNG CAO (Band ${averageBandScore}):**\n\n`;
+        recommendations += `🎯 **Mục tiêu 3 tháng tới:** Band 8.5-9.0\n`;
         recommendations += `📚 **Khóa học ưu tiên:**\n`;
         recommendations += `   1. Advanced English (C1-C2)\n`;
-        recommendations += `   2. IELTS Band 7.5+ Writing & Speaking\n`;
+        recommendations += `   2. IELTS Band 8.0+ Writing & Speaking\n`;
         recommendations += `   3. Academic Vocabulary & Complex Grammar\n\n`;
         recommendations += `📅 **Kế hoạch hàng tuần:**\n`;
         recommendations += `   • **Thứ 2-4-6:** 2-3 đề Reading/Listening nâng cao (90p)\n`;
@@ -1490,9 +1538,9 @@ Dựa trên dữ liệu thực tế của bạn! 📈`;
         recommendations += `   • Cambridge IELTS 15-17 (advanced level)\n`;
         recommendations += `   • Academic journals và newspapers\n`;
         recommendations += `   • TED Talks với transcript\n`;
-      } else if (averagePercentage >= 65) {
-        recommendations += `📚 **LỘ TRÌNH PHÁT TRIỂN (${averagePercentage}%):**\n\n`;
-        recommendations += `🎯 **Mục tiêu 3 tháng tới:** Band 7.0\n`;
+      } else if (avgBand >= 6.5) {
+        recommendations += `📚 **LỘ TRÌNH PHÁT TRIỂN (Band ${averageBandScore}):**\n\n`;
+        recommendations += `🎯 **Mục tiêu 3 tháng tới:** Band 7.5\n`;
         recommendations += `📚 **Khóa học ưu tiên:**\n`;
         recommendations += `   1. Intermediate-Upper (B2)\n`;
         recommendations += `   2. IELTS Band 6.5 Preparation\n`;
@@ -1506,9 +1554,9 @@ Dựa trên dữ liệu thực tế của bạn! 📈`;
         recommendations += `   • Học 20-30 từ vựng IELTS mỗi ngày\n`;
         recommendations += `   • Tăng tốc độ đọc lên 250 wpm\n`;
         recommendations += `   • Hoàn thành 2 bài test mỗi tuần\n`;
-      } else if (averagePercentage >= 50) {
-        recommendations += `⚡ **LỘ TRÌNH CỤG CỐ (${averagePercentage}%):**\n\n`;
-        recommendations += `🎯 **Mục tiêu 3 tháng tới:** Band 6.0\n`;
+      } else if (avgBand >= 5.0) {
+        recommendations += `⚡ **LỘ TRÌNH CỤG CỐ (Band ${averageBandScore}):**\n\n`;
+        recommendations += `🎯 **Mục tiêu 3 tháng tới:** Band 6.5\n`;
         recommendations += `📚 **Khóa học ưu tiên:**\n`;
         recommendations += `   1. Pre-Intermediate (B1)\n`;
         recommendations += `   2. Grammar Fundamentals\n`;
@@ -1523,7 +1571,7 @@ Dựa trên dữ liệu thực tế của bạn! 📈`;
         recommendations += `   • Nghe với subtitle trước, sau đó tắt\n`;
         recommendations += `   • Focus vào câu trả lời đúng, phân tích sai lầm\n`;
       } else {
-        recommendations += `🔥 **LỘ TRÌNH XÂY DỰNG NỀN TẢNG (${averagePercentage}%):**\n\n`;
+        recommendations += `🔥 **LỘ TRÌNH XÂY DỰNG NỀN TẢNG (Band ${averageBandScore}):**\n\n`;
         recommendations += `🎯 **Mục tiêu 3 tháng tới:** Band 5.5\n`;
         recommendations += `📚 **Khóa học ưu tiên:**\n`;
         recommendations += `   1. Elementary English (A2-B1)\n`;
@@ -1543,18 +1591,20 @@ Dựa trên dữ liệu thực tế của bạn! 📈`;
       // Phân tích điểm yếu theo kỹ năng
       recommendations += `\n🔍 **PHÂN TÍCH KỸ NĂNG & ĐỀ XUẤT:**\n`;
       
-      const readingScores = ieltsResults.filter(r => r.examType === 'reading').map(r => r.score.percentage);
-      const listeningScores = ieltsResults.filter(r => r.examType === 'listening').map(r => r.score.percentage);
+      const readingTests = ieltsResults.filter(r => r.examType === 'reading');
+      const listeningTests = ieltsResults.filter(r => r.examType === 'listening');
+      const readingWithBand = readingTests.filter(r => r.score.bandScore);
+      const listeningWithBand = listeningTests.filter(r => r.score.bandScore);
       
-      if (readingScores.length > 0) {
-        const readingAvg = Math.round(readingScores.reduce((a, b) => a + b, 0) / readingScores.length);
-        recommendations += `   📖 **Reading (${readingAvg}%):**`;
-        if (readingAvg < averagePercentage - 10) {
+      if (readingWithBand.length > 0) {
+        const readingAvgBand = (readingWithBand.reduce((sum, r) => sum + r.score.bandScore, 0) / readingWithBand.length).toFixed(1);
+        recommendations += `   📖 **Reading (Band ${readingAvgBand}):**`;
+        if (parseFloat(readingAvgBand) < avgBand - 1.0) {
           recommendations += ` ⚠️ **Điểm yếu!**\n`;
           recommendations += `      → Đăng ký khóa "Reading Comprehension"\n`;
           recommendations += `      → Đọc 2 bài short articles mỗi ngày\n`;
           recommendations += `      → Practice skimming & scanning techniques\n`;
-        } else if (readingAvg > averagePercentage + 10) {
+        } else if (parseFloat(readingAvgBand) > avgBand + 1.0) {
           recommendations += ` 💪 **Điểm mạnh!**\n`;
           recommendations += `      → Thử thách với advanced texts\n`;
           recommendations += `      → Focus vào academic vocabulary\n`;
@@ -1564,15 +1614,15 @@ Dựa trên dữ liệu thực tế của bạn! 📈`;
         }
       }
       
-      if (listeningScores.length > 0) {
-        const listeningAvg = Math.round(listeningScores.reduce((a, b) => a + b, 0) / listeningScores.length);
-        recommendations += `   🎧 **Listening (${listeningAvg}%):**`;
-        if (listeningAvg < averagePercentage - 10) {
+      if (listeningWithBand.length > 0) {
+        const listeningAvgBand = (listeningWithBand.reduce((sum, r) => sum + r.score.bandScore, 0) / listeningWithBand.length).toFixed(1);
+        recommendations += `   🎧 **Listening (Band ${listeningAvgBand}):**`;
+        if (parseFloat(listeningAvgBand) < avgBand - 1.0) {
           recommendations += ` ⚠️ **Điểm yếu!**\n`;
           recommendations += `      → Đăng ký khóa "Listening Skills"\n`;
           recommendations += `      → Nghe English podcasts 30p/ngày\n`;
           recommendations += `      → Practice dictation exercises\n`;
-        } else if (listeningAvg > averagePercentage + 10) {
+        } else if (parseFloat(listeningAvgBand) > avgBand + 1.0) {
           recommendations += ` 💪 **Điểm mạnh!**\n`;
           recommendations += `      → Nghe native content: news, movies\n`;
           recommendations += `      → Focus vào accents: British, American\n`;

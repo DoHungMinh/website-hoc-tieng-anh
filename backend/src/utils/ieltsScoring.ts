@@ -5,30 +5,33 @@ export interface IELTSResult {
   totalQuestions: number;
   correctAnswers: number;
   bandScore: number;
-  percentage: number;
   description: string;
 }
 
 // IELTS Listening Band Score Conversion (40 questions)
+// Bảng chuyển đổi điểm chuẩn IELTS Listening
 const listeningBandScores: { [key: number]: number } = {
   40: 9.0, 39: 9.0,
   38: 8.5, 37: 8.5,
   36: 8.0, 35: 8.0,
-  34: 7.5, 33: 7.5, 32: 7.5,
-  31: 7.0, 30: 7.0,
-  29: 6.5, 28: 6.5, 27: 6.5, 26: 6.5,
-  25: 6.0, 24: 6.0, 23: 6.0,
+  34: 7.5, 33: 7.5,
+  32: 7.0, 31: 7.0, 30: 7.0,
+  29: 6.5, 28: 6.5, 27: 6.5,
+  26: 6.0, 25: 6.0, 24: 6.0, 23: 6.0,
   22: 5.5, 21: 5.5, 20: 5.5, 19: 5.5, 18: 5.5,
   17: 5.0, 16: 5.0,
   15: 4.5, 14: 4.5, 13: 4.5,
-  12: 4.0, 11: 4.0, 10: 4.0,
-  9: 3.5, 8: 3.5, 7: 3.5,
-  6: 3.0, 5: 3.0, 4: 3.0,
-  3: 2.5, 2: 2.5, 1: 2.5,
+  12: 4.0, 11: 4.0,
+  10: 3.5, 9: 3.5, 8: 3.5,
+  7: 3.0, 6: 3.0,
+  5: 2.5, 4: 2.5,
+  3: 2.0,
+  2: 1.5, 1: 1.0,
   0: 0.0
 };
 
 // IELTS Academic Reading Band Score Conversion (40 questions)
+// Bảng chuyển đổi điểm chuẩn IELTS Academic Reading
 const academicReadingBandScores: { [key: number]: number } = {
   40: 9.0, 39: 9.0,
   38: 8.5, 37: 8.5,
@@ -41,9 +44,11 @@ const academicReadingBandScores: { [key: number]: number } = {
   18: 5.0, 17: 5.0, 16: 5.0, 15: 5.0,
   14: 4.5, 13: 4.5,
   12: 4.0, 11: 4.0, 10: 4.0,
-  9: 3.5, 8: 3.5, 7: 3.5,
-  6: 3.0, 5: 3.0, 4: 3.0,
-  3: 2.5, 2: 2.5, 1: 2.5,
+  9: 3.5, 8: 3.5,
+  7: 3.0,
+  6: 2.5,
+  5: 2.0,
+  4: 1.5, 3: 1.5, 2: 1.5, 1: 1.0,
   0: 0.0
 };
 
@@ -75,13 +80,11 @@ export function calculateListeningScore(correctAnswers: number): IELTSResult {
   const totalQuestions = 40;
   const clampedCorrect = Math.max(0, Math.min(correctAnswers, totalQuestions));
   const bandScore = listeningBandScores[clampedCorrect] || 0.0;
-  const percentage = Math.round((clampedCorrect / totalQuestions) * 100);
   
   return {
     totalQuestions,
     correctAnswers: clampedCorrect,
     bandScore,
-    percentage,
     description: bandDescriptions[bandScore] || "Invalid score"
   };
 }
@@ -93,13 +96,11 @@ export function calculateAcademicReadingScore(correctAnswers: number): IELTSResu
   const totalQuestions = 40;
   const clampedCorrect = Math.max(0, Math.min(correctAnswers, totalQuestions));
   const bandScore = academicReadingBandScores[clampedCorrect] || 0.0;
-  const percentage = Math.round((clampedCorrect / totalQuestions) * 100);
   
   return {
     totalQuestions,
     correctAnswers: clampedCorrect,
     bandScore,
-    percentage,
     description: bandDescriptions[bandScore] || "Invalid score"
   };
 }
