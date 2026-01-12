@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import multer from "multer";
 import path from "path";
+import fs from "fs";
 import { authenticateToken } from "../middleware/auth";
 import { voiceChatController } from "../controllers/voiceChatController";
 
@@ -10,10 +11,17 @@ const router = Router();
 // MULTER CONFIGURATION FOR AUDIO UPLOAD
 // =================================================================
 
+// Ensure upload directory exists
+const uploadDir = "uploads/audio/";
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+    console.log(`✅ Created upload directory: ${uploadDir}`);
+}
+
 // Configure storage for audio files
 const audioStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, "uploads/audio/");
+        cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);

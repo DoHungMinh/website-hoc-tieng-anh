@@ -1,6 +1,7 @@
 import { whisperService } from './whisperService';
 import { ttsService } from './ttsService';
 import { AIService } from './aiService';
+import { cloudinaryService } from './cloudinaryService';
 import { IUser } from '../models/User';
 import { IProgress } from '../models/Progress';
 
@@ -72,6 +73,27 @@ export class VoiceChatService {
         2 // Max retries
       );
 
+      // STEP 4: Upload user's audio to Cloudinary (async, don't wait)
+      let userAudioUrl: string | undefined;
+      if (cloudinaryService.isAvailable()) {
+        try {
+          console.log('☁️ Step 4/4: Uploading user audio to Cloudinary...');
+          const uploadResult = await cloudinaryService.uploadAudio(audioFilePath, {
+            folder: 'voice-chat',
+            publicId: `user-audio-${Date.now()}`,
+            userId: user._id?.toString(),
+            sessionId: `session-${Date.now()}`,
+          });
+          userAudioUrl = uploadResult.secureUrl;
+          console.log('✅ User audio uploaded to Cloudinary:', userAudioUrl);
+        } catch (uploadError) {
+          console.error('⚠️ Failed to upload to Cloudinary (non-critical):', uploadError);
+          // Don't fail the whole request if Cloudinary upload fails
+        }
+      } else {
+        console.log('⚠️ Cloudinary not configured, skipping upload');
+      }
+
       const processingTime = Date.now() - startTime;
       console.log(`✅ Voice chat completed in ${processingTime}ms`);
 
@@ -80,6 +102,7 @@ export class VoiceChatService {
         transcript: transcript,
         responseText: aiResponse,
         audioPath: audioResponsePath,
+        userAudioUrl: userAudioUrl, // Cloudinary URL for user's audio
         processingTimeMs: processingTime,
         metadata: {
           transcriptLength: transcript.length,

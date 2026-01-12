@@ -15,6 +15,7 @@ export interface IVoiceChatSession extends Omit<Document, "_id"> {
   transcriptText: string;
   transcriptLength: number;
   audioInputSize?: number; // bytes
+  userAudioUrl?: string; // Cloudinary URL for user's audio
   
   // AI Response
   responseText: string;
@@ -85,6 +86,10 @@ const voiceChatSessionSchema = new Schema<IVoiceChatSession>(
     },
     audioInputSize: {
       type: Number,
+    },
+    userAudioUrl: {
+      type: String,
+      default: null,
     },
     
     // AI Response

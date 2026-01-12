@@ -137,6 +137,7 @@ export const voiceChatController = {
           transcript: result.transcript,
           response: result.responseText,
           audioData: audioBase64,
+          userAudioUrl: result.userAudioUrl, // Cloudinary URL
           sessionId: 'voice-' + Date.now(), // Generate session ID
           processingTime: result.processingTimeMs,
           estimatedCost: 0.001, // Approximate cost per request

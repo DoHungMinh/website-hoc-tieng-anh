@@ -7,6 +7,7 @@ export interface VoiceChatResponse {
   transcript: string;
   response: string;
   audioData: string; // Base64 encoded audio
+  userAudioUrl?: string; // Cloudinary URL
   sessionId: string;
   processingTime: number;
   estimatedCost: number;

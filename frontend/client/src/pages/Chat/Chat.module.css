@@ -3,7 +3,7 @@
    Premium, modern design - works within main layout
    ============================================ */
 
-/* Main Container */
+/* Main Container - Now with Sidebar */
 .container {
     height: calc(100vh - 160px);
     max-height: calc(100vh - 160px);
@@ -11,7 +11,226 @@
     position: relative;
     overflow: hidden;
     display: flex;
+    flex-direction: row;
+    overscroll-behavior: contain;
+}
+
+/* ============================================
+   SIDEBAR - CONVERSATION HISTORY
+   ============================================ */
+
+.sidebar {
+    width: 260px;
+    background: #ffffff;
+    border-right: 1px solid rgba(139, 92, 246, 0.1);
+    display: flex;
     flex-direction: column;
+    overflow: hidden;
+    z-index: 10;
+}
+
+.sidebarHeader {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+.newChatBtn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+}
+
+.newChatBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.sessionList {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem;
+}
+
+.sessionItem {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.25rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #4b5563;
+    font-size: 0.875rem;
+}
+
+.sessionItem:hover {
+    background: rgba(139, 92, 246, 0.05);
+    color: #8b5cf6;
+}
+
+.sessionItemActive {
+    background: rgba(139, 92, 246, 0.1);
+    color: #8b5cf6;
+    font-weight: 500;
+}
+
+.sessionTitle {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.emptyState {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #9ca3af;
+    font-size: 0.875rem;
+}
+
+/* ============================================
+   MAIN AREA - Chat Content
+   ============================================ */
+
+.mainArea {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    overscroll-behavior: contain;
+}
+
+/* ============================================
+   CHAT MESSAGES
+   ============================================ */
+
+.chatMessages {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 2rem;
+    padding-bottom: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    overscroll-behavior: contain; /* Prevent scroll chaining to parent */
+}
+
+/* Custom scrollbar for chat messages */
+.chatMessages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chatMessages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chatMessages::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.2);
+    border-radius: 3px;
+}
+
+.chatMessages::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.4);
+}
+
+.messageRow {
+    display: flex;
+    width: 100%;
+    animation: messageSlideIn 0.3s ease-out;
+}
+
+@keyframes messageSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.messageRowUser {
+    justify-content: flex-end;
+}
+
+.messageRowAssistant {
+    justify-content: flex-start;
+}
+
+.messageContent {
+    display: flex;
+    gap: 0.75rem;
+    max-width: 80%;
+}
+
+.messageAvatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.messageRowUser .messageAvatar {
+    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+    color: white;
+}
+
+.messageRowAssistant .messageAvatar {
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    padding: 6px;
+}
+
+.messageText {
+    flex: 1;
+}
+
+.messageSender {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+}
+
+.messageRowUser .messageText p {
+    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 16px 16px 4px 16px;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+}
+
+.messageRowAssistant .messageText p {
+    background: white;
+    color: #1a1a2e;
+    padding: 0.75rem 1rem;
+    border-radius: 16px 16px 16px 4px;
+    border: 1px solid rgba(139, 92, 246, 0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    line-height: 1.6;
 }
 
 /* Subtle background patterns */
@@ -115,21 +334,47 @@
 .mainContent {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    align-items: stretch;
+    justify-content: flex-start;
     flex: 1;
-    padding: 2rem;
+    padding: 0;
     position: relative;
     z-index: 5;
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100%;
+    overscroll-behavior: contain;
+}
+
+/* Custom scrollbar for mainContent */
+.mainContent::-webkit-scrollbar {
+    width: 8px;
+}
+
+.mainContent::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.mainContent::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.2);
+    border-radius: 4px;
+}
+
+.mainContent::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.4);
 }
 
 /* Logo Section */
 .logoSection {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -120%);
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 2rem;
+    z-index: 5;
 }
 
 .logoText {
@@ -212,8 +457,12 @@
 
 /* Greeting Text */
 .greeting {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, 0%);
     text-align: center;
-    margin-bottom: 2.5rem;
+    z-index: 5;
 }
 
 .greetingTitle {
@@ -758,11 +1007,20 @@
 
 /* Voice Orb Container */
 .voiceOrbContainer {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
+    gap: 1rem;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.voiceOrbContainer > * {
+    pointer-events: auto;
 }
 
 /* Voice Orb Button */
@@ -858,21 +1116,30 @@
 
 /* Status Text */
 .statusText {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
     font-size: 1rem;
     color: #6b7280;
     text-align: center;
-    margin-bottom: 2rem;
+    z-index: 10;
+    pointer-events: none;
 }
 
 /* Error Box */
 .errorBox {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
     max-width: 500px;
-    width: 100%;
+    width: auto;
     padding: 1rem 1.5rem;
     background: #fef2f2;
     border: 1px solid #fecaca;
     border-radius: 12px;
-    margin-bottom: 2rem;
+    z-index: 10;
 }
 
 .errorBox p {
@@ -1010,8 +1277,84 @@
     flex-shrink: 0;
 }
 
+/* Audio Player - Fixed Bottom */
+.audioPlayerFixed {
+    position: fixed;
+    bottom: 0;
+    left: 260px;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 2rem;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(139, 92, 246, 0.1);
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.05);
+    z-index: 20;
+}
+
+.audioPlayerFixed .playButton {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.audioPlayerFixed .playButton:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.audioPlayerFixed .progressBar {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(139, 92, 246, 0.1);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.audioPlayerFixed .progressBar::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #8b5cf6;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.audioPlayerFixed .progressBar::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.audioPlayerFixed .audioTime {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-variant-numeric: tabular-nums;
+    min-width: 100px;
+    text-align: right;
+}
+
 /* Voice Chat Responsive */
 @media (max-width: 768px) {
+    .sidebar {
+        width: 220px;
+    }
+    
+    .audioPlayerFixed {
+        left: 220px;
+    }
+    
     .voiceOrb {
         width: 140px;
         height: 140px;
@@ -1035,9 +1378,25 @@
         width: 36px;
         height: 36px;
     }
+    
+    .chatMessages {
+        padding: 1rem;
+    }
+    
+    .messageContent {
+        max-width: 90%;
+    }
 }
 
 @media (max-width: 480px) {
+    .sidebar {
+        display: none;
+    }
+    
+    .audioPlayerFixed {
+        left: 0;
+    }
+    
     .voiceOrb {
         width: 120px;
         height: 120px;
@@ -1054,5 +1413,13 @@
 
     .statusText {
         font-size: 0.875rem;
+    }
+    
+    .chatMessages {
+        padding: 0.75rem;
+    }
+    
+    .messageContent {
+        max-width: 95%;
     }
 }
