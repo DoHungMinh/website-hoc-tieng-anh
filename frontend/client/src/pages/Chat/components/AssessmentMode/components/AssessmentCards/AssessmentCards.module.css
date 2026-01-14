@@ -1,0 +1,138 @@
+/* ============================================
+   ASSESSMENT CARDS STYLES
+   ============================================ */
+
+.assessmentMode {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+    align-items: center;
+}
+
+.assessmentWelcome {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.assessmentTitle {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+
+.assessmentSubtitle {
+    font-size: 1.125rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+.assessmentCards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    width: 100%;
+    max-width: 900px;
+}
+
+.assessmentCard {
+    padding: 2.5rem 2rem;
+    border-radius: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.assessmentCard:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+}
+
+.cardIcon {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.cardTitle {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+
+.cardDescription {
+    font-size: 1rem;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.cardButton {
+    padding: 0.875rem 2rem;
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    margin-top: 0.5rem;
+}
+
+.cardButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .assessmentMode {
+        padding: 2rem 1rem;
+    }
+
+    .assessmentTitle {
+        font-size: 1.5rem;
+    }
+
+    .assessmentSubtitle {
+        font-size: 1rem;
+    }
+
+    .assessmentCards {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .assessmentCard {
+        padding: 2rem 1.5rem;
+    }
+
+    .cardIcon {
+        width: 64px;
+        height: 64px;
+    }
+
+    .cardTitle {
+        font-size: 1.25rem;
+    }
+
+    .cardDescription {
+        font-size: 0.875rem;
+    }
+}

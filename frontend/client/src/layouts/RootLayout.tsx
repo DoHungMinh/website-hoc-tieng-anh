@@ -13,6 +13,9 @@ import { useScrollToTop } from "../hooks/useScrollToTop";
 /** Routes configuration for hiding header/footer */
 const HIDE_LAYOUT_ROUTES = ["/login", "/register", "/admin", "/placement-test"];
 
+/** Routes that only hide footer (keep header visible) */
+const HIDE_FOOTER_ONLY_ROUTES = ["/aichat"];
+
 /**
  * Root Layout Component
  * Wraps all pages with common layout elements (Header, Footer)
@@ -45,11 +48,12 @@ const RootLayout = memo(() => {
 
     // Determine if header/footer should be hidden
     const hideLayout = HIDE_LAYOUT_ROUTES.some((route) => pathname.startsWith(route));
+    const hideFooterOnly = HIDE_FOOTER_ONLY_ROUTES.some((route) => pathname.startsWith(route));
 
     return (
         <Layout
             hideHeader={hideLayout}
-            hideFooter={hideLayout}
+            hideFooter={hideLayout || hideFooterOnly}
             currentPage={pathname.slice(1) || "home"}
         >
             <Suspense fallback={<PageLoader />}>

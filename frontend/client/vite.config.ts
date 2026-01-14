@@ -28,8 +28,25 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:5002',
-        changeOrigin: true
+        changeOrigin: true,
+        secure: false,
+        // Prevent proxy errors from crashing the dev server
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('🔌 Proxy error (backend may be restarting):', err.message);
+          });
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            // Add custom headers if needed
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            // Handle proxy responses
+          });
+        }
       }
+    },
+    // Prevent HMR websocket from crashing when backend restarts
+    hmr: {
+      overlay: false, // Don't show error overlay for connection issues
     }
   }
 });

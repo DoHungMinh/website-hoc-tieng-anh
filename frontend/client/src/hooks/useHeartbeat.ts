@@ -17,6 +17,9 @@ export const useHeartbeat = () => {
         // Function to send heartbeat
         const sendHeartbeat = async () => {
             try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+                
                 const response = await fetch(
                     `${API_BASE_URL}/user/heartbeat`,
                     {
@@ -25,8 +28,11 @@ export const useHeartbeat = () => {
                             Authorization: `Bearer ${token}`,
                             "Content-Type": "application/json",
                         },
+                        signal: controller.signal,
                     }
                 );
+                
+                clearTimeout(timeoutId);
 
                 // Check if account is disabled
                 if (response.status === 403) {
@@ -42,7 +48,17 @@ export const useHeartbeat = () => {
                     console.log("Heartbeat sent successfully");
                 }
             } catch (error) {
-                console.error("Failed to send heartbeat:", error);
+                // Gracefully handle errors - backend may be restarting
+                if (error instanceof Error) {
+                    if (error.name === 'AbortError') {
+                        console.warn("⏱️ Heartbeat timeout - backend may be busy");
+                    } else if (error.message.includes('Failed to fetch')) {
+                        console.warn("🔌 Backend connection lost - may be restarting");
+                    } else {
+                        console.error("❌ Heartbeat error:", error.message);
+                    }
+                }
+                // Don't crash - just log and continue
             }
         };
 

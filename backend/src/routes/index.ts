@@ -14,6 +14,7 @@ import analyticsRoutes from "./analytics.routes";
 import voiceChatRoutes from "./voiceChat.routes";
 import levelPackageRoutes from "./levelPackage.routes";
 import levelEnrollmentRoutes from "./levelEnrollment.routes";
+import pronunciationRoutes from "./pronunciation.routes";
 
 const router = Router();
 
@@ -53,6 +54,9 @@ router.use("/admin/statistics", analyticsRoutes);
 
 // Voice chat routes
 router.use("/voice", voiceChatRoutes);
+
+// Pronunciation practice routes (NEW)
+router.use("/pronunciation", pronunciationRoutes);
 
 // Level Package routes (NEW - Level-based learning)
 router.use("/level-packages", levelPackageRoutes);
@@ -95,6 +99,7 @@ router.get("/", (req, res) => {
             payments: "/api/payments",
             analytics: "/api/admin/statistics",
             voice: "/api/voice",
+            pronunciation: "/api/pronunciation",
             levelPackage: "/api/level-package",
             levelEnrollment: "/api/level-enrollment",
         },
