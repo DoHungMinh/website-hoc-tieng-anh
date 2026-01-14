@@ -492,52 +492,54 @@ const PromptPractice: React.FC<PromptPracticeProps> = ({ onBack }) => {
                                         </div>
                                     </div>
 
-                            {/* Score */}
-                            <div className={styles.resultPanelSection}>
-                                <h4 className={styles.resultPanelLabel}>Pronunciation Score:</h4>
-                                <div className={styles.scoreDisplay}>
-                                    <span className={styles.scoreNumber}>{pronunciationScore}</span>
-                                    <span className={styles.scoreMax}>/100</span>
-                                </div>
-                                <div className={styles.scoreBar}>
-                                    <div
-                                        className={styles.scoreBarFill}
-                                        style={{
-                                            width: `${pronunciationScore}%`,
-                                            background:
-                                                pronunciationScore >= 80
-                                                    ? '#10b981'
-                                                    : pronunciationScore >= 60
-                                                    ? '#f59e0b'
-                                                    : '#ef4444'
-                                        }}
-                                    ></div>
-                                </div>
-                            </div>
-
-                            {/* Word Details */}
-                            <div className={styles.resultPanelSection}>
-                                <h4 className={styles.resultPanelLabel}>Chi tiết từng từ:</h4>
-                                <div className={styles.wordScoresGrid}>
-                                    {wordScores.map((wordScore, index) => {
-                                        const isCorrect = wordScore.score >= 70;
-                                        return (
+                                    {/* Score */}
+                                    <div className={styles.resultPanelSection}>
+                                        <h4 className={styles.resultPanelLabel}>Pronunciation Score:</h4>
+                                        <div className={styles.scoreDisplay}>
+                                            <span className={styles.scoreNumber}>{pronunciationScore}</span>
+                                            <span className={styles.scoreMax}>/100</span>
+                                        </div>
+                                        <div className={styles.scoreBar}>
                                             <div
-                                                key={index}
-                                                className={`${styles.wordScoreItem} ${
-                                                    isCorrect ? styles.wordScoreCorrect : styles.wordScoreError
-                                                }`}
-                                            >
-                                                <span className={styles.wordScoreIcon}>
-                                                    {isCorrect ? '✅' : '❌'}
-                                                </span>
-                                                <span className={styles.wordScoreWord}>{wordScore.word}</span>
-                                                <span className={styles.wordScoreNumber}>({wordScore.score})</span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
+                                                className={styles.scoreBarFill}
+                                                style={{
+                                                    width: `${pronunciationScore}%`,
+                                                    background:
+                                                        pronunciationScore >= 80
+                                                            ? '#10b981'
+                                                            : pronunciationScore >= 60
+                                                            ? '#f59e0b'
+                                                            : '#ef4444'
+                                                }}
+                                            ></div>
+                                        </div>
+                                    </div>
+
+                                    {/* Word Details */}
+                                    <div className={styles.resultPanelSection}>
+                                        <h4 className={styles.resultPanelLabel}>Chi tiết từng từ:</h4>
+                                        <div className={styles.wordScoresGrid}>
+                                            {wordScores.map((wordScore, index) => {
+                                                const isCorrect = wordScore.score >= 70;
+                                                return (
+                                                    <div
+                                                        key={index}
+                                                        className={`${styles.wordScoreItem} ${
+                                                            isCorrect ? styles.wordScoreCorrect : styles.wordScoreError
+                                                        }`}
+                                                    >
+                                                        <span className={styles.wordScoreIcon}>
+                                                            {isCorrect ? '✅' : '❌'}
+                                                        </span>
+                                                        <span className={styles.wordScoreWord}>{wordScore.word}</span>
+                                                        <span className={styles.wordScoreNumber}>({wordScore.score})</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 )}

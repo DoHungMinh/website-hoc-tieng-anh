@@ -11,37 +11,40 @@ import styles from './Chat.module.css';
  */
 const VoiceChatPage: React.FC = () => {
     const [speakingMode, setSpeakingMode] = useState<SpeakingMode>('conversation');
+    const [showModeToggle, setShowModeToggle] = useState<boolean>(true);
 
     return (
         <div className={styles.pageWrapper}>
-            {/* Mode Toggle */}
-            <div className={styles.modeToggleContainer}>
-                <div className={styles.modeToggle}>
-                    <button
-                        className={`${styles.modeToggleBtn} ${
-                            speakingMode === 'conversation' ? styles.modeToggleBtnActive : ''
-                        }`}
-                        onClick={() => setSpeakingMode('conversation')}
-                    >
-                        <MessageCircle size={18} />
-                        <span>Conversation Mode</span>
-                    </button>
-                    <button
-                        className={`${styles.modeToggleBtn} ${
-                            speakingMode === 'assessment' ? styles.modeToggleBtnActive : ''
-                        }`}
-                        onClick={() => setSpeakingMode('assessment')}
-                    >
-                        <Target size={18} />
-                        <span>Assessment Mode</span>
-                    </button>
+            {/* Mode Toggle - Only show on main selection screen */}
+            {showModeToggle && (
+                <div className={styles.modeToggleContainer}>
+                    <div className={styles.modeToggle}>
+                        <button
+                            className={`${styles.modeToggleBtn} ${
+                                speakingMode === 'conversation' ? styles.modeToggleBtnActive : ''
+                            }`}
+                            onClick={() => setSpeakingMode('conversation')}
+                        >
+                            <MessageCircle size={18} />
+                            <span>Conversation Mode</span>
+                        </button>
+                        <button
+                            className={`${styles.modeToggleBtn} ${
+                                speakingMode === 'assessment' ? styles.modeToggleBtnActive : ''
+                            }`}
+                            onClick={() => setSpeakingMode('assessment')}
+                        >
+                            <Target size={18} />
+                            <span>Assessment Mode</span>
+                        </button>
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Mode Content */}
             <div className={styles.container}>
                 {speakingMode === 'conversation' && <ConversationMode />}
-                {speakingMode === 'assessment' && <AssessmentMode />}
+                {speakingMode === 'assessment' && <AssessmentMode onToggleVisibility={setShowModeToggle} />}
             </div>
         </div>
     );
