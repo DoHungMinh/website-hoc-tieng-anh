@@ -69,6 +69,13 @@ router.get('/word-audio/:word', pronunciationController.getWordAudio);
 router.get('/history', authenticateToken, pronunciationController.getHistory);
 
 /**
+ * @route   GET /api/pronunciation/latest-session/:promptIndex
+ * @desc    Get latest practice session for specific prompt
+ * @access  Private
+ */
+router.get('/latest-session/:promptIndex', authenticateToken, pronunciationController.getLatestSession);
+
+/**
  * @route   GET /api/pronunciation/session/:sessionId
  * @desc    Get session detail by ID
  * @access  Private

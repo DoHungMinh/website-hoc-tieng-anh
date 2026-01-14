@@ -199,6 +199,59 @@ export const pronunciationController = {
   },
 
   /**
+   * GET /api/pronunciation/latest-session/:promptIndex
+   * Get latest practice session for specific prompt
+   */
+  async getLatestSession(req: Request, res: Response) {
+    try {
+      const userId = req.user?._id?.toString();
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+        });
+      }
+
+      const { promptIndex } = req.params;
+      const parsedPromptIndex = parseInt(promptIndex);
+
+      if (isNaN(parsedPromptIndex) || parsedPromptIndex < 0 || parsedPromptIndex > 15) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid promptIndex. Must be between 0 and 15',
+        });
+      }
+
+      console.log(`🔍 Request for latest session: User ${userId}, Prompt ${parsedPromptIndex}`);
+
+      const session = await pronunciationScoringService.getLatestSession(
+        userId,
+        parsedPromptIndex
+      );
+
+      if (!session) {
+        return res.status(404).json({
+          success: false,
+          message: 'No history found for this prompt',
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: session,
+      });
+
+    } catch (error: any) {
+      console.error('❌ Get latest session error:', error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to get latest session',
+      });
+    }
+  },
+
+  /**
    * GET /api/pronunciation/session/:sessionId
    * Get session detail by ID
    */

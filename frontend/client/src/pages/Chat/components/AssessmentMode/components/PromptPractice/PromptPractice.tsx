@@ -86,6 +86,11 @@ const PromptPractice: React.FC<PromptPracticeProps> = ({ onBack }) => {
     const [promptAudioUrl, setPromptAudioUrl] = useState<string>('');
     const [userAudioUrl, setUserAudioUrl] = useState<string>(''); // User's recorded audio URL
     
+    // Historical result states
+    const [hasHistory, setHasHistory] = useState(false);
+    const [historicalDate, setHistoricalDate] = useState<string>('');
+    const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+    
     // Recording states
     const [isRecording, setIsRecording] = useState(false);
     const [countdown, setCountdown] = useState(44);
@@ -97,6 +102,77 @@ const PromptPractice: React.FC<PromptPracticeProps> = ({ onBack }) => {
 
     const currentPrompt = PROMPTS[currentPromptIndex];
     const totalPrompts = PROMPTS.length;
+
+    // Fetch latest session on mount or prompt change
+    useEffect(() => {
+        const fetchLatestSession = async () => {
+            try {
+                setIsLoadingHistory(true);
+                const token = localStorage.getItem('token');
+                
+                if (!token) {
+                    console.warn('⚠️ No auth token found');
+                    setHasHistory(false);
+                    return;
+                }
+
+                console.log(`🔍 Fetching latest session for prompt ${currentPromptIndex}...`);
+
+                const response = await fetch(
+                    `/api/pronunciation/latest-session/${currentPromptIndex}`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                        },
+                    }
+                );
+
+                if (response.status === 404) {
+                    // No history found - first time user
+                    console.log('ℹ️ No history found - first attempt');
+                    setHasHistory(false);
+                    setShowResult(false);
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch history');
+                }
+
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    console.log('✅ History found:', result.data);
+                    
+                    // Load historical data
+                    setUserTranscript(result.data.transcript);
+                    setPronunciationScore(result.data.overallScore);
+                    setWordScores(result.data.wordScores);
+                    setUserAudioUrl(result.data.userAudioUrl || '');
+                    
+                    // Format date: "Hoàn thành lúc: 14/01/2026 15:30"
+                    const completedDate = new Date(result.data.completedAt || Date.now());
+                    const formattedDate = `Hoàn thành lúc: ${completedDate.toLocaleDateString('vi-VN')} ${completedDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
+                    setHistoricalDate(formattedDate);
+                    
+                    setHasHistory(true);
+                    setShowResult(true); // Show 2-column layout
+                } else {
+                    setHasHistory(false);
+                    setShowResult(false);
+                }
+
+            } catch (error) {
+                console.error('❌ Failed to fetch latest session:', error);
+                setHasHistory(false);
+                setShowResult(false);
+            } finally {
+                setIsLoadingHistory(false);
+            }
+        };
+
+        fetchLatestSession();
+    }, [currentPromptIndex]);
 
     // Countdown timer effect
     useEffect(() => {
@@ -174,11 +250,18 @@ const PromptPractice: React.FC<PromptPracticeProps> = ({ onBack }) => {
             const result = await response.json();
             console.log('✅ Scoring result:', result);
 
-            // Update UI with results
+            // Update UI with new results
             setUserTranscript(result.data.transcript);
             setPronunciationScore(result.data.overallScore);
             setWordScores(result.data.wordScores);
             setUserAudioUrl(result.data.userAudioUrl || ''); // Save user's audio URL
+            
+            // Update historical data (this is now the new "latest")
+            setHasHistory(true);
+            const completedDate = new Date();
+            const formattedDate = `Hoàn thành lúc: ${completedDate.toLocaleDateString('vi-VN')} ${completedDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
+            setHistoricalDate(formattedDate);
+            
             setShowResult(true);
             
         } catch (error: unknown) {
@@ -288,15 +371,24 @@ const PromptPractice: React.FC<PromptPracticeProps> = ({ onBack }) => {
     };
 
     const handleRetry = () => {
+        // Clear all result states
         setShowResult(false);
         setUserTranscript('');
         setPronunciationScore(0);
         setWordScores([]);
         setUserAudioUrl('');
+        
+        // Clear historical states (back to first-time state)
+        setHasHistory(false);
+        setHistoricalDate('');
+        
+        // Reset recording states
         setIsRecording(false);
         setIsLoading(false);
         setCountdown(44);
         setError('');
+        
+        console.log('🔄 Retry: Reset to first-time state');
     };
 
     const handleNext = () => {
@@ -366,13 +458,39 @@ const PromptPractice: React.FC<PromptPracticeProps> = ({ onBack }) => {
 
                         {/* Result Panel - Right */}
                         <div className={styles.resultPanel}>
-                            {/* Transcript */}
-                            <div className={styles.resultPanelSection}>
-                                <h4 className={styles.resultPanelLabel}>Transcript của bạn:</h4>
-                                <div className={styles.transcriptBox}>
-                                    <p className={styles.userTranscript}>{userTranscript}</p>
+                            {/* Show loading indicator while fetching history */}
+                            {isLoadingHistory ? (
+                                <div className={styles.loadingHistory}>
+                                    <Loader2 size={24} className={styles.spinner} />
+                                    <p>Đang tải lịch sử...</p>
                                 </div>
-                            </div>
+                            ) : (
+                                <>
+                                    {/* Historical Audio Player (if has history) */}
+                                    {hasHistory && userAudioUrl && (
+                                        <div className={styles.resultPanelSection}>
+                                            <h4 className={styles.resultPanelLabel}>📼 Recording lần trước</h4>
+                                            <audio 
+                                                controls 
+                                                src={userAudioUrl}
+                                                className={styles.audioPlayer}
+                                                preload="metadata"
+                                            >
+                                                Trình duyệt không hỗ trợ audio player.
+                                            </audio>
+                                            {historicalDate && (
+                                                <p className={styles.historicalTimestamp}>{historicalDate}</p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Transcript */}
+                                    <div className={styles.resultPanelSection}>
+                                        <h4 className={styles.resultPanelLabel}>Transcript của bạn:</h4>
+                                        <div className={styles.transcriptBox}>
+                                            <p className={styles.userTranscript}>{userTranscript}</p>
+                                        </div>
+                                    </div>
 
                             {/* Score */}
                             <div className={styles.resultPanelSection}>

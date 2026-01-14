@@ -18,6 +18,7 @@ export interface ScoringResult {
   sessionId: string;
   userAudioUrl: string;
   recordingDuration: number;
+  completedAt?: Date;
 }
 
 /**
@@ -181,6 +182,46 @@ export class PronunciationScoringService {
   }
 
   /**
+   * Get latest session for specific prompt
+   */
+  async getLatestSession(
+    userId: string,
+    promptIndex: number
+  ): Promise<ScoringResult | null> {
+    try {
+      console.log(`🔍 Fetching latest session for user ${userId}, prompt ${promptIndex}`);
+      
+      const session = await UserPracticeSession
+        .findOne({ userId, promptIndex })
+        .sort({ completedAt: -1 })
+        .limit(1);
+
+      if (!session) {
+        console.log('ℹ️ No history found for this prompt');
+        return null;
+      }
+
+      console.log(`✅ Found session from ${session.completedAt}`);
+
+      return {
+        transcript: session.transcript,
+        overallScore: session.overallScore,
+        fluencyScore: session.fluencyScore,
+        pronunciationScore: session.pronunciationScore,
+        wordScores: session.wordScores,
+        sessionId: session._id,
+        userAudioUrl: session.userAudioUrl,
+        recordingDuration: session.recordingDuration,
+        completedAt: session.completedAt,
+      };
+
+    } catch (error: any) {
+      console.error('❌ Failed to get latest session:', error.message);
+      throw error;
+    }
+  }
+
+  /**
    * Get session detail by ID
    */
   async getSessionDetail(sessionId: string): Promise<ScoringResult | null> {
@@ -200,6 +241,7 @@ export class PronunciationScoringService {
         sessionId: session._id,
         userAudioUrl: session.userAudioUrl,
         recordingDuration: session.recordingDuration,
+        completedAt: session.completedAt,
       };
 
     } catch (error: any) {
