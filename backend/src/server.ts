@@ -1,15 +1,13 @@
+// MUST be first: Load environment variables before any other imports
+import './config/env';
+
 import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
-// restart trigger
-import dotenv from "dotenv";
 import { createServer } from "http";
 import { Server } from "socket.io";
-
-// Load environment variables
-dotenv.config();
 
 // Import database connection
 const connectDB = require("../config/database");

@@ -1,7 +1,9 @@
 import UserPracticeSession, { IWordScore } from '../models/UserPracticeSession';
+import FreeSpeakingSession from '../models/FreeSpeakingSession';
 import { speechaceService } from './speechaceService';
 import { CloudinaryService } from './cloudinaryService';
 import { WhisperService } from './whisperService';
+import OpenAI from 'openai';
 import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -22,16 +24,52 @@ export interface ScoringResult {
 }
 
 /**
+ * Free Speaking Result Interface
+ */
+export interface FreeSpeakingResult {
+  sessionId: string;
+  transcript: string;
+  scores: {
+    overall: number;
+    pronunciation: number;
+    fluency: number;
+    vocabulary: number;
+    grammar: number;
+  };
+  wordScores: Array<{
+    word: string;
+    score: number;
+    startTime: number;
+    endTime: number;
+    pauseAfter?: boolean;
+    phoneScores: Array<{
+      phone: string;
+      soundMostLike: string;
+      score: number;
+    }>;
+  }>;
+  metrics: {
+    badPauses: number;
+    accuracy: number;
+  };
+  userAudioUrl: string;
+}
+
+/**
  * Pronunciation Scoring Service
  * Service chính xử lý chấm điểm phát âm
  */
 export class PronunciationScoringService {
   private cloudinaryService: CloudinaryService;
   private whisperService: WhisperService;
+  private openai: OpenAI;
 
   constructor() {
     this.cloudinaryService = new CloudinaryService();
     this.whisperService = new WhisperService();
+    this.openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
   }
 
   /**
@@ -294,13 +332,367 @@ export class PronunciationScoringService {
   }
 
   /**
+   * ═══════════════════════════════════════════════════════════════════
+   * FREE SPEAKING - Score recording với IELTS criteria
+   * ═══════════════════════════════════════════════════════════════════
+   */
+  async scoreFreeSpeaking(
+    userId: string,
+    topicId: string,
+    topicTitle: string,
+    questions: string[],
+    audioFilePath: string
+  ): Promise<FreeSpeakingResult> {
+    try {
+      console.log('🎤 Starting Free Speaking scoring...');
+      console.log('👤 User ID:', userId);
+      console.log('📝 Topic:', topicTitle);
+
+      // ═══════════════════════════════════════════════════════════════
+      // STEP 1: Upload to Cloudinary
+      // ═══════════════════════════════════════════════════════════════
+      console.log('☁️ Uploading audio to Cloudinary...');
+      const cloudinaryResult = await this.cloudinaryService.uploadAudio(
+        audioFilePath,
+        {
+          folder: 'free-speaking-recordings',
+          publicId: `user-${userId}-topic-${topicId}-${Date.now()}`,
+        }
+      );
+      console.log('✅ Audio uploaded:', cloudinaryResult.secureUrl);
+
+      // ═══════════════════════════════════════════════════════════════
+      // STEP 2: Download MP3 for Speechace
+      // ═══════════════════════════════════════════════════════════════
+      console.log('📥 Downloading MP3 from Cloudinary for Speechace...');
+      const mp3Path = await this.downloadAudioFromCloudinary(
+        cloudinaryResult.secureUrl,
+        userId,
+        topicId
+      );
+
+      // ═══════════════════════════════════════════════════════════════
+      // STEP 3: Transcribe với Whisper
+      // ═══════════════════════════════════════════════════════════════
+      console.log('📝 Transcribing audio with Whisper...');
+      const transcript = await this.whisperService.transcribeAudio(audioFilePath, 'en');
+      console.log('✅ Transcript:', transcript);
+
+      // ═══════════════════════════════════════════════════════════════
+      // STEP 4: Score Pronunciation/Fluency với Speechace Pro
+      // ═══════════════════════════════════════════════════════════════
+      console.log('🎯 Scoring with Speechace Pro API...');
+      const speechaceResult = await speechaceService.scoreAudio(
+        mp3Path,
+        transcript,  // Dùng transcript làm reference text
+        userId
+      );
+
+      console.log('📊 Speechace Scores:');
+      console.log('  - Overall Quality:', speechaceResult.text_score.quality_score);
+      console.log('  - Pronunciation (from quality):', speechaceResult.text_score.quality_score);
+      console.log('  - Fluency (from quality):', speechaceResult.text_score.quality_score);
+      console.log('  - Words analyzed:', speechaceResult.text_score.word_score_list.length);
+
+      // ═══════════════════════════════════════════════════════════════
+      // STEP 5: Parse word scores & Extract timing
+      // ═══════════════════════════════════════════════════════════════
+      const wordScores = speechaceService.parseWordScores(
+        speechaceResult.text_score.word_score_list
+      );
+
+      // ═══════════════════════════════════════════════════════════════
+      // STEP 6: Detect pauses from timing gaps
+      // ═══════════════════════════════════════════════════════════════
+      const pauseInfo = this.detectPausesFromExtent(wordScores);
+      console.log('⏸️ Bad pauses detected:', pauseInfo.badPauses);
+
+      // ═══════════════════════════════════════════════════════════════
+      // STEP 7: Score Vocabulary/Grammar với GPT-4
+      // ═══════════════════════════════════════════════════════════════
+      console.log('🤖 Scoring Vocabulary/Grammar with GPT-4...');
+      const gptScores = await this.scoreWithGPT4(
+        topicTitle,
+        questions,
+        transcript
+      );
+
+      console.log('✅ GPT-4 Scores:');
+      console.log('  - Vocabulary:', gptScores.vocabulary);
+      console.log('  - Grammar:', gptScores.grammar);
+
+      // ═══════════════════════════════════════════════════════════════
+      // STEP 8: Convert to IELTS scale (0-9)
+      // ═══════════════════════════════════════════════════════════════
+      // Speechace v0.5 chỉ có quality_score, dùng cho cả pronunciation và fluency
+      const qualityScore = speechaceResult.text_score.quality_score;
+      const ieltsScores = {
+        pronunciation: this.toIELTS(qualityScore),
+        fluency: this.toIELTS(qualityScore),
+        vocabulary: gptScores.vocabulary,
+        grammar: gptScores.grammar,
+        overall: 0,
+      };
+
+      // Overall = average of 4 criteria
+      ieltsScores.overall = this.round(
+        (ieltsScores.pronunciation + ieltsScores.fluency + 
+         ieltsScores.vocabulary + ieltsScores.grammar) / 4
+      );
+
+      console.log('📊 IELTS Scores:', ieltsScores);
+
+      // ═══════════════════════════════════════════════════════════════
+      // STEP 9: Calculate metrics
+      // ═══════════════════════════════════════════════════════════════
+      const metrics = {
+        badPauses: pauseInfo.badPauses,
+        accuracy: this.calculateAccuracy(wordScores),
+      };
+
+      console.log('📈 Metrics:', metrics);
+
+      // ═══════════════════════════════════════════════════════════════
+      // STEP 10: Save to Database
+      // ═══════════════════════════════════════════════════════════════
+      console.log('💾 Saving Free Speaking session to database...');
+      const session = await FreeSpeakingSession.create({
+        userId,
+        topicId,
+        topicTitle,
+        questions,
+        userAudioUrl: cloudinaryResult.secureUrl,
+        userAudioPublicId: cloudinaryResult.publicId,
+        transcript,
+        scores: ieltsScores,
+        wordScores,
+        metrics,
+        recordingDuration: cloudinaryResult.duration,
+        completedAt: new Date(),
+      });
+
+      console.log('✅ Free Speaking session saved:', session._id);
+
+      // ═══════════════════════════════════════════════════════════════
+      // STEP 11: Cleanup temp files
+      // ═══════════════════════════════════════════════════════════════
+      try {
+        if (fs.existsSync(mp3Path)) {
+          fs.unlinkSync(mp3Path);
+        }
+        if (fs.existsSync(audioFilePath)) {
+          fs.unlinkSync(audioFilePath);
+        }
+        console.log('🗑️ Cleaned up temp files');
+      } catch (cleanupError) {
+        console.warn('⚠️ Failed to cleanup temp files:', cleanupError);
+      }
+
+      // ═══════════════════════════════════════════════════════════════
+      // STEP 12: Return result
+      // ═══════════════════════════════════════════════════════════════
+      return {
+        sessionId: session._id,
+        transcript,
+        scores: ieltsScores,
+        wordScores,
+        metrics,
+        userAudioUrl: cloudinaryResult.secureUrl,
+      };
+
+    } catch (error) {
+      console.error('❌ Free Speaking scoring failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get latest Free Speaking session for a topic
+   */
+  async getLatestFreeSpeakingSession(
+    userId: string,
+    topicId: string
+  ): Promise<FreeSpeakingResult | null> {
+    try {
+      const session = await FreeSpeakingSession
+        .findOne({ userId, topicId })
+        .sort({ completedAt: -1 })
+        .limit(1);
+
+      if (!session) {
+        return null;
+      }
+
+      return {
+        sessionId: session._id,
+        transcript: session.transcript,
+        scores: session.scores,
+        wordScores: session.wordScores,
+        metrics: session.metrics,
+        userAudioUrl: session.userAudioUrl,
+      };
+
+    } catch (error) {
+      console.error('❌ Failed to get latest Free Speaking session:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get Free Speaking history for user
+   */
+  async getFreeSpeakingHistory(userId: string, limit: number = 20) {
+    try {
+      const sessions = await FreeSpeakingSession
+        .find({ userId })
+        .select('topicId topicTitle scores.overall completedAt')
+        .sort({ completedAt: -1 })
+        .limit(limit);
+
+      return sessions;
+
+    } catch (error) {
+      console.error('❌ Failed to get Free Speaking history:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * ═══════════════════════════════════════════════════════════════════
+   * HELPER METHODS for Free Speaking
+   * ═══════════════════════════════════════════════════════════════════
+   */
+
+  /**
+   * Score Vocabulary & Grammar với GPT-4
+   */
+  private async scoreWithGPT4(
+    topicTitle: string,
+    questions: string[],
+    transcript: string
+  ): Promise<{ vocabulary: number; grammar: number }> {
+    try {
+      const prompt = `You are an IELTS Speaking examiner. Evaluate this response:
+
+**Topic:** ${topicTitle}
+
+**Questions:**
+${questions.map((q, i) => `${i + 1}. ${q}`).join('\n')}
+
+**User's Answer:**
+"${transcript}"
+
+Rate the following on IELTS scale (0-9):
+
+1. **Vocabulary** (Lexical Resource):
+   - Range (variety of words)
+   - Accuracy (correct usage)
+   - Appropriacy (suitable for topic)
+
+2. **Grammar** (Grammatical Range and Accuracy):
+   - Range (variety of structures)
+   - Accuracy (correct usage)
+   - Complexity (simple vs complex sentences)
+
+Return ONLY valid JSON:
+{
+  "vocabulary": 7.5,
+  "grammar": 6.0,
+  "vocabulary_feedback": "Good range but some repetition",
+  "grammar_feedback": "Mostly simple sentences, few errors"
+}`;
+
+      const response = await this.openai.chat.completions.create({
+        model: 'gpt-4o',  // gpt-4o supports json_object response format
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' },
+        temperature: 0.3,
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{}');
+
+      return {
+        vocabulary: this.round(result.vocabulary || 6.0),
+        grammar: this.round(result.grammar || 6.0),
+      };
+
+    } catch (error) {
+      console.error('❌ GPT-4 scoring failed:', error);
+      // Fallback to default scores
+      return {
+        vocabulary: 6.0,
+        grammar: 6.0,
+      };
+    }
+  }
+
+  /**
+   * Detect pauses từ word timing gaps
+   * Gap > 500ms = pause
+   */
+  private detectPausesFromExtent(
+    wordScores: IWordScore[]
+  ): { badPauses: number; pausePositions: number[] } {
+    let pauseCount = 0;
+    const pausePositions: number[] = [];
+    const PAUSE_THRESHOLD_MS = 500; // 500ms
+
+    for (let i = 0; i < wordScores.length - 1; i++) {
+      const currentWord = wordScores[i];
+      const nextWord = wordScores[i + 1];
+
+      if (!currentWord.endTime || !nextWord.startTime) {
+        continue;
+      }
+
+      const gapMs = (nextWord.startTime - currentWord.endTime) * 1000;
+
+      if (gapMs > PAUSE_THRESHOLD_MS) {
+        pauseCount++;
+        pausePositions.push(i);
+        // Mark pause on current word
+        (wordScores[i] as any).pauseAfter = true;
+
+        console.log(`⏸️ Pause after "${currentWord.word}" (${gapMs.toFixed(0)}ms)`);
+      }
+    }
+
+    return { badPauses: pauseCount, pausePositions };
+  }
+
+  /**
+   * Convert Speechace (0-100) → IELTS (0-9)
+   */
+  private toIELTS(score: number | undefined): number {
+    if (!score) return 0;
+    const ielts = (score / 100) * 9;
+    return this.round(ielts);
+  }
+
+  /**
+   * Round to nearest 0.5 (IELTS format)
+   */
+  private round(num: number): number {
+    return Math.round(num * 2) / 2;
+  }
+
+  /**
+   * Calculate accuracy (% of words >= 70 score)
+   */
+  private calculateAccuracy(wordScores: IWordScore[]): number {
+    if (wordScores.length === 0) return 0;
+    const correct = wordScores.filter(w => w.score >= 70).length;
+    return Math.round((correct / wordScores.length) * 100);
+  }
+
+  /**
    * Download audio file from Cloudinary for Speechace API
    * Speechace requires MP3/WAV format, Cloudinary auto-converts to MP3
    */
   private async downloadAudioFromCloudinary(
     audioUrl: string,
     userId: string,
-    promptIndex: number
+    identifier: string | number
   ): Promise<string> {
     try {
       const response = await axios.get(audioUrl, {
@@ -313,7 +705,7 @@ export class PronunciationScoringService {
         fs.mkdirSync(tempDir, { recursive: true });
       }
 
-      const fileName = `cloudinary-mp3-${userId}-${promptIndex}-${Date.now()}.mp3`;
+      const fileName = `cloudinary-mp3-${userId}-${identifier}-${Date.now()}.mp3`;
       const filePath = path.join(tempDir, fileName);
 
       fs.writeFileSync(filePath, Buffer.from(response.data));

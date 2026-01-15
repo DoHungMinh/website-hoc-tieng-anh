@@ -15,6 +15,7 @@ import voiceChatRoutes from "./voiceChat.routes";
 import levelPackageRoutes from "./levelPackage.routes";
 import levelEnrollmentRoutes from "./levelEnrollment.routes";
 import pronunciationRoutes from "./pronunciation.routes";
+import freeSpeakingRoutes from "./freeSpeaking.routes";
 
 const router = Router();
 
@@ -57,6 +58,9 @@ router.use("/voice", voiceChatRoutes);
 
 // Pronunciation practice routes (NEW)
 router.use("/pronunciation", pronunciationRoutes);
+
+// Free Speaking routes (NEW - IELTS-style speaking)
+router.use("/free-speaking", freeSpeakingRoutes);
 
 // Level Package routes (NEW - Level-based learning)
 router.use("/level-packages", levelPackageRoutes);

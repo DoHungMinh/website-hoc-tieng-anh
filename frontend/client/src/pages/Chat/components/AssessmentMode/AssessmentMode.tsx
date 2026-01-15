@@ -20,6 +20,7 @@ interface AssessmentModeProps {
 const AssessmentMode: React.FC<AssessmentModeProps> = ({ onToggleVisibility }) => {
     const [assessmentView, setAssessmentView] = useState<AssessmentView>('cards');
     const [selectedTopic, setSelectedTopic] = useState<{ id: string; title: string; description: string } | null>(null);
+    const [resultData, setResultData] = useState<any>(null);
 
     // Show/hide mode toggle based on current view
     useEffect(() => {
@@ -47,13 +48,20 @@ const AssessmentMode: React.FC<AssessmentModeProps> = ({ onToggleVisibility }) =
         setAssessmentView('recording');
     };
 
-    const handleViewResult = () => {
+    const handleViewResult = (data: any) => {
+        setResultData(data);
+        setAssessmentView('result');
+    };
+
+    const handleReviewLastScore = (data: any) => {
+        setResultData(data);
         setAssessmentView('result');
     };
 
     const handleBackToCards = () => {
         setAssessmentView('cards');
         setSelectedTopic(null);
+        setResultData(null);
     };
 
     const handleBackToTopics = () => {
@@ -92,6 +100,7 @@ const AssessmentMode: React.FC<AssessmentModeProps> = ({ onToggleVisibility }) =
                     topicDescription={selectedTopic.description}
                     onBack={handleBackToTopics}
                     onStartRecording={handleStartRecording}
+                    onReviewLastScore={handleReviewLastScore}
                 />
             )}
 
@@ -104,7 +113,7 @@ const AssessmentMode: React.FC<AssessmentModeProps> = ({ onToggleVisibility }) =
                 />
             )}
 
-            {assessmentView === 'result' && selectedTopic && (
+            {assessmentView === 'result' && selectedTopic && resultData && (
                 <FreeSpeakingResult
                     topicId={selectedTopic.id}
                     topicTitle={selectedTopic.title}
@@ -120,6 +129,7 @@ const AssessmentMode: React.FC<AssessmentModeProps> = ({ onToggleVisibility }) =
                             "Do you think it is ok to keep animals in a zoo?"
                         ]
                     }
+                    resultData={resultData}
                     onBack={handleBackToFreeSpeaking}
                 />
             )}

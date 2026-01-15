@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, MessageSquare } from 'lucide-react';
+import { API_BASE_URL } from '@/utils/constants';
 import styles from './FreeSpeakingPractice.module.css';
 
 interface FreeSpeakingPracticeProps {
@@ -8,6 +9,7 @@ interface FreeSpeakingPracticeProps {
     topicDescription: string;
     onBack: () => void;
     onStartRecording: () => void;
+    onReviewLastScore: (data: any) => void;
 }
 
 const FreeSpeakingPractice: React.FC<FreeSpeakingPracticeProps> = ({
@@ -15,13 +17,38 @@ const FreeSpeakingPractice: React.FC<FreeSpeakingPracticeProps> = ({
     topicTitle,
     topicDescription,
     onBack,
-    onStartRecording
+    onStartRecording,
+    onReviewLastScore
 }) => {
     const [lastScore] = useState<number | null>(5.8);
 
-    const handleReviewLastScore = () => {
+    const handleReviewLastScore = async () => {
         console.log('Review last score');
-        // TODO: Navigate to review page
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Vui lòng đăng nhập để xem kết quả');
+                return;
+            }
+
+            const response = await fetch(`${API_BASE_URL}/free-speaking/latest/${topicId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.data) {
+                console.log('✅ Latest session loaded:', result.data);
+                onReviewLastScore(result.data);
+            } else {
+                alert('Chưa có lịch sử làm bài cho topic này');
+            }
+        } catch (error) {
+            console.error('❌ Error loading latest session:', error);
+            alert('Lỗi khi tải kết quả. Vui lòng thử lại.');
+        }
     };
 
     const handleStartPractice = () => {
@@ -39,7 +66,6 @@ const FreeSpeakingPractice: React.FC<FreeSpeakingPracticeProps> = ({
                 </button>
                 <div className={styles.headerContent}>
                     <h1 className={styles.topicTitle}>{topicTitle}</h1>
-                    <div className={styles.completedBadge}>0 of 1 completed</div>
                 </div>
             </div>
 
@@ -52,11 +78,8 @@ const FreeSpeakingPractice: React.FC<FreeSpeakingPracticeProps> = ({
                             <MessageSquare size={28} color="#8b5cf6" />
                         </div>
                         <h3 className={styles.cardTitle}>{topicTitle}</h3>
-                        <p className={styles.cardDescription}>{topicDescription}</p>
+                        <p className={styles.cardDescription}>Click here to see your last result</p>
                         <div className={styles.cardFooter}>
-                            <div className={styles.scoreBadge} style={{ background: '#dc2626' }}>
-                                My last score: {lastScore}
-                            </div>
                             <button 
                                 className={styles.actionButton}
                                 style={{ background: '#3b82f6', color: 'white' }}
@@ -76,9 +99,6 @@ const FreeSpeakingPractice: React.FC<FreeSpeakingPracticeProps> = ({
                     <h3 className={styles.cardTitle}>{topicTitle}</h3>
                     <p className={styles.cardDescription}>{topicDescription}</p>
                     <div className={styles.cardFooter}>
-                        <div className={styles.scoreBadge} style={{ background: '#6b7280', opacity: 0.5 }}>
-                            My score: -
-                        </div>
                         <button 
                             className={styles.actionButton}
                             style={{ background: '#3b82f6', color: 'white' }}

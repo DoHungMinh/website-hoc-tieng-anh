@@ -6,6 +6,7 @@ interface FreeSpeakingResultProps {
     topicId: string;
     topicTitle: string;
     questions: string[];
+    resultData: any;  // Real data từ API
     onBack: () => void;
 }
 
@@ -28,100 +29,38 @@ const FreeSpeakingResult: React.FC<FreeSpeakingResultProps> = ({
     topicId,
     topicTitle,
     questions,
+    resultData,
     onBack
 }) => {
-    // Mock data - TODO: Replace with real data from API
-    const [scores] = useState<ScoreData>({
-        overall: 7.5,
-        pronunciation: 8.5,
-        fluency: 9,
-        vocabulary: 6,
-        grammar: 6.5
-    });
+    // Use real data from API
+    const scores = resultData.scores || {
+        overall: 0,
+        pronunciation: 0,
+        fluency: 0,
+        vocabulary: 0,
+        grammar: 0
+    };
 
-    const [metrics] = useState({
-        badPauses: 2,
-        accuracy: 93
-    });
+    const metrics = resultData.metrics || {
+        badPauses: 0,
+        accuracy: 0
+    };
 
-    const [audioUrl] = useState('https://example.com/audio.mp3');
+    const audioUrl = resultData.userAudioUrl || '';
     const [isPlaying, setIsPlaying] = useState(false);
+    const audioRef = React.useRef<HTMLAudioElement>(null);
 
-    const [transcript] = useState<TranscriptWord[]>([
-        { word: 'I', isCorrect: true, score: 95 },
-        { word: 'got', isCorrect: true, score: 99 },
-        { word: 'my', isCorrect: true, score: 92 },
-        { word: 'first', isCorrect: true, score: 88 },
-        { word: 'computer', isCorrect: true, score: 94 },
-        { word: 'when', isCorrect: true, score: 97 },
-        { word: 'I', isCorrect: true, score: 95 },
-        { word: 'was', isCorrect: false, score: 50 },
-        { word: 'eight.', isCorrect: true, score: 91, pauseAfter: true },
-        { word: 'And', isCorrect: true, score: 96 },
-        { word: 'the', isCorrect: false, score: 49 },
-        { word: 'first', isCorrect: true, score: 88 },
-        { word: 'time', isCorrect: true, score: 93 },
-        { word: 'I', isCorrect: true, score: 95 },
-        { word: 'wrote', isCorrect: true, score: 89 },
-        { word: 'a', isCorrect: true, score: 98 },
-        { word: 'program,', isCorrect: true, score: 87 },
-        { word: 'it', isCorrect: true, score: 97 },
-        { word: 'was', isCorrect: true, score: 94 },
-        { word: 'in', isCorrect: true, score: 96 },
-        { word: 'simple', isCorrect: true, score: 85 },
-        { word: 'basic', isCorrect: true, score: 90 },
-        { word: 'and', isCorrect: true, score: 98 },
-        { word: 'I', isCorrect: true, score: 95 },
-        { word: 'just', isCorrect: true, score: 92 },
-        { word: 'got', isCorrect: true, score: 99 },
-        { word: 'this', isCorrect: true, score: 93 },
-        { word: 'feeling', isCorrect: true, score: 86 },
-        { word: 'they', isCorrect: true, score: 71 },
-        { word: 'got', isCorrect: true, score: 99 },
-        { word: 'when', isCorrect: true, score: 97 },
-        { word: 'you', isCorrect: true, score: 96, pauseAfter: true },
-        { word: 'were', isCorrect: false, score: 48 },
-        { word: 'able', isCorrect: true, score: 90 },
-        { word: 'to', isCorrect: true, score: 98 },
-        { word: 'create', isCorrect: true, score: 87 },
-        { word: 'something', isCorrect: true, score: 84 },
-        { word: 'and', isCorrect: true, score: 98 },
-        { word: 'realized', isCorrect: true, score: 82 },
-        { word: 'that', isCorrect: false, score: 52 },
-        { word: 'the', isCorrect: true, score: 96 },
-        { word: 'freedom', isCorrect: true, score: 81 },
-        { word: 'that', isCorrect: true, score: 94 },
-        { word: 'you', isCorrect: true, score: 96 },
-        { word: 'get', isCorrect: true, score: 97 },
-        { word: 'with', isCorrect: true, score: 95 },
-        { word: 'programming', isCorrect: true, score: 79 },
-        { word: 'your', isCorrect: false, score: 47 },
-        { word: 'ability', isCorrect: true, score: 83 },
-        { word: 'to', isCorrect: false, score: 51 },
-        { word: 'create.', isCorrect: true, score: 89 },
-        { word: 'I', isCorrect: true, score: 95 },
-        { word: 'just', isCorrect: true, score: 92 },
-        { word: 'fell', isCorrect: true, score: 88 },
-        { word: 'in', isCorrect: false, score: 46 },
-        { word: 'love', isCorrect: true, score: 94 },
-        { word: 'with', isCorrect: true, score: 95 },
-        { word: 'that.', isCorrect: true, score: 93 },
-        { word: 'And', isCorrect: true, score: 96 },
-        { word: 'from', isCorrect: true, score: 91 },
-        { word: 'that', isCorrect: false, score: 48 },
-        { word: 'point', isCorrect: true, score: 87 },
-        { word: 'onwards.', isCorrect: true, score: 85 },
-        { word: 'I', isCorrect: true, score: 95 },
-        { word: 'knew', isCorrect: true, score: 86 },
-        { word: 'that', isCorrect: true, score: 94 },
-        { word: 'I', isCorrect: true, score: 95 },
-        { word: 'wanted', isCorrect: true, score: 84 },
-        { word: 'to', isCorrect: false, score: 49 },
-        { word: 'be', isCorrect: false, score: 50 },
-        { word: 'a', isCorrect: true, score: 98 },
-        { word: 'software', isCorrect: false, score: 45 },
-        { word: 'engineer.', isCorrect: false }
-    ]);
+    // Debug log
+    console.log('🎵 FreeSpeakingResult - Audio URL:', audioUrl);
+    console.log('📊 FreeSpeakingResult - Scores:', scores);
+
+    // Transform wordScores từ API sang format của UI
+    const transcript = (resultData.wordScores || []).map((item: any) => ({
+        word: item.word,
+        isCorrect: item.score >= 70,  // Green if >= 70, Red if < 70
+        score: item.score,
+        pauseAfter: item.pauseAfter || false
+    }));
 
     const getScoreColor = (score: number) => {
         if (score >= 8) return '#10b981'; // Green
@@ -130,8 +69,19 @@ const FreeSpeakingResult: React.FC<FreeSpeakingResultProps> = ({
     };
 
     const toggleAudio = () => {
-        setIsPlaying(!isPlaying);
-        // TODO: Implement actual audio play/pause
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        if (isPlaying) {
+            audio.pause();
+            setIsPlaying(false);
+        } else {
+            audio.play().catch(err => {
+                console.error('❌ Audio play failed:', err);
+                alert('Không thể phát audio. Vui lòng thử lại.');
+            });
+            setIsPlaying(true);
+        }
     };
 
     return (
@@ -249,7 +199,14 @@ const FreeSpeakingResult: React.FC<FreeSpeakingResultProps> = ({
                     <button className={styles.playButton} onClick={toggleAudio}>
                         {isPlaying ? <Pause size={20} /> : <Play size={20} />}
                     </button>
-                    <audio src={audioUrl} className={styles.audioElement}></audio>
+                    <audio 
+                        ref={audioRef}
+                        src={audioUrl} 
+                        className={styles.audioElement}
+                        onEnded={() => setIsPlaying(false)}
+                        onPause={() => setIsPlaying(false)}
+                        onPlay={() => setIsPlaying(true)}
+                    ></audio>
                 </div>
 
                 {/* Transcript Text */}
@@ -266,13 +223,6 @@ const FreeSpeakingResult: React.FC<FreeSpeakingResultProps> = ({
                             {item.pauseAfter && <span className={styles.pauseMarker}>●</span>}
                         </React.Fragment>
                     ))}
-                </div>
-
-                {/* Pronunciation Score */}
-                <div className={styles.pronunciationScore}>
-                    <div className={styles.scoreCircle}>
-                        {scores.pronunciation}
-                    </div>
                 </div>
             </div>
         </div>

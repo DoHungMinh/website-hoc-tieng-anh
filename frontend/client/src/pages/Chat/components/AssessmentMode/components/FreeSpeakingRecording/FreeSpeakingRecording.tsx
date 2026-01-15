@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, Loader2 } from 'lucide-react';
+import { API_BASE_URL } from '@/utils/constants';
 import styles from './FreeSpeakingRecording.module.css';
 
 interface FreeSpeakingRecordingProps {
     topicId: string;
     topicTitle: string;
     onBack: () => void;
-    onViewResult: () => void;
+    onViewResult: (data: any) => void;
 }
 
 interface TopicQuestions {
@@ -38,10 +39,11 @@ const FreeSpeakingRecording: React.FC<FreeSpeakingRecordingProps> = ({
     const [countdown, setCountdown] = useState(44);
     const [isLoading, setIsLoading] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
+    const [resultData, setResultData] = useState<any>(null);
     
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
-    const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const countdownIntervalRef = useRef<number | null>(null);
 
     const questions = TOPIC_QUESTIONS[topicId] || [];
 
@@ -50,12 +52,13 @@ const FreeSpeakingRecording: React.FC<FreeSpeakingRecordingProps> = ({
         return () => {
             if (countdownIntervalRef.current) {
                 clearInterval(countdownIntervalRef.current);
+                countdownIntervalRef.current = null;
             }
-            if (mediaRecorderRef.current && isRecording) {
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
                 mediaRecorderRef.current.stop();
             }
         };
-    }, [isRecording]);
+    }, []);
 
     const startRecording = async () => {
         try {
@@ -80,10 +83,15 @@ const FreeSpeakingRecording: React.FC<FreeSpeakingRecordingProps> = ({
             setIsRecording(true);
             setCountdown(44);
 
-            // Start countdown
-            countdownIntervalRef.current = setInterval(() => {
+            // Start countdown timer
+            countdownIntervalRef.current = window.setInterval(() => {
                 setCountdown((prev) => {
                     if (prev <= 1) {
+                        // Stop recording when countdown reaches 0
+                        if (countdownIntervalRef.current) {
+                            clearInterval(countdownIntervalRef.current);
+                            countdownIntervalRef.current = null;
+                        }
                         stopRecording();
                         return 0;
                     }
@@ -112,19 +120,54 @@ const FreeSpeakingRecording: React.FC<FreeSpeakingRecordingProps> = ({
     const handleSubmitRecording = async (blob: Blob) => {
         setIsLoading(true);
 
-        // TODO: Submit to backend API for scoring
-        console.log('Submitting audio for topic:', topicId);
-        console.log('Audio blob size:', blob.size);
+        try {
+            const formData = new FormData();
+            formData.append('audio', blob, 'recording.webm');
+            formData.append('topicId', topicId);
+            formData.append('topicTitle', topicTitle);
+            formData.append('questions', JSON.stringify(questions));
 
-        // Simulate API call
-        setTimeout(() => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Vui lòng đăng nhập để tiếp tục');
+                setIsLoading(false);
+                return;
+            }
+
+            console.log('📤 Submitting recording for topic:', topicId);
+
+            const response = await fetch(`${API_BASE_URL}/free-speaking/score`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: formData,
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                console.log('✅ Scoring completed:', result.data);
+                console.log('📊 Scores received:', result.data.scores);
+                setResultData(result.data);
+                setIsCompleted(true);
+            } else {
+                console.error('❌ Scoring failed:', result.error);
+                alert(`Không thể chấm điểm: ${result.error}`);
+                setIsLoading(false);
+            }
+
+        } catch (error) {
+            console.error('❌ Error submitting recording:', error);
+            alert('Lỗi kết nối. Vui lòng kiểm tra internet và thử lại.');
             setIsLoading(false);
-            setIsCompleted(true);
-        }, 3000);
+        }
     };
 
     const handleViewResult = () => {
-        onViewResult();
+        if (resultData) {
+            onViewResult(resultData);
+        }
     };
 
     return (
@@ -179,7 +222,7 @@ const FreeSpeakingRecording: React.FC<FreeSpeakingRecordingProps> = ({
                         </>
                     )}
 
-                    {isLoading && (
+                    {isLoading && !isCompleted && (
                         <div className={styles.loadingSection}>
                             <Loader2 size={48} className={styles.spinner} />
                             <p className={styles.loadingText}>Đang chấm điểm...</p>
