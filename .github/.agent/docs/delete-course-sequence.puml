@@ -1,0 +1,46 @@
+@startuml
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+
+actor Admin
+
+boundary "View: CourseManagement.tsx" as View
+control "Controller: courseController.ts" as Controller
+entity "Model: Course (MongoDB)" as Model
+
+Admin -> View : 1: Click nút "Xóa" trên khóa học
+activate View
+
+View -> View : 1.1: Hiển thị confirm dialog\n"Bạn có chắc chắn muốn xóa khóa học này?"
+
+alt Admin xác nhận xóa
+    Admin -> View : 2: Nhấn "OK" để xác nhận
+    View -> Controller : 2.1: DELETE /api/course/:id\nGửi request xóa (JWT)
+    activate Controller
+
+    Controller -> Controller : 2.2: Kiểm tra xác thực JWT\nvà quyền admin
+
+    Controller -> Model : 2.3: Course.findByIdAndDelete(id)\nXóa khóa học khỏi MongoDB
+    activate Model
+    deactivate Model
+
+    alt Xóa thành công
+        Controller --> View : 2.4: Response 200 OK\n{ success: true, message: "Xóa khóa học thành công" }
+        deactivate Controller
+
+        View -> View : 2.5: Hiển thị alert\n"Xóa khóa học thành công!"
+        View -> View : 2.6: Gọi fetchCourses()\nCập nhật lại danh sách
+    else Không tìm thấy khóa học
+        Controller --> View : 2.7: Response 404\n{ success: false, message: "Không tìm thấy khóa học" }
+        deactivate Controller
+
+        View -> View : 2.8: Hiển thị alert\n"Lỗi khi xóa khóa học"
+    end
+else Admin hủy xóa
+    Admin -> View : 3: Nhấn "Cancel"
+    View -> View : 3.1: Đóng dialog, không thực hiện gì
+end
+
+deactivate View
+
+@enduml

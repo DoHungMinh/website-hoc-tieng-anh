@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Loader2, Play, MessageSquare, Plus, XCircle } from 'lucide-react';
+import { Mic, MicOff, Loader2, Play, Pause, MessageSquare, Plus, XCircle } from 'lucide-react';
 import { useRealtimeAI } from '@/hooks/useRealtimeAI';
 import Logo from '@/components/common/Logo/Logo';
 import styles from './ConversationMode.module.css';
 
 /**
- * Conversation Mode Component  
- * Voice chat interface with AI using OpenAI Realtime API
+ * Realtime Conversation Mode Component
+ * Uses OpenAI Realtime API for low-latency voice chat
  */
-const ConversationMode: React.FC = () => {
+const RealtimeConversationMode: React.FC = () => {
     const {
         isConnected,
         isConnecting,
@@ -28,12 +28,10 @@ const ConversationMode: React.FC = () => {
     const [isRecording, setIsRecording] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
 
-    const audioContextRef = useRef<AudioContext | null>(null);
-    const processorRef = useRef<ScriptProcessorNode | null>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
-    const recordingIntervalRef = useRef<number | null>(null);
+    const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const hasAudioDataRef = useRef<boolean>(false);
 
     // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
@@ -61,42 +59,39 @@ const ConversationMode: React.FC = () => {
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
                     channelCount: 1,
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    sampleRate: 24000,
+                    sampleRate: 16000, // 16kHz for Realtime API
                 },
             });
+
             streamRef.current = stream;
 
-            // AudioContext setup for PCM16 conversion
-            const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-            const audioContext = new AudioContextClass({ sampleRate: 24000 });
-            audioContextRef.current = audioContext;
+            const mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'audio/webm;codecs=opus',
+                audioBitsPerSecond: 16000,
+            });
 
-            const source = audioContext.createMediaStreamSource(stream);
-            const processor = audioContext.createScriptProcessor(4096, 1, 1);
-            processorRef.current = processor;
+            mediaRecorderRef.current = mediaRecorder;
 
-            processor.onaudioprocess = (e) => {
-                const inputData = e.inputBuffer.getChannelData(0);
-                const int16Buffer = new Int16Array(inputData.length);
-
-                for (let i = 0; i < inputData.length; i++) {
-                    const s = Math.max(-1, Math.min(1, inputData[i]));
-                    int16Buffer[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            // Send audio chunks as they're available
+            mediaRecorder.ondataavailable = async (event) => {
+                if (event.data.size > 0 && sessionId) {
+                    await sendAudioChunk(event.data);
                 }
-
-                sendAudioChunk(int16Buffer as any);
-                hasAudioDataRef.current = true;
             };
 
-            source.connect(processor);
-            processor.connect(audioContext.destination);
+            mediaRecorder.onstop = async () => {
+                // Commit audio buffer when recording stops
+                if (sessionId) {
+                    await commitAudio();
+                }
+            };
 
+            // Start recording with 100ms chunks for low latency
+            mediaRecorder.start(100);
             setIsRecording(true);
 
             // Start recording timer
-            recordingIntervalRef.current = window.setInterval(() => {
+            recordingIntervalRef.current = setInterval(() => {
                 setRecordingTime(prev => prev + 1);
             }, 1000);
 
@@ -108,15 +103,8 @@ const ConversationMode: React.FC = () => {
 
     // Stop recording
     const stopRecording = () => {
-        // Disconnect and cleanup Audio Nodes
-        if (processorRef.current) {
-            processorRef.current.disconnect();
-            processorRef.current = null;
-        }
-
-        if (audioContextRef.current) {
-            audioContextRef.current.close();
-            audioContextRef.current = null;
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.stop();
         }
 
         if (streamRef.current) {
@@ -127,11 +115,6 @@ const ConversationMode: React.FC = () => {
         if (recordingIntervalRef.current) {
             clearInterval(recordingIntervalRef.current);
             recordingIntervalRef.current = null;
-        }
-
-        // Commit remaining audio
-        if (isRecording && sessionId) {
-            commitAudio();
         }
 
         setIsRecording(false);
@@ -238,8 +221,8 @@ const ConversationMode: React.FC = () => {
                                 <div
                                     key={index}
                                     className={`${styles.messageRow} ${message.role === 'user'
-                                        ? styles.messageRowUser
-                                        : styles.messageRowAssistant
+                                            ? styles.messageRowUser
+                                            : styles.messageRowAssistant
                                         }`}
                                 >
                                     <div className={styles.messageContent}>
@@ -359,4 +342,4 @@ const ConversationMode: React.FC = () => {
     );
 };
 
-export default ConversationMode;
+export default RealtimeConversationMode;

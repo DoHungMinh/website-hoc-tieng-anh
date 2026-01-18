@@ -29,6 +29,7 @@ import {
 } from "./middleware/userActivity";
 import { optionalAuth } from "./middleware/auth";
 import { realtimeService } from "./services/realtimeService";
+import { realtimeAIService } from "./services/realtimeAIService";
 
 // Setup global error handlers
 handleUncaughtException();
@@ -339,9 +340,38 @@ app.get("/api/create-test-user", async (req: Request, res: Response) => {
     }
 });
 
+// Socket.IO authentication middleware
+io.use((socket: any, next) => {
+    try {
+        const token = socket.handshake.auth.token;
+
+        if (!token) {
+            console.warn('⚠️ Socket.IO connection attempt without token');
+            // Allow connection but mark as unauthenticated
+            socket.isAuthenticated = false;
+            return next();
+        }
+
+        // Verify JWT token
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+
+        socket.userId = decoded.id || decoded.userId;
+        socket.isAuthenticated = true;
+
+        console.log(`✅ Socket.IO authenticated: User ${socket.userId}`);
+        next();
+    } catch (error) {
+        console.error('❌ Socket.IO auth error:', error);
+        // Allow connection but mark as unauthenticated
+        socket.isAuthenticated = false;
+        next();
+    }
+});
+
 // Socket.IO connection handling
 io.on("connection", (socket: any) => {
-    console.log("🔗 User connected:", socket.id);
+    console.log("🔗 User connected:", socket.id, socket.isAuthenticated ? `(User: ${socket.userId})` : '(Unauthenticated)');
 
     // Initialize realtime service with socket.io instance
     realtimeService.setSocketIO(io);
@@ -372,6 +402,62 @@ io.on("connection", (socket: any) => {
             socket.emit("chat_error", {
                 message: "Chat service temporarily unavailable",
             });
+        }
+    });
+
+    // ========================================
+    // OpenAI Realtime API Event Handlers
+    // ========================================
+
+    // Start new Realtime API session
+    socket.on("realtime:start-session", async (data: { sessionId: string; userId: string }) => {
+        try {
+            console.log(`🎙️ Starting Realtime API session: ${data.sessionId} for user: ${data.userId}`);
+            await realtimeAIService.createSession(data.sessionId, data.userId, socket);
+        } catch (error) {
+            console.error("❌ Error starting Realtime session:", error);
+            socket.emit("realtime:error", {
+                message: "Failed to start session",
+                error: error instanceof Error ? error.message : "Unknown error",
+            });
+        }
+    });
+
+    // Receive audio chunk from client
+    socket.on("realtime:audio-chunk", async (data: { sessionId: string; audioChunk: string }) => {
+        try {
+            await realtimeAIService.sendAudioChunk(data.sessionId, data.audioChunk);
+        } catch (error) {
+            console.error("❌ Error sending audio chunk:", error);
+        }
+    });
+
+    // Commit audio buffer (end of user speech)
+    socket.on("realtime:commit-audio", async (data: { sessionId: string }) => {
+        try {
+            await realtimeAIService.commitAudioBuffer(data.sessionId);
+        } catch (error) {
+            console.error("❌ Error committing audio buffer:", error);
+        }
+    });
+
+    // End Realtime API session
+    socket.on("realtime:end-session", async (data: { sessionId: string }) => {
+        try {
+            console.log(`🔚 Ending Realtime API session: ${data.sessionId}`);
+            await realtimeAIService.closeSession(data.sessionId);
+        } catch (error) {
+            console.error("❌ Error ending Realtime session:", error);
+        }
+    });
+
+    // Get session info
+    socket.on("realtime:get-session-info", (data: { sessionId: string }) => {
+        try {
+            const info = realtimeAIService.getSessionInfo(data.sessionId);
+            socket.emit("realtime:session-info", info);
+        } catch (error) {
+            console.error("❌ Error getting session info:", error);
         }
     });
 
@@ -431,9 +517,11 @@ connectDB()
             console.log(`🌐 Environment: ${process.env.NODE_ENV}`);
             console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL}`);
 
-            // Initialize realtime service with socket.io
+            // Initialize realtime services with socket.io
             realtimeService.setSocketIO(io);
-            console.log("📡 Real-time service initialized");
+            realtimeAIService.setSocketIO(io);
+            console.log("📡 Real-time services initialized");
+            console.log(`🎙️ OpenAI Realtime API ready (active sessions: ${realtimeAIService.getActiveSessionCount()})`);
 
             // Start user activity cleanup
             startUserActivityCleanup();

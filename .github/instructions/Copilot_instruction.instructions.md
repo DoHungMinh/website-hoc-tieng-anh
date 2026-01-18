@@ -33,3 +33,6 @@ Tài liệu này cung cấp bối cảnh kỹ thuật toàn diện của dự á
 
 [cite\_start] trước khi code hãy đọc thật kỹ các file tôi đã gửi đính kèm để hiểu rõ hơn code. Bên cạnh đó làm chức năng nào phải đọc kỹ tất cả các file liên quan đến chức năng đó không được bỏ sót file nào để hiểu rõ cấu trúc và cách hoạt động của chức năng đó. Bạn đang bị lỗi là không chịu đọc kỹ các file liên quan mà làm luôn code dẫn đến bị lỗi tùm lum, hãy nhớ kỹ điều này nhé.
 [cite\_end]
+
+[cite\_start] khi code cho tôi phải nhớ rằng phải đúng logic, ui, ux, tông màu frontend ban đầu, không được tự ý sửa frontend, chỉ khi có sự đồng ý của tôi mới được sửa fontend nhé.
+[cite\_end]
