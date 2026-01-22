@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Loader2, Play, Pause, MessageSquare, Plus, XCircle } from 'lucide-react';
+import { Mic, MicOff, Loader2, Play, XCircle } from 'lucide-react';
 import { useRealtimeAI } from '@/hooks/useRealtimeAI';
 import Logo from '@/components/common/Logo/Logo';
 import styles from './ConversationMode.module.css';
@@ -22,7 +22,7 @@ const RealtimeConversationMode: React.FC = () => {
         isAIResponding,
         isSpeechDetected,
         error,
-        sessionInfo,
+
     } = useRealtimeAI();
 
     const [isRecording, setIsRecording] = useState(false);
@@ -30,7 +30,7 @@ const RealtimeConversationMode: React.FC = () => {
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
-    const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Auto-scroll to bottom when new messages arrive
@@ -121,14 +121,7 @@ const RealtimeConversationMode: React.FC = () => {
         setRecordingTime(0);
     };
 
-    // Handle new conversation
-    const handleNewConversation = async () => {
-        if (sessionId) {
-            await endSession();
-        }
-        stopRecording();
-        await startSession();
-    };
+
 
     // Format time
     const formatTime = (seconds: number): string => {
@@ -152,36 +145,6 @@ const RealtimeConversationMode: React.FC = () => {
 
     return (
         <>
-            {/* Sidebar */}
-            <aside className={styles.sidebar}>
-                <div className={styles.sidebarHeader}>
-                    <button className={styles.newChatBtn} onClick={handleNewConversation} disabled={!isConnected}>
-                        <Plus size={20} />
-                        <span>New Session</span>
-                    </button>
-                </div>
-
-                <div className={styles.sessionList}>
-                    {sessionInfo && (
-                        <div className={styles.sessionItem}>
-                            <MessageSquare size={16} />
-                            <div className={styles.sessionDetails}>
-                                <span className={styles.sessionTitle}>Last Session</span>
-                                <span className={styles.sessionMeta}>
-                                    {sessionInfo.messageCount} messages • ${sessionInfo.estimatedCost.toFixed(4)}
-                                </span>
-                            </div>
-                        </div>
-                    )}
-
-                    {!sessionInfo && (
-                        <div className={styles.emptyState}>
-                            <p>Chưa có session nào</p>
-                        </div>
-                    )}
-                </div>
-            </aside>
-
             {/* Main Content */}
             <div className={styles.mainArea}>
                 {/* Header */}
@@ -221,8 +184,8 @@ const RealtimeConversationMode: React.FC = () => {
                                 <div
                                     key={index}
                                     className={`${styles.messageRow} ${message.role === 'user'
-                                            ? styles.messageRowUser
-                                            : styles.messageRowAssistant
+                                        ? styles.messageRowUser
+                                        : styles.messageRowAssistant
                                         }`}
                                 >
                                     <div className={styles.messageContent}>

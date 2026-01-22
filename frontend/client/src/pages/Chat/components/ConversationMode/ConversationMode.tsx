@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Loader2, Play, MessageSquare, Plus, XCircle } from 'lucide-react';
+import { Mic, MicOff, Loader2, Play, XCircle } from 'lucide-react';
 import { useRealtimeAI } from '@/hooks/useRealtimeAI';
 import Logo from '@/components/common/Logo/Logo';
 import styles from './ConversationMode.module.css';
@@ -22,7 +22,7 @@ const ConversationMode: React.FC = () => {
         isAIResponding,
         isSpeechDetected,
         error,
-        sessionInfo,
+
     } = useRealtimeAI();
 
     const [isRecording, setIsRecording] = useState(false);
@@ -138,14 +138,7 @@ const ConversationMode: React.FC = () => {
         setRecordingTime(0);
     };
 
-    // Handle new conversation
-    const handleNewConversation = async () => {
-        if (sessionId) {
-            await endSession();
-        }
-        stopRecording();
-        await startSession();
-    };
+
 
     // Format time
     const formatTime = (seconds: number): string => {
@@ -169,67 +162,35 @@ const ConversationMode: React.FC = () => {
 
     return (
         <>
-            {/* Sidebar */}
-            <aside className={styles.sidebar}>
-                <div className={styles.sidebarHeader}>
-                    <button className={styles.newChatBtn} onClick={handleNewConversation} disabled={!isConnected}>
-                        <Plus size={20} />
-                        <span>New Session</span>
-                    </button>
-                </div>
-
-                <div className={styles.sessionList}>
-                    {sessionInfo && (
-                        <div className={styles.sessionItem}>
-                            <MessageSquare size={16} />
-                            <div className={styles.sessionDetails}>
-                                <span className={styles.sessionTitle}>Last Session</span>
-                                <span className={styles.sessionMeta}>
-                                    {sessionInfo.messageCount} messages • ${sessionInfo.estimatedCost.toFixed(4)}
-                                </span>
-                            </div>
-                        </div>
-                    )}
-
-                    {!sessionInfo && (
-                        <div className={styles.emptyState}>
-                            <p>Chưa có session nào</p>
-                        </div>
-                    )}
-                </div>
-            </aside>
-
             {/* Main Content */}
             <div className={styles.mainArea}>
-                {/* Header */}
-                <div className={styles.pageHeader}>
+                {/* Header - Hidden for cleaner UI */}
+                {/* <div className={styles.pageHeader}>
                     <div className={styles.modelSelector}>
                         <span className={styles.modelName}>OpenAI Realtime API (Mini)</span>
                         <span className={styles.modelBadge}>
                             {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
                         </span>
                     </div>
-                </div>
+                </div> */}
 
                 <main className={styles.mainContent}>
-                    {/* Welcome Screen */}
-                    {!hasConversation && (
-                        <>
-                            <div className={styles.logoSection}>
-                                <Logo height={60} color="#8b5cf6" />
-                                <span className={styles.logoText}>Realtime AI</span>
-                            </div>
+                    {/* Welcome Screen - Always visible */}
+                    <div className={styles.logoSection}>
+                        <Logo height={60} color="#8b5cf6" />
+                        <span className={styles.logoText}>Realtime AI</span>
+                    </div>
 
-                            <div className={styles.greeting}>
-                                <h1 className={styles.greetingTitle}>
-                                    <span className={styles.greetingHighlight}>Realtime Voice Chat</span>
-                                </h1>
-                                <p className={styles.greetingSubtitle}>
-                                    Low-latency AI conversation với OpenAI Realtime API
-                                </p>
-                            </div>
-                        </>
-                    )}
+                    <div className={styles.greeting}>
+                        <h1 className={styles.greetingTitle}>
+                            <span className={styles.greetingHighlight}>Realtime Voice Chat</span>
+                        </h1>
+                        <p className={styles.greetingSubtitle}>
+                            Low-latency AI conversation với OpenAI Realtime API
+                        </p>
+                    </div>
+
+
 
                     {/* Chat Messages */}
                     {hasConversation && (
@@ -344,17 +305,18 @@ const ConversationMode: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Session Info */}
-                    {sessionId && (
+
+                    {/* Session Info - Hidden for cleaner UI */}
+                    {/* {sessionId && (
                         <div className={styles.sessionInfoBox}>
                             <p className={styles.sessionId}>Session: {sessionId.substring(0, 20)}...</p>
                             {messages.length > 0 && (
                                 <p className={styles.messageCount}>{messages.length} messages</p>
                             )}
                         </div>
-                    )}
+                    )} */}
                 </main>
-            </div>
+            </div >
         </>
     );
 };
