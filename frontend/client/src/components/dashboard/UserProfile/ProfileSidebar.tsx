@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Shield, Users, UserCheck, Bell, CreditCard, Download, Trash2, LogOut, LayoutDashboard } from 'lucide-react';
+import { User, Shield, Users, UserCheck, Download, Trash2, LogOut, LayoutDashboard } from 'lucide-react';
 import { ProfileTab, TabItem } from './types';
 import styles from './UserProfile.module.css';
 
@@ -13,9 +13,7 @@ interface ProfileSidebarProps {
 
 const tabs: TabItem[] = [
   { id: 'profile', label: 'Hồ sơ cá nhân', icon: User },
-  { id: 'security', label: 'Bảo mật', icon: Shield },
-  { id: 'notifications', label: 'Thông báo', icon: Bell },
-  { id: 'billing', label: 'Thanh toán', icon: CreditCard }
+  { id: 'security', label: 'Bảo mật', icon: Shield }
 ];
 
 const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ 

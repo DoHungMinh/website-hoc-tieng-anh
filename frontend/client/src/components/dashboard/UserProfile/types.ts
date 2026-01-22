@@ -1,12 +1,10 @@
-export type ProfileTab = 
-  | 'profile' 
-  | 'security' 
-  | 'teams' 
-  | 'team-member' 
-  | 'notifications' 
-  | 'billing' 
-  | 'data-export' 
-  | 'delete-account' 
+export type ProfileTab =
+  | 'profile'
+  | 'security'
+  | 'teams'
+  | 'team-member'
+  | 'data-export'
+  | 'delete-account'
   | 'password';
 
 export interface TabItem {
