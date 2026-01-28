@@ -228,7 +228,7 @@ export class PronunciationScoringService {
   ): Promise<ScoringResult | null> {
     try {
       console.log(`🔍 Fetching latest session for user ${userId}, prompt ${promptIndex}`);
-      
+
       const session = await UserPracticeSession
         .findOne({ userId, promptIndex })
         .sort({ completedAt: -1 })
@@ -265,7 +265,7 @@ export class PronunciationScoringService {
   async getSessionDetail(sessionId: string): Promise<ScoringResult | null> {
     try {
       const session = await UserPracticeSession.findById(sessionId);
-      
+
       if (!session) {
         return null;
       }
@@ -372,78 +372,69 @@ export class PronunciationScoringService {
       );
 
       // ═══════════════════════════════════════════════════════════════
-      // STEP 3: Transcribe với Whisper
+      // STEP 3: Score with Speechace v9 Open-ended Speech API
+      // This API provides:
+      // - Automatic transcription (no need for Whisper)
+      // - Full IELTS scores: pronunciation, fluency, vocab, grammar, coherence
+      // - Word-level analysis with timing
       // ═══════════════════════════════════════════════════════════════
-      console.log('📝 Transcribing audio with Whisper...');
-      const transcript = await this.whisperService.transcribeAudio(audioFilePath, 'en');
-      console.log('✅ Transcript:', transcript);
-
-      // ═══════════════════════════════════════════════════════════════
-      // STEP 4: Score Pronunciation/Fluency với Speechace Pro
-      // ═══════════════════════════════════════════════════════════════
-      console.log('🎯 Scoring with Speechace Pro API...');
-      const speechaceResult = await speechaceService.scoreAudio(
+      console.log('🎯 Scoring with Speechace v9 Open-ended Speech API...');
+      const speechaceResult = await speechaceService.scoreOpenEndedSpeech(
         mp3Path,
-        transcript,  // Dùng transcript làm reference text
-        userId
+        userId,
+        true  // include IELTS feedback
       );
 
-      console.log('📊 Speechace Scores:');
-      console.log('  - Overall Quality:', speechaceResult.text_score.quality_score);
-      console.log('  - Pronunciation (from quality):', speechaceResult.text_score.quality_score);
-      console.log('  - Fluency (from quality):', speechaceResult.text_score.quality_score);
-      console.log('  - Words analyzed:', speechaceResult.text_score.word_score_list.length);
+      // Extract data from v9 API response
+      const transcript = speechaceResult.speech_score.transcript;
+      const ieltsScores = speechaceResult.speech_score.ielts_score;
+
+      console.log('📊 Speechace v9 IELTS Scores:');
+      console.log('  - Overall:', ieltsScores.overall);
+      console.log('  - Pronunciation:', ieltsScores.pronunciation);
+      console.log('  - Fluency:', ieltsScores.fluency);
+      console.log('  - Vocabulary:', ieltsScores.vocab);
+      console.log('  - Grammar:', ieltsScores.grammar);
+      console.log('  - Coherence:', ieltsScores.coherence);
+      console.log('📝 Transcript:', transcript);
 
       // ═══════════════════════════════════════════════════════════════
-      // STEP 5: Parse word scores & Extract timing
+      // STEP 4: Parse word scores & Extract timing
       // ═══════════════════════════════════════════════════════════════
       const wordScores = speechaceService.parseWordScores(
-        speechaceResult.text_score.word_score_list
+        speechaceResult.speech_score.word_score_list
       );
 
       // ═══════════════════════════════════════════════════════════════
-      // STEP 6: Detect pauses from timing gaps
+      // STEP 5: Detect pauses from timing gaps
       // ═══════════════════════════════════════════════════════════════
       const pauseInfo = this.detectPausesFromExtent(wordScores);
       console.log('⏸️ Bad pauses detected:', pauseInfo.badPauses);
 
       // ═══════════════════════════════════════════════════════════════
-      // STEP 7: Score Vocabulary/Grammar với GPT-4
+      // STEP 6: Prepare final IELTS scores
+      // Use scores directly from Speechace v9 API (already in IELTS 0-9 scale)
+      // Note: We use 4 main criteria for overall score (matching IELTS Speaking)
       // ═══════════════════════════════════════════════════════════════
-      console.log('🤖 Scoring Vocabulary/Grammar with GPT-4...');
-      const gptScores = await this.scoreWithGPT4(
-        topicTitle,
-        questions,
-        transcript
-      );
-
-      console.log('✅ GPT-4 Scores:');
-      console.log('  - Vocabulary:', gptScores.vocabulary);
-      console.log('  - Grammar:', gptScores.grammar);
-
-      // ═══════════════════════════════════════════════════════════════
-      // STEP 8: Convert to IELTS scale (0-9)
-      // ═══════════════════════════════════════════════════════════════
-      // Speechace v0.5 chỉ có quality_score, dùng cho cả pronunciation và fluency
-      const qualityScore = speechaceResult.text_score.quality_score;
-      const ieltsScores = {
-        pronunciation: this.toIELTS(qualityScore),
-        fluency: this.toIELTS(qualityScore),
-        vocabulary: gptScores.vocabulary,
-        grammar: gptScores.grammar,
+      const finalScores = {
+        pronunciation: this.round(ieltsScores.pronunciation),
+        fluency: this.round(ieltsScores.fluency),
+        vocabulary: this.round(ieltsScores.vocab),
+        grammar: this.round(ieltsScores.grammar),
         overall: 0,
       };
 
-      // Overall = average of 4 criteria
-      ieltsScores.overall = this.round(
-        (ieltsScores.pronunciation + ieltsScores.fluency + 
-         ieltsScores.vocabulary + ieltsScores.grammar) / 4
+      // Calculate overall as average of 4 main criteria
+      // (Coherence is bonus metric, not included in overall for IELTS Speaking)
+      finalScores.overall = this.round(
+        (finalScores.pronunciation + finalScores.fluency +
+          finalScores.vocabulary + finalScores.grammar) / 4
       );
 
-      console.log('📊 IELTS Scores:', ieltsScores);
+      console.log('📊 Final IELTS Scores:', finalScores);
 
       // ═══════════════════════════════════════════════════════════════
-      // STEP 9: Calculate metrics
+      // STEP 7: Calculate metrics
       // ═══════════════════════════════════════════════════════════════
       const metrics = {
         badPauses: pauseInfo.badPauses,
@@ -453,7 +444,7 @@ export class PronunciationScoringService {
       console.log('📈 Metrics:', metrics);
 
       // ═══════════════════════════════════════════════════════════════
-      // STEP 10: Save to Database
+      // STEP 8: Save to Database
       // ═══════════════════════════════════════════════════════════════
       console.log('💾 Saving Free Speaking session to database...');
       const session = await FreeSpeakingSession.create({
@@ -464,7 +455,7 @@ export class PronunciationScoringService {
         userAudioUrl: cloudinaryResult.secureUrl,
         userAudioPublicId: cloudinaryResult.publicId,
         transcript,
-        scores: ieltsScores,
+        scores: finalScores,
         wordScores,
         metrics,
         recordingDuration: cloudinaryResult.duration,
@@ -474,7 +465,7 @@ export class PronunciationScoringService {
       console.log('✅ Free Speaking session saved:', session._id);
 
       // ═══════════════════════════════════════════════════════════════
-      // STEP 11: Cleanup temp files
+      // STEP 9: Cleanup temp files
       // ═══════════════════════════════════════════════════════════════
       try {
         if (fs.existsSync(mp3Path)) {
@@ -489,12 +480,12 @@ export class PronunciationScoringService {
       }
 
       // ═══════════════════════════════════════════════════════════════
-      // STEP 12: Return result
+      // STEP 10: Return result
       // ═══════════════════════════════════════════════════════════════
       return {
         sessionId: session._id,
         transcript,
-        scores: ieltsScores,
+        scores: finalScores,
         wordScores,
         metrics,
         userAudioUrl: cloudinaryResult.secureUrl,
@@ -709,7 +700,7 @@ Return ONLY valid JSON:
       const filePath = path.join(tempDir, fileName);
 
       fs.writeFileSync(filePath, Buffer.from(response.data));
-      
+
       console.log('✅ Downloaded MP3 from Cloudinary:', filePath);
       return filePath;
 
