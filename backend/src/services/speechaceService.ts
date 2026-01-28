@@ -83,7 +83,21 @@ export interface SpeechaceOpenEndedResponse {
       overall_metrics?: any;
     };
     fluency?: {
-      overall_metrics?: any;
+      overall_metrics?: {
+        all_pause_count?: number;
+        all_pause_duration?: number;
+        all_pause_list?: Array<{
+          start: number;  // seconds
+          end: number;    // seconds
+          duration: number; // seconds
+        }>;
+        articulation?: number; // syllables per minute
+        speech_rate?: number;  // syllables per second
+        mean_length_run?: number;
+        max_length_run?: number;
+        word_correct_per_minute?: number;
+        syllable_correct_per_minute?: number;
+      };
     };
 
     asr_version?: string;

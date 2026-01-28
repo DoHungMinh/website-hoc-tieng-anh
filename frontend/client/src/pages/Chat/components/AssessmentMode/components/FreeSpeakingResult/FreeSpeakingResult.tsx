@@ -22,7 +22,7 @@ interface TranscriptWord {
     word: string;
     isCorrect: boolean;
     score: number;
-    pauseAfter?: boolean; // true if there's a pause after this word
+    pauseAfter?: boolean | 'medium' | 'long'; // pause type: true/false or 'medium'/'long'
 }
 
 const FreeSpeakingResult: React.FC<FreeSpeakingResultProps> = ({
@@ -199,9 +199,9 @@ const FreeSpeakingResult: React.FC<FreeSpeakingResultProps> = ({
                     <button className={styles.playButton} onClick={toggleAudio}>
                         {isPlaying ? <Pause size={20} /> : <Play size={20} />}
                     </button>
-                    <audio 
+                    <audio
                         ref={audioRef}
-                        src={audioUrl} 
+                        src={audioUrl}
                         className={styles.audioElement}
                         onEnded={() => setIsPlaying(false)}
                         onPause={() => setIsPlaying(false)}
@@ -220,7 +220,11 @@ const FreeSpeakingResult: React.FC<FreeSpeakingResultProps> = ({
                                 <span className={styles.wordText}>{item.word}</span>
                                 <span className={styles.wordScore}>({item.score})</span>
                             </div>
-                            {item.pauseAfter && <span className={styles.pauseMarker}>●</span>}
+                            {item.pauseAfter && (
+                                <span className={styles.pauseMarker}>
+                                    {item.pauseAfter === 'long' ? '⚠️⚠️' : '⚠️'}
+                                </span>
+                            )}
                         </React.Fragment>
                     ))}
                 </div>

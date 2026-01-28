@@ -406,10 +406,21 @@ export class PronunciationScoringService {
       );
 
       // ═══════════════════════════════════════════════════════════════
-      // STEP 5: Detect pauses from timing gaps
+      // STEP 5: Detect pauses from v9 fluency metrics
       // ═══════════════════════════════════════════════════════════════
-      const pauseInfo = this.detectPausesFromExtent(wordScores);
-      console.log('⏸️ Bad pauses detected:', pauseInfo.badPauses);
+      const fluencyMetrics = speechaceResult.speech_score.fluency?.overall_metrics;
+      const pauseInfo = this.detectPausesFromFluencyMetrics(wordScores, fluencyMetrics);
+
+      console.log('⏸️ Pause Detection Results:');
+      console.log(`   - Bad pauses: ${pauseInfo.badPauses}`);
+      console.log(`   - Medium pauses: ${pauseInfo.mediumPauses}`);
+      console.log(`   - Long pauses: ${pauseInfo.longPauses}`);
+      if (pauseInfo.articulation) {
+        console.log(`   - Articulation rate: ${pauseInfo.articulation} syllables/min`);
+      }
+      if (pauseInfo.speechRate) {
+        console.log(`   - Speech rate: ${pauseInfo.speechRate} syllables/sec`);
+      }
 
       // ═══════════════════════════════════════════════════════════════
       // STEP 6: Prepare final IELTS scores
@@ -438,7 +449,12 @@ export class PronunciationScoringService {
       // ═══════════════════════════════════════════════════════════════
       const metrics = {
         badPauses: pauseInfo.badPauses,
+        mediumPauses: pauseInfo.mediumPauses,
+        longPauses: pauseInfo.longPauses,
         accuracy: this.calculateAccuracy(wordScores),
+        articulation: pauseInfo.articulation,
+        speechRate: pauseInfo.speechRate,
+        meanLengthRun: pauseInfo.meanLengthRun,
       };
 
       console.log('📈 Metrics:', metrics);
@@ -618,15 +634,140 @@ Return ONLY valid JSON:
   }
 
   /**
-   * Detect pauses từ word timing gaps
-   * Gap > 500ms = pause
+   * Detect pauses from Speechace v9 fluency metrics
+   * Uses all_pause_list from API for accurate pause detection
+   * Classifies pauses: medium (500ms-1s) vs long (>1s)
+   * 
+   * @param wordScores - Word scores with timing
+   * @param fluencyMetrics - Fluency metrics from v9 API (optional)
+   * @returns Pause statistics and positions
    */
-  private detectPausesFromExtent(
-    wordScores: IWordScore[]
-  ): { badPauses: number; pausePositions: number[] } {
-    let pauseCount = 0;
+  private detectPausesFromFluencyMetrics(
+    wordScores: IWordScore[],
+    fluencyMetrics?: {
+      all_pause_count?: number;
+      all_pause_duration?: number;
+      all_pause_list?: Array<{
+        start: number;
+        end: number;
+        duration: number;
+      }>;
+      articulation?: number;
+      speech_rate?: number;
+      mean_length_run?: number;
+      max_length_run?: number;
+    }
+  ): {
+    badPauses: number;
+    mediumPauses: number;
+    longPauses: number;
+    pausePositions: number[];
+    articulation?: number;
+    speechRate?: number;
+    meanLengthRun?: number;
+  } {
+    // If no fluency metrics, fallback to old method
+    if (!fluencyMetrics?.all_pause_list || fluencyMetrics.all_pause_list.length === 0) {
+      console.log('⚠️ No fluency metrics from API, using fallback method');
+      return this.detectPausesFromExtentFallback(wordScores);
+    }
+
+    const pauseList = fluencyMetrics.all_pause_list;
+    const MEDIUM_THRESHOLD_MS = 500;  // 500ms
+    const LONG_THRESHOLD_MS = 1000;   // 1 second
+
+    let mediumPauseCount = 0;
+    let longPauseCount = 0;
     const pausePositions: number[] = [];
-    const PAUSE_THRESHOLD_MS = 500; // 500ms
+
+    console.log(`📊 Analyzing ${pauseList.length} pauses from v9 API...`);
+
+    // Classify pauses from API
+    pauseList.forEach((pause, index) => {
+      const durationMs = pause.duration * 1000;
+
+      if (durationMs >= LONG_THRESHOLD_MS) {
+        longPauseCount++;
+        console.log(`⏸️ Long pause ${index + 1}: ${durationMs.toFixed(0)}ms at ${pause.start.toFixed(2)}s`);
+      } else if (durationMs >= MEDIUM_THRESHOLD_MS) {
+        mediumPauseCount++;
+        console.log(`⏸️ Medium pause ${index + 1}: ${durationMs.toFixed(0)}ms at ${pause.start.toFixed(2)}s`);
+      }
+    });
+
+    // Map pauses to word positions
+    pauseList.forEach(pause => {
+      const durationMs = pause.duration * 1000;
+
+      // Only mark pauses >= 500ms
+      if (durationMs < MEDIUM_THRESHOLD_MS) {
+        return;
+      }
+
+      // Find word that ends before this pause
+      for (let i = 0; i < wordScores.length - 1; i++) {
+        const currentWord = wordScores[i];
+        const nextWord = wordScores[i + 1];
+
+        if (!currentWord.endTime || !nextWord.startTime) {
+          continue;
+        }
+
+        // Check if pause falls between these words
+        const wordGapStart = currentWord.endTime;
+        const wordGapEnd = nextWord.startTime;
+
+        if (pause.start >= wordGapStart && pause.end <= wordGapEnd) {
+          // Mark pause type on word
+          if (durationMs >= LONG_THRESHOLD_MS) {
+            (wordScores[i] as any).pauseAfter = 'long';
+          } else {
+            (wordScores[i] as any).pauseAfter = 'medium';
+          }
+
+          pausePositions.push(i);
+          console.log(`🔗 Mapped pause to word "${currentWord.word}" (${durationMs.toFixed(0)}ms)`);
+          break;
+        }
+      }
+    });
+
+    const totalBadPauses = mediumPauseCount + longPauseCount;
+
+    console.log('📊 Pause Detection Summary:');
+    console.log(`   - Total pauses: ${pauseList.length}`);
+    console.log(`   - Medium pauses (500ms-1s): ${mediumPauseCount}`);
+    console.log(`   - Long pauses (>1s): ${longPauseCount}`);
+    console.log(`   - Bad pauses (≥500ms): ${totalBadPauses}`);
+
+    return {
+      badPauses: totalBadPauses,
+      mediumPauses: mediumPauseCount,
+      longPauses: longPauseCount,
+      pausePositions,
+      articulation: fluencyMetrics.articulation,
+      speechRate: fluencyMetrics.speech_rate,
+      meanLengthRun: fluencyMetrics.mean_length_run,
+    };
+  }
+
+  /**
+   * Fallback method: Detect pauses from word timing gaps
+   * Used when v9 API doesn't return fluency metrics
+   */
+  private detectPausesFromExtentFallback(
+    wordScores: IWordScore[]
+  ): {
+    badPauses: number;
+    mediumPauses: number;
+    longPauses: number;
+    pausePositions: number[];
+  } {
+    let mediumPauseCount = 0;
+    let longPauseCount = 0;
+    const pausePositions: number[] = [];
+    const MEDIUM_THRESHOLD_MS = 500;
+    const LONG_THRESHOLD_MS = 1000;
 
     for (let i = 0; i < wordScores.length - 1; i++) {
       const currentWord = wordScores[i];
@@ -638,17 +779,27 @@ Return ONLY valid JSON:
 
       const gapMs = (nextWord.startTime - currentWord.endTime) * 1000;
 
-      if (gapMs > PAUSE_THRESHOLD_MS) {
-        pauseCount++;
+      if (gapMs >= LONG_THRESHOLD_MS) {
+        longPauseCount++;
         pausePositions.push(i);
-        // Mark pause on current word
-        (wordScores[i] as any).pauseAfter = true;
-
-        console.log(`⏸️ Pause after "${currentWord.word}" (${gapMs.toFixed(0)}ms)`);
+        (wordScores[i] as any).pauseAfter = 'long';
+        console.log(`⏸️ Long pause after "${currentWord.word}" (${gapMs.toFixed(0)}ms)`);
+      } else if (gapMs >= MEDIUM_THRESHOLD_MS) {
+        mediumPauseCount++;
+        pausePositions.push(i);
+        (wordScores[i] as any).pauseAfter = 'medium';
+        console.log(`⏸️ Medium pause after "${currentWord.word}" (${gapMs.toFixed(0)}ms)`);
       }
     }
 
-    return { badPauses: pauseCount, pausePositions };
+    const totalBadPauses = mediumPauseCount + longPauseCount;
+
+    return {
+      badPauses: totalBadPauses,
+      mediumPauses: mediumPauseCount,
+      longPauses: longPauseCount,
+      pausePositions
+    };
   }
 
   /**
