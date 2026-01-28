@@ -59,6 +59,24 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
     },
     {
       _id: '2',
+      youtubeId: 'BF3bXji-J7I',
+      title: 'The Fox and the Crow',
+      topics: ['Story', 'Intermediate'],
+      blankCount: 8,
+      thumbnailUrl: 'https://img.youtube.com/vi/BF3bXji-J7I/maxresdefault.jpg',
+      duration: '3:13'
+    },
+    {
+      _id: '3',
+      youtubeId: 'jKi2SvWOCXc',
+      title: 'The Bear and the Bee',
+      topics: ['Story', 'Advanced'],
+      blankCount: 8,
+      thumbnailUrl: 'https://img.youtube.com/vi/jKi2SvWOCXc/maxresdefault.jpg',
+      duration: '3:34'
+    },
+    {
+      _id: '4',
       youtubeId: 'dQw4w9WgXcQ',
       title: 'Business English - Job Interview Tips',
       topics: ['Business', 'Career'],
@@ -67,7 +85,7 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
       duration: '8:15'
     },
     {
-      _id: '3',
+      _id: '5',
       youtubeId: 'dQw4w9WgXcQ',
       title: 'Travel English - Booking A Hotel Room',
       topics: ['Travel', 'Tourism'],
@@ -76,7 +94,7 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
       duration: '4:45'
     },
     {
-      _id: '4',
+      _id: '6',
       youtubeId: 'dQw4w9WgXcQ',
       title: 'English Grammar - Present Perfect Tense',
       topics: ['Grammar', 'Education'],
@@ -85,7 +103,7 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
       duration: '6:20'
     },
     {
-      _id: '5',
+      _id: '7',
       youtubeId: 'dQw4w9WgXcQ',
       title: 'Advanced Discussion - Climate Change',
       topics: ['Environment', 'Science'],
@@ -94,7 +112,7 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
       duration: '10:30'
     },
     {
-      _id: '6',
+      _id: '8',
       youtubeId: 'dQw4w9WgXcQ',
       title: 'Beginner Basics - Introducing Yourself',
       topics: ['Basics', 'Social'],
@@ -107,7 +125,7 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
   // Filter and search logic
   const filteredVideos = videoExercises.filter((video) => {
     // Search filter
-    const matchesSearch = searchQuery.trim() === '' || 
+    const matchesSearch = searchQuery.trim() === '' ||
       video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       video.topics.some(topic => topic.toLowerCase().includes(searchQuery.toLowerCase()));
 
@@ -118,7 +136,7 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
       .filter(opt => activeFilters.includes(opt.id))
       .map(opt => opt.value.toLowerCase());
 
-    const matchesFilters = video.topics.some(topic => 
+    const matchesFilters = video.topics.some(topic =>
       activeFilterValues.includes(topic.toLowerCase())
     );
 
@@ -278,8 +296,8 @@ const VideoListeningLibrary: React.FC<VideoListeningLibraryProps> = ({ onBack })
           <div className="text-center py-16">
             <Volume2 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-600 mb-2">
-              {searchQuery || activeFilters.length > 0 
-                ? 'Không tìm thấy video phù hợp' 
+              {searchQuery || activeFilters.length > 0
+                ? 'Không tìm thấy video phù hợp'
                 : 'Chưa có bài tập nào'}
             </h3>
             <p className="text-gray-500">

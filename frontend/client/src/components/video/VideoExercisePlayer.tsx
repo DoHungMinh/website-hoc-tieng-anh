@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, CheckCircle, XCircle, Volume2, RotateCcw } from 'lucide-react';
 import { parseSRT } from '@/utils/srtParser';
-import { windAndSunSRT } from '../../data/srtData';
+import { windAndSunSRT, foxAndCrowSRT, bearAndBeeSRT } from '../../data/srtData';
 
 // Declare YouTube IFrame API types
 declare global {
@@ -51,10 +51,14 @@ const VideoExercisePlayer: React.FC<VideoExercisePlayerProps> = ({ video, onBack
   const timeCheckInterval = useRef<any>(null);
   const canAutoPauseRef = useRef(true);
 
-  // Parse SRT data - Load real subtitle cho video "The Wind and the Sun"
+  // Parse SRT data - Load subtitle based on video ID
   const subtitles = video.youtubeId === 'l0Z8A4u3CtI'
     ? parseSRT(windAndSunSRT)
-    : []; // Các video khác sẽ cần load SRT riêng
+    : video.youtubeId === 'BF3bXji-J7I'
+      ? parseSRT(foxAndCrowSRT)
+      : video.youtubeId === 'jKi2SvWOCXc'
+        ? parseSRT(bearAndBeeSRT)
+        : []; // Các video khác sẽ cần load SRT riêng
 
   const blanksOnly = subtitles.filter(s => s.hasBlank);
 
