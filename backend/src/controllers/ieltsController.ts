@@ -13,13 +13,13 @@ const updateUserLevelFromTestResults = async (userId: string) => {
   try {
     // Get all test results for this user
     const testResults = await IELTSTestResult.find({ userId }).lean();
-    
+
     // Calculate the appropriate level based on test results
     const newLevel = calculateUserLevel(testResults.map(result => ({ bandScore: result.score.bandScore })));
-    
+
     // Update user's level in database
     await User.findByIdAndUpdate(userId, { level: newLevel }, { validateModifiedOnly: true });
-    
+
     console.log(`📈 Updated user ${userId} level to: ${newLevel}`);
   } catch (error) {
     console.error('Error updating user level from test results:', error);
@@ -35,7 +35,7 @@ cloudinary.config({
 
 // Configure Multer for memory storage
 const storage = multer.memoryStorage();
-export const upload = multer({ 
+export const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('audio/')) {
@@ -77,13 +77,13 @@ const uploadToCloudinary = (buffer: Buffer, filename: string): Promise<any> => {
 // Get all IELTS exams with filtering
 export const getIELTSExams = async (req: Request, res: Response) => {
   try {
-    const { 
-      type, 
-      difficulty, 
+    const {
+      type,
+      difficulty,
       status = 'published',
-      page = 1, 
+      page = 1,
       limit = 10,
-      search 
+      search
     } = req.query;
 
     console.log('getIELTSExams called with params:', { type, difficulty, status, page, limit, search });
@@ -95,21 +95,21 @@ export const getIELTSExams = async (req: Request, res: Response) => {
 
     // Build filter object with input validation
     const filter: any = {};
-    
+
     if (type && type !== 'all') {
       filter.type = type;
     }
-    
+
     if (difficulty && difficulty !== 'all' && typeof difficulty === 'string') {
       // Sanitize difficulty input
       const sanitizedDifficulty = difficulty.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.difficulty = { $regex: sanitizedDifficulty, $options: 'i' };
     }
-    
+
     if (status && status !== 'all') {
       filter.status = status;
     }
-    
+
     if (search && typeof search === 'string' && search.trim()) {
       // Sanitize search input
       const sanitizedSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -117,7 +117,7 @@ export const getIELTSExams = async (req: Request, res: Response) => {
     }
 
     console.log('Filter object:', filter);
-    
+
     const exams = await IELTSExam.find(filter)
       .populate({
         path: 'createdBy',
@@ -131,15 +131,15 @@ export const getIELTSExams = async (req: Request, res: Response) => {
       .lean();
 
     const total = await IELTSExam.countDocuments(filter).maxTimeMS(10000);
-    
+
     console.log(`Found ${exams.length} exams out of ${total} total`);
-    
+
     // Filter out any null/undefined createdBy references
     const validExams = exams.map(exam => ({
       ...exam,
       createdBy: exam.createdBy || null
     }));
-    
+
     res.json({
       success: true,
       data: validExams,
@@ -152,7 +152,7 @@ export const getIELTSExams = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Error fetching IELTS exams:', error);
     console.error('Error details:', error);
-    
+
     // Handle timeout errors
     if (error.code === 50 || error.message?.includes('timeout')) {
       res.status(504).json({
@@ -161,7 +161,7 @@ export const getIELTSExams = async (req: Request, res: Response) => {
       });
       return;
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Lỗi khi lấy danh sách đề thi',
@@ -174,7 +174,7 @@ export const getIELTSExams = async (req: Request, res: Response) => {
 export const getIELTSExamById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     const exam = await IELTSExam.findById(id)
       .populate({
         path: 'createdBy',
@@ -182,20 +182,20 @@ export const getIELTSExamById = async (req: Request, res: Response) => {
         options: { strictPopulate: false }
       })
       .lean();
-    
+
     if (!exam) {
       return res.status(404).json({
         success: false,
         message: 'Không tìm thấy đề thi'
       });
     }
-    
+
     // Ensure createdBy is not undefined
     const examData = {
       ...exam,
       createdBy: exam.createdBy || null
     };
-    
+
     return res.json({
       success: true,
       data: examData
@@ -255,18 +255,18 @@ export const createIELTSExam = async (req: Request, res: Response) => {
 
     // Calculate total questions
     let totalQuestions = 0;
-    
+
     // If totalQuestions is provided in request body (from AI generation), use it
     // Otherwise calculate from passages/sections
     if (req.body.totalQuestions && typeof req.body.totalQuestions === 'number') {
       totalQuestions = req.body.totalQuestions;
       console.log('Using provided totalQuestions:', totalQuestions);
     } else if (type === 'reading' && passages) {
-      totalQuestions = passages.reduce((total: number, passage: any) => 
+      totalQuestions = passages.reduce((total: number, passage: any) =>
         total + (passage.questions ? passage.questions.length : 0), 0);
       console.log('Calculated totalQuestions from passages:', totalQuestions);
     } else if (type === 'listening' && sections) {
-      totalQuestions = sections.reduce((total: number, section: any) => 
+      totalQuestions = sections.reduce((total: number, section: any) =>
         total + (section.questions ? section.questions.length : 0), 0);
       console.log('Calculated totalQuestions from sections:', totalQuestions);
     }
@@ -301,7 +301,7 @@ export const createIELTSExam = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error creating IELTS exam:', error);
-    
+
     // Provide more detailed error information
     if (error instanceof Error) {
       return res.status(500).json({
@@ -324,7 +324,8 @@ export const createIELTSExam = async (req: Request, res: Response) => {
 export const uploadAudio = async (req: Request, res: Response) => {
   try {
     const { examId, sectionId } = req.body;
-    
+
+    // Validate file exists
     if (!req.file) {
       return res.status(400).json({
         success: false,
@@ -332,9 +333,26 @@ export const uploadAudio = async (req: Request, res: Response) => {
       });
     }
 
+    // Validate buffer has data (memoryStorage provides buffer)
+    if (!req.file.buffer || req.file.buffer.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'File audio rỗng hoặc không hợp lệ'
+      });
+    }
+
+    console.log('📤 Uploading audio to Cloudinary:', {
+      filename: req.file.originalname,
+      size: req.file.size,
+      mimetype: req.file.mimetype,
+      bufferLength: req.file.buffer.length
+    });
+
     // Upload to Cloudinary
     const filename = `${examId}_${sectionId}_${Date.now()}`;
     const result = await uploadToCloudinary(req.file.buffer, filename);
+
+    console.log('✅ Audio uploaded successfully:', result.secure_url);
 
     return res.json({
       success: true,
@@ -345,7 +363,7 @@ export const uploadAudio = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error uploading audio:', error);
+    console.error('❌ Error uploading audio:', error);
     return res.status(500).json({
       success: false,
       message: 'Lỗi khi upload audio',
@@ -364,10 +382,10 @@ export const updateIELTSExam = async (req: Request, res: Response) => {
     if (updateData.passages || updateData.sections) {
       let totalQuestions = 0;
       if (updateData.type === 'reading' && updateData.passages) {
-        totalQuestions = updateData.passages.reduce((total: number, passage: any) => 
+        totalQuestions = updateData.passages.reduce((total: number, passage: any) =>
           total + (passage.questions ? passage.questions.length : 0), 0);
       } else if (updateData.type === 'listening' && updateData.sections) {
-        totalQuestions = updateData.sections.reduce((total: number, section: any) => 
+        totalQuestions = updateData.sections.reduce((total: number, section: any) =>
           total + (section.questions ? section.questions.length : 0), 0);
       }
       updateData.totalQuestions = totalQuestions;
@@ -519,7 +537,7 @@ export const submitTestResult = async (req: Request, res: Response): Promise<voi
   try {
     const { examId } = req.params;
     const { answers, timeSpent } = req.body;
-    
+
     // Get user from auth middleware
     const userId = req.user?.id || req.user?._id;
     if (!userId) {
@@ -564,7 +582,7 @@ export const submitTestResult = async (req: Request, res: Response): Promise<voi
     // Loop through ALL questions in the exam
     for (const question of allQuestions) {
       let userAnswer = answers[question.id]; // undefined if not answered
-      
+
       // Convert numeric index (0,1,2,3) to letter (A,B,C,D) if needed
       // This handles cases where frontend sends index instead of letter
       if (typeof userAnswer === 'number' && typeof question.correctAnswer === 'string') {
@@ -572,7 +590,7 @@ export const submitTestResult = async (req: Request, res: Response): Promise<voi
         userAnswer = indexToLetter[userAnswer] || userAnswer;
         console.log(`🔄 Converted index ${answers[question.id]} to letter ${userAnswer}`);
       }
-      
+
       // DEBUG: Log first 3 questions to check types
       if (processedAnswers.length < 3) {
         console.log(`🔍 Question ${processedAnswers.length + 1}:`, {
@@ -583,11 +601,11 @@ export const submitTestResult = async (req: Request, res: Response): Promise<voi
           strictEqual: userAnswer === question.correctAnswer,
         });
       }
-      
-      const isCorrect = userAnswer !== undefined && 
-                       question.correctAnswer !== undefined && 
-                       userAnswer === question.correctAnswer;
-      
+
+      const isCorrect = userAnswer !== undefined &&
+        question.correctAnswer !== undefined &&
+        userAnswer === question.correctAnswer;
+
       if (isCorrect) correctCount++;
 
       processedAnswers.push({
@@ -609,7 +627,7 @@ export const submitTestResult = async (req: Request, res: Response): Promise<voi
     // Calculate IELTS band score using official scoring system
     let bandScore: number | undefined;
     let description: string | undefined;
-    
+
     if (exam.type === 'listening' || exam.type === 'reading') {
       const ieltsResult = calculateIELTSScore(exam.type, correctCount);
       bandScore = ieltsResult.bandScore;
@@ -728,7 +746,7 @@ export const getTestResultDetail = async (req: Request, res: Response): Promise<
   try {
     const { resultId } = req.params;
     const userId = req.user?.id || req.user?._id;
-    
+
     if (!userId) {
       res.status(401).json({
         success: false,

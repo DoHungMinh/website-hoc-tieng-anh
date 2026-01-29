@@ -22,19 +22,10 @@ const router = Router();
 // MULTER CONFIGURATION FOR AUDIO UPLOAD
 // =================================================================
 
-// Configure storage for audio files
-const audioStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, "uploads/audio/");
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-        cb(
-            null,
-            file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
-        );
-    },
-});
+// Configure memory storage for audio files
+// Using memoryStorage because controller uses req.file.buffer to upload to Cloudinary
+// File is temporarily stored in RAM and automatically released after upload
+const audioStorage = multer.memoryStorage();
 
 const audioUpload = multer({
     storage: audioStorage,
